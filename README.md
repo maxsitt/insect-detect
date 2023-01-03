@@ -5,13 +5,13 @@
 [![DOI](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)
 [![License badge](https://img.shields.io/badge/license-GPLv3-yellowgreen)](https://choosealicense.com/licenses/gpl-3.0/)
 
-This repository contains Python scripts and a YOLOv5s detection model
-([.blob format](https://docs.luxonis.com/en/latest/pages/model_conversion/)) for
-testing and deploying the Insect Detect DIY camera trap for automated insect monitoring.
+This repository contains Python scripts and a [YOLOv5s](https://github.com/ultralytics/yolov5)
+detection model ([.blob format](https://docs.luxonis.com/en/latest/pages/model_conversion/))
+for testing and deploying the Insect Detect DIY camera trap for automated insect monitoring.
 The camera trap system is composed of low-cost off-the-shelf hardware components
 ([Raspberry Pi Zero 2 W](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/),
 [Luxonis OAK-1](https://docs.luxonis.com/projects/hardware/en/latest/pages/BW1093.html),
-[PiJuice Zero pHAT](https://uk.pi-supply.com/products/pijuice-zero)), combined with completely
+[PiJuice Zero pHAT](https://uk.pi-supply.com/products/pijuice-zero)), combined with
 open source software and can be easily assembled and set up with the
 [provided instructions](https://maxsitt.github.io/insect-detect-docs/).
 
@@ -53,5 +53,3 @@ You can cite this repository as:
 Sittinger, M. (2022). Insect Detect - Software for automated insect monitoring
 with a DIY camera trap system. Zenodo. https://doi.org/10.5281/zenodo.7472238
 ```
-
-[![DOI](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)

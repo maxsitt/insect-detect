@@ -7,11 +7,11 @@ License:      GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
 - run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
-- use full FOV 4K frames downscaled to LQ frames (e.g. 416x416) as model input
+- use 4K frames downscaled to full FOV LQ frames (e.g. 416x416) as model input
 - use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
-- show a preview of full FOV 4K frames downscaled to LQ frames (e.g. 416x416) + model/tracker output
-- optional: print available Rasperry Pi memory (MB) and RPi CPU utilization (percent)
-  -> "-log" to print RPi info to console
+- show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 416x416) + model/tracker output
+- optional argument:
+  "-log" print available Raspberry Pi memory (MB) and RPi CPU utilization (percent) to console
 
 compiled with open source scripts available at https://github.com/luxonis
 '''
@@ -56,7 +56,7 @@ labels = nn_mappings.get("labels", {})
 # Create depthai pipeline
 pipeline = dai.Pipeline()
 
-# Define camera source
+# Create and configure camera node
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
@@ -65,7 +65,7 @@ cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
 cam_rgb.setFps(20) # frames per second available for focus/exposure/model input
 
-# Define detection model source and input
+# Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
 cam_rgb.preview.link(nn.input) # downscaled LQ frames as model input
 nn.input.setBlocking(False)
@@ -80,7 +80,7 @@ nn.setIouThreshold(iou_threshold)
 nn.setConfidenceThreshold(confidence_threshold)
 nn.setNumInferenceThreads(2)
 
-# Define object tracker source and input + output
+# Create and configure object tracker node and define inputs + outputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
 #tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
@@ -129,7 +129,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         if track_out is not None:
             tracklets_data = track_out.tracklets
             counter+=1
-            
+
         if frame is not None:
             for t in tracklets_data:
                 roi = t.roi.denormalize(frame.shape[1], frame.shape[0])

@@ -8,24 +8,23 @@ License:      GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 This Python script does the following:
 - run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
 - use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
-- synchronize tracker output (+ detections) from inference on LQ frames (e.g. 416x416)
+- synchronize tracker output (+ detections) from inference on full FOV LQ frames (e.g. 416x416)
   with HQ frames (e.g. 3840x2160) on-device using the respective sequence numbers
 - save detections (bounding box area) cropped from HQ frames to .jpg
-  optional: save full HQ frames additional to cropped detections
-  -> "-raw" to save cropped detections + full raw HQ frames (e.g. for training data) OR
-  -> "-overlay" to save cropped detections + full HQ frames with overlay (bbox + info)
 - save metadata from model + tracker output (time, label, confidence, tracking ID,
   relative bbox coordinates, .jpg file path) to "metadata_{timestamp}.csv"
 - write info and error (stderr) + traceback messages to log file ("script_log.log")
 - duration of each recording interval conditional on PiJuice battery charge level
-- shut down without recording if charge level or free disk space are lower than thresholds
+- shut down without recording if charge level or free disk space is lower than threshold
 - write record info (recording ID, start/end time, duration, number of cropped detections,
   number of unique tracking IDs, free disk space and battery charge level) to "record_log.csv"
   and safely shut down RPi after recording interval is finished or if charge level drops
   below threshold or if an error occurs
-- optional: write PiJuice battery info + temperature, RPi CPU + OAK VPU temperatures and
-  RPi available memory (MB) + CPU utilization (percent) to "info_log_{timestamp}.csv"
-  -> "-log" to save additional battery, temperature and RPi memory/CPU logs
+- optional arguments:
+  "-raw" additionally save HQ frames to .jpg (e.g. for training data collection) OR
+  "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
+  "-log" write RPi CPU + OAK VPU temperatures and RPi available memory (MB) +
+         CPU utilization (percent) to "info_log_{timestamp}.csv"
 
 includes segments from open source scripts available at https://github.com/luxonis
 '''
@@ -104,7 +103,7 @@ labels = nn_mappings.get("labels", {})
 # Create depthai pipeline
 pipeline = dai.Pipeline()
 
-# Define camera source
+# Create and configure camera node
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
@@ -114,7 +113,7 @@ cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
 cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
 cam_rgb.setFps(20) # frames per second available for focus/exposure/model input
 
-# Define detection model source and input
+# Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
 cam_rgb.preview.link(nn.input) # downscaled LQ frames as model input
 nn.input.setBlocking(False)
@@ -129,7 +128,7 @@ nn.setIouThreshold(iou_threshold)
 nn.setConfidenceThreshold(confidence_threshold)
 nn.setNumInferenceThreads(2)
 
-# Define object tracker source and input + output
+# Create and configure object tracker node and define inputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
 #tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
@@ -139,7 +138,7 @@ nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
 nn.out.link(tracker.inputDetections)
 
-# Define script node and input to sync detections with HQ frames
+# Create script node and define inputs (to sync detections with HQ frames)
 script = pipeline.create(dai.node.Script)
 tracker.out.link(script.inputs["tracker"]) # tracker output + passthrough detections
 cam_rgb.video.link(script.inputs["frames"]) # HQ frames
@@ -171,15 +170,14 @@ while True:
         lst.pop(0) # remove synchronized frame from the list
 ''')
 
-# Get synced tracker output (+ passthrough detections)
+# Define script node outputs
 xout_track = pipeline.create(dai.node.XLinkOut)
 xout_track.setStreamName("track")
-script.outputs["track_out"].link(xout_track.input)
+script.outputs["track_out"].link(xout_track.input) # synced tracker output
 
-# Get synced HQ frames
 xout_frame = pipeline.create(dai.node.XLinkOut)
 xout_frame.setStreamName("frame")
-script.outputs["frame_out"].link(xout_frame.input)
+script.outputs["frame_out"].link(xout_frame.input) # synced HQ frames
 
 # Create new folders for each day, recording interval and object class
 rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
@@ -276,7 +274,7 @@ def record_log():
             "record_start_date": rec_start[:8],
             "record_start_time": rec_start[9:],
             "record_end_time": datetime.now().strftime("%H-%M"),
-            "record_time_min": round((time.monotonic() - time_start) / 60, 2),
+            "record_time_min": round((time.monotonic() - start_time) / 60, 2),
             "num_crops": len(list(Path(f"{save_path}/cropped").glob("**/*.jpg"))),
             "num_IDs": unique_ids,
             "disk_free_gb": round(psutil.disk_usage("/").free / 1073741824, 1),
@@ -325,7 +323,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
     chargelevel = chargelevel_start
-    time_start = time.monotonic()
+    start_time = time.monotonic()
 
     # Define recording time conditional on PiJuice battery charge level
     if chargelevel >= 70:
@@ -342,7 +340,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
     try:
         # Record until recording time is finished or chargelevel drops below threshold
-        while time.monotonic() < time_start + rec_time and chargelevel >= 10:
+        while time.monotonic() < start_time + rec_time and chargelevel >= 10:
 
             # Update PiJuice battery charge level
             chargelevel = pijuice.status.GetChargeLevel().get("data", -1)

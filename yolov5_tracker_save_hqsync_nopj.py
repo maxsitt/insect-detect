@@ -8,12 +8,9 @@ License:      GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 This Python script does the following:
 - run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
 - use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
-- synchronize tracker output (+ detections) from inference on LQ frames (e.g. 416x416)
+- synchronize tracker output (+ detections) from inference on full FOV LQ frames (e.g. 416x416)
   with HQ frames (e.g. 3840x2160) on-device using the respective sequence numbers
 - save detections (bounding box area) cropped from HQ frames to .jpg
-  optional: save full HQ frames additional to cropped detections
-  -> "-raw" to save cropped detections + full raw HQ frames (e.g. for training data) OR
-  -> "-overlay" to save cropped detections + full HQ frames with overlay (bbox + info)
 - save metadata from model + tracker output (time, label, confidence, tracking ID,
   relative bbox coordinates, .jpg file path) to "metadata_{timestamp}.csv"
 - write info and error (stderr) + traceback messages to log file ("script_log.log")
@@ -21,9 +18,13 @@ This Python script does the following:
 - write record info (recording ID, start/end time, duration, number of cropped detections,
   number of unique tracking IDs and free disk space) to "record_log.csv"
   and safely shut down RPi after recording interval is finished or if an error occurs
-- optional: write RPi CPU + OAK VPU temperatures and RPi available memory (MB) +
-  CPU utilization (percent) to "info_log_{timestamp}.csv"
-  -> "-log" to save additional RPi + OAK temperature and RPi memory/CPU logs
+- optional arguments:
+  "-min [min]" (default = 2) set recording time in minutes
+               (e.g. "-min 5" for 5 min recording time)
+  "-raw" additionally save HQ frames to .jpg (e.g. for training data collection) OR
+  "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
+  "-log" write RPi CPU + OAK VPU temperatures and RPi available memory (MB) +
+         CPU utilization (percent) to "info_log_{timestamp}.csv"
 
 includes segments from open source scripts available at https://github.com/luxonis
 '''
@@ -75,6 +76,8 @@ group.add_argument("-raw", "--save-raw-frames", action="store_true",
     help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
 group.add_argument("-overlay", "--save-overlay-frames", action="store_true",
     help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 720), default=2,
+    help="set record time in minutes")
 parser.add_argument("-log", "--save-logs", action="store_true",
     help="save RPi CPU + OAK VPU temperatures and RPi available memory (MB) + \
           CPU utilization (percent) to .csv file")
@@ -97,7 +100,7 @@ labels = nn_mappings.get("labels", {})
 # Create depthai pipeline
 pipeline = dai.Pipeline()
 
-# Define camera source
+# Create and configure camera node
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
@@ -107,7 +110,7 @@ cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
 cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
 cam_rgb.setFps(20) # frames per second available for focus/exposure/model input
 
-# Define detection model source and input
+# Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
 cam_rgb.preview.link(nn.input) # downscaled LQ frames as model input
 nn.input.setBlocking(False)
@@ -122,7 +125,7 @@ nn.setIouThreshold(iou_threshold)
 nn.setConfidenceThreshold(confidence_threshold)
 nn.setNumInferenceThreads(2)
 
-# Define object tracker source and input + output
+# Create and configure object tracker node and define inputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
 #tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
@@ -132,7 +135,7 @@ nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
 nn.out.link(tracker.inputDetections)
 
-# Define script node and input to sync detections with HQ frames
+# Create script node and define inputs (to sync detections with HQ frames)
 script = pipeline.create(dai.node.Script)
 tracker.out.link(script.inputs["tracker"]) # tracker output + passthrough detections
 cam_rgb.video.link(script.inputs["frames"]) # HQ frames
@@ -164,15 +167,14 @@ while True:
         lst.pop(0) # remove synchronized frame from the list
 ''')
 
-# Get synced tracker output (+ passthrough detections)
+# Define script node outputs
 xout_track = pipeline.create(dai.node.XLinkOut)
 xout_track.setStreamName("track")
-script.outputs["track_out"].link(xout_track.input)
+script.outputs["track_out"].link(xout_track.input) # synced tracker output
 
-# Get synced HQ frames
 xout_frame = pipeline.create(dai.node.XLinkOut)
 xout_frame.setStreamName("frame")
-script.outputs["frame_out"].link(xout_frame.input)
+script.outputs["frame_out"].link(xout_frame.input) # synced HQ frames
 
 # Create new folders for each day, recording interval and object class
 rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
@@ -269,7 +271,7 @@ def record_log():
             "record_start_date": rec_start[:8],
             "record_start_time": rec_start[9:],
             "record_end_time": datetime.now().strftime("%H-%M"),
-            "record_time_min": round((time.monotonic() - time_start) / 60, 2),
+            "record_time_min": round((time.monotonic() - start_time) / 60, 2),
             "num_crops": len(list(Path(f"{save_path}/cropped").glob("**/*.jpg"))),
             "num_IDs": unique_ids,
             "disk_free_gb": round(psutil.disk_usage("/").free / 1073741824, 1)
@@ -306,15 +308,15 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    time_start = time.monotonic()
+    start_time = time.monotonic()
 
-    # Define recording time [60 seconds * XX minutes]
-    rec_time = 60 * 30
-    logger.info(f"Rec ID: {rec_id} | Rec time: {int(rec_time / 60)} min")
+    # Get recording time in min from optional argument (default: 2)
+    rec_time = args.min_rec_time * 60
+    logger.info(f"Rec ID: {rec_id} | Rec time: {args.min_rec_time} min")
 
     try:
         # Record until recording time is finished
-        while time.monotonic() < time_start + rec_time:
+        while time.monotonic() < start_time + rec_time:
 
             # Get synced HQ frames and tracker output (detections + tracking IDs)
             frame_synced = q_frame.get().getCvFrame()

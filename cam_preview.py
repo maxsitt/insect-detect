@@ -6,7 +6,7 @@ Website:      https://maxsitt.github.io/insect-detect-docs/
 License:      GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- show a preview of full FOV 4K frames downscaled to LQ frames (e.g. 416x416)
+- show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 416x416)
 
 compiled with open source scripts available at https://github.com/luxonis
 '''
@@ -17,7 +17,7 @@ import depthai as dai
 # Create depthai pipeline
 pipeline = dai.Pipeline()
 
-# Define camera source and output
+# Create and configure camera node and define output
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)

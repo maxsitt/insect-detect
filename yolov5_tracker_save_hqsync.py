@@ -140,6 +140,7 @@ nn.out.link(tracker.inputDetections)
 
 # Create script node and define inputs (to sync detections with HQ frames)
 script = pipeline.create(dai.node.Script)
+script.setProcessor(dai.ProcessorType.LEON_CSS)
 tracker.out.link(script.inputs["tracker"]) # tracker output + passthrough detections
 cam_rgb.video.link(script.inputs["frames"]) # HQ frames
 script.inputs["frames"].setBlocking(False)

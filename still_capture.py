@@ -42,11 +42,6 @@ cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_12_MP) # OA
 cam_rgb.setNumFramesPool(2,2,2,2,2)
 cam_rgb.setFps(10) # frames per second available for focus/exposure
 
-# Define camera control input
-xin_ctrl = pipeline.create(dai.node.XLinkIn)
-xin_ctrl.setStreamName("control")
-xin_ctrl.out.link(cam_rgb.inputControl)
-
 # Create and configure video encoder node and define input + output
 still_enc = pipeline.create(dai.node.VideoEncoder)
 still_enc.setDefaultProfilePreset(1, dai.VideoEncoderProperties.Profile.MJPEG)
@@ -57,11 +52,24 @@ xout_still = pipeline.create(dai.node.XLinkOut)
 xout_still.setStreamName("still")
 still_enc.bitstream.link(xout_still.input)
 
+# Create script node (to send capture still command)
+script = pipeline.create(dai.node.Script)
+script.setProcessor(dai.ProcessorType.LEON_CSS)
+
+# Set script that will be run on-device (Luxonis OAK)
+script.setScript('''
+ctrl = CameraControl()
+ctrl.setCaptureStill(True)
+
+while True:
+    node.io["capture_still"].send(ctrl)
+''')
+
+# Send script output (capture still command) to camera
+script.outputs["capture_still"].link(cam_rgb.inputControl)
+
 # Connect to OAK device and start pipeline
 with dai.Device(pipeline, usb2Mode=True) as device:
-
-    # Create input queue to send the still capture command to the OAK device
-    q_ctrl = device.getInputQueue(name="control", maxSize=4, blocking=False)
 
     # Create output queue to get the encoded still images
     q_still = device.getOutputQueue(name="still", maxSize=1, blocking=False)
@@ -79,11 +87,6 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
     # Record until recording time is finished
     while time.monotonic() < start_time + rec_time:
-
-        # Send still capture command to OAK device
-        ctrl = dai.CameraControl()
-        ctrl.setCaptureStill(True)
-        q_ctrl.send(ctrl)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
 

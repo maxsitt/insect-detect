@@ -26,7 +26,7 @@ CAPTURE_FREQ = 2
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 720),
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721),
                     default=2, help="set record time in minutes")
 args = parser.parse_args()
 
@@ -91,9 +91,9 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
 
         # Get encoded still frames and save to .jpg at specified time interval
-        enc_still = q_still.get()
+        enc_still = q_still.get().getData()
         with open(f"{save_path}/{timestamp}_still.jpg", "wb") as still_jpg:
-            still_jpg.write(enc_still.getData())
+            still_jpg.write(enc_still)
 
         time.sleep(CAPTURE_FREQ)
 

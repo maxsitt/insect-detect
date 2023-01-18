@@ -28,7 +28,7 @@ CAPTURE_FREQ = 1
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 720),
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721),
                     default=2, help="set record time in minutes")
 parser.add_argument("-lq", "--save_lq_frames", action="store_true",
     help="additionally save downscaled full FOV LQ frames (e.g. 416x416)")

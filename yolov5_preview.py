@@ -27,7 +27,7 @@ import numpy as np
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-log", "--print-log", action="store_true",
+parser.add_argument("-log", "--print_log", action="store_true",
     help="print RPi available memory (MB) + CPU utilization (percent)")
 args = parser.parse_args()
 

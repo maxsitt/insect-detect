@@ -72,13 +72,13 @@ if disk_free < 200:
 # Define optional arguments
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group()
-group.add_argument("-raw", "--save-raw-frames", action="store_true",
+group.add_argument("-raw", "--save_raw_frames", action="store_true",
     help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
-group.add_argument("-overlay", "--save-overlay-frames", action="store_true",
+group.add_argument("-overlay", "--save_overlay_frames", action="store_true",
     help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 720), default=2,
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
     help="set record time in minutes")
-parser.add_argument("-log", "--save-logs", action="store_true",
+parser.add_argument("-log", "--save_logs", action="store_true",
     help="save RPi CPU + OAK VPU temperatures and RPi available memory (MB) + \
           CPU utilization (percent) to .csv file")
 args = parser.parse_args()
@@ -104,10 +104,10 @@ pipeline = dai.Pipeline()
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
+cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
 cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
 cam_rgb.setFps(20) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input
@@ -182,10 +182,10 @@ rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
 save_path = f"./insect-detect/data/{rec_start[:8]}/{rec_start}"
 for text in labels:
     Path(f"{save_path}/cropped/{text}").mkdir(parents=True, exist_ok=True)
-    if args.save_raw_frames:
-        Path(f"{save_path}/raw/{text}").mkdir(parents=True, exist_ok=True)
     if args.save_overlay_frames:
         Path(f"{save_path}/overlay/{text}").mkdir(parents=True, exist_ok=True)
+if args.save_raw_frames:
+    Path(f"{save_path}/raw").mkdir(parents=True, exist_ok=True)
 
 # Calculate current recording ID by subtracting number of directories with date-prefix
 folders_dates = len([f for f in Path("./insect-detect/data").glob("**/20*") if f.is_dir()])
@@ -219,25 +219,6 @@ def store_data(frame, tracklets):
                 cropped_path = f"{save_path}/cropped/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_cropped.jpg"
                 cv2.imwrite(cropped_path, det_crop)
 
-                # Save full raw HQ frame (e.g. for training data collection)
-                if args.save_raw_frames:
-                    raw_path = f"{save_path}/raw/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_raw.jpg"
-                    cv2.imwrite(raw_path, frame)
-
-                # Save full HQ frame with overlay (bounding box, label, confidence, tracking ID) drawn on frame
-                # text position, font size and thickness optimized for 3840x2160 HQ frame size
-                if args.save_overlay_frames:
-                    overlay_frame = frame.copy()
-                    cv2.putText(overlay_frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 80),
-                                cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6)
-                    cv2.putText(overlay_frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 140),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 5)
-                    cv2.putText(overlay_frame, f"t.ID:{t.id}", (bbox[0], bbox[3] + 240),
-                                cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6)
-                    cv2.rectangle(overlay_frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 3)
-                    overlay_path = f"{save_path}/overlay/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_overlay.jpg"
-                    cv2.imwrite(overlay_path, overlay_frame)
-
                 # Save corresponding metadata to .csv file for each cropped detection
                 data = {
                     "rec_ID": rec_id,
@@ -253,6 +234,27 @@ def store_data(frame, tracklets):
                 }
                 metadata.writerow(data)
                 metadata_file.flush() # write data immediately to .csv to avoid potential data loss
+
+                # Save full HQ frame with overlay (bounding box, label, confidence, tracking ID) drawn on frame
+                # text position, font size and thickness optimized for 3840x2160 HQ frame size
+                if args.save_overlay_frames:
+                    overlay_frame = frame.copy()
+                    cv2.putText(overlay_frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 80),
+                                cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6)
+                    cv2.putText(overlay_frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 140),
+                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 5)
+                    cv2.putText(overlay_frame, f"t.ID:{t.id}", (bbox[0], bbox[3] + 240),
+                                cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6)
+                    cv2.rectangle(overlay_frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 3)
+                    overlay_path = f"{save_path}/overlay/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_overlay.jpg"
+                    cv2.imwrite(overlay_path, overlay_frame)
+
+        # Save full raw HQ frame (e.g. for training data collection)
+        if args.save_raw_frames:
+            timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
+            raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
+            cv2.imwrite(raw_path, frame)
+
 
 def record_log():
     """Write information about each recording interval to .csv file."""
@@ -326,9 +328,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                 tracklets_data = track_synced.tracklets
                 if frame_synced is not None:
                     store_data(frame_synced, tracklets_data)
-                    time.sleep(1) # wait 1 second to save the cropped detections
-                    if args.save_raw_frames or args.save_overlay_frames:
-                        time.sleep(2) # wait 2 seconds longer to save additional raw frames
+                    time.sleep(1) # wait 1 second to save the cropped detections (+ HQ frames)
 
             # Write RPi CPU and OAK VPU temp, RPi info to .csv log file
             if args.save_logs:

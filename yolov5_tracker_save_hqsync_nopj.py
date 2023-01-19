@@ -255,7 +255,6 @@ def store_data(frame, tracklets):
             raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
             cv2.imwrite(raw_path, frame)
 
-
 def record_log():
     """Write information about each recording interval to .csv file."""
     try:

@@ -21,8 +21,9 @@ from pathlib import Path
 
 import depthai as dai
 
-# Set capture frequency in seconds (save still to .jpg every XX seconds)
-CAPTURE_FREQ = 2
+# Set capture frequency in seconds
+# 'CAPTURE_FREQ = 1' saves ~57 still frames per minute to .jpg
+CAPTURE_FREQ = 1
 
 # Define optional arguments
 parser = argparse.ArgumentParser()

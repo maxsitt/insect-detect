@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 '''
-Author:       Maximilian Sittinger (https://github.com/maxsitt)
-Website:      https://maxsitt.github.io/insect-detect-docs/
-License:      GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+Author:   Maximilian Sittinger (https://github.com/maxsitt)
+Website:  https://maxsitt.github.io/insect-detect-docs/
+License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
 - run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)

@@ -283,7 +283,7 @@ def record_log():
 
 def save_logs():
     """
-    Write time, RPi CPU + OAK VPU temp and RPi available memory (MB) +
+    Write recording ID, time, RPi CPU + OAK VPU temp and RPi available memory (MB) +
     CPU utilization (percent) to .csv file.
     """
     with open(f"./insect-detect/data/{rec_start[:8]}/info_log_{rec_start[:8]}.csv",

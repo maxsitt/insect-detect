@@ -23,8 +23,8 @@ This Python script does the following:
 - optional arguments:
   "-raw" additionally save HQ frames to .jpg (e.g. for training data collection) OR
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
-  "-log" write RPi CPU + OAK VPU temperatures and RPi available memory (MB) +
-         CPU utilization (percent) to "info_log_{timestamp}.csv"
+  "-log" write RPi CPU + OAK VPU temperatures, RPi available memory (MB) +
+         CPU utilization (percent) and battery info to "info_log_{timestamp}.csv"
 
 includes segments from open source scripts available at https://github.com/luxonis
 '''
@@ -82,8 +82,8 @@ group.add_argument("-raw", "--save_raw_frames", action="store_true",
 group.add_argument("-overlay", "--save_overlay_frames", action="store_true",
     help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
 parser.add_argument("-log", "--save_logs", action="store_true",
-    help="save battery info + temperature, RPi CPU + OAK VPU temperatures and \
-          RPi available memory (MB) + CPU utilization (percent) to .csv file")
+    help="save RPi CPU + OAK VPU temperatures, RPi available memory (MB) + \
+          CPU utilization (percent) and battery info to .csv file")
 args = parser.parse_args()
 
 # Extract detection model metadata from config JSON
@@ -288,31 +288,31 @@ def record_log():
 
 def save_logs():
     """
-    Write time, PiJuice battery info + temp, RPi CPU + OAK VPU temp and
-    RPi available memory (MB) + CPU utilization (percent) to .csv file.
+    Write recording ID, time, RPi CPU + OAK VPU temp, RPi available memory (MB) +
+    CPU utilization (percent) and PiJuice battery info + temp to .csv file.
     """
     with open(f"./insect-detect/data/{rec_start[:8]}/info_log_{rec_start[:8]}.csv",
               "a", encoding="utf-8") as log_info_file:
         log_info = csv.DictWriter(log_info_file, fieldnames=
-            ["rec_ID", "timestamp", "power_input", "charge_status", "charge_level",
-             "current_batt_mA", "current_gpio_mA", "voltage_batt_mV", "temp_batt",
-             "temp_pi", "temp_oak", "pi_mem_available", "pi_cpu_used"])
+            ["rec_ID", "timestamp", "temp_pi", "temp_oak", "pi_mem_available", "pi_cpu_used",
+             "power_input", "charge_status", "charge_level", "temp_batt", "voltage_batt_mV",
+             "current_batt_mA", "current_gpio_mA"])
         if log_info_file.tell() == 0:
             log_info.writeheader()
         logs_info = {
             "rec_ID": rec_id,
             "timestamp": datetime.now().strftime("%Y%m%d_%H-%M-%S"),
-            "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", 0),
-            "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", 0),
-            "charge_level": chargelevel,
-            "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", 0),
-            "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", 0),
-            "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", 0),
-            "temp_batt": pijuice.status.GetBatteryTemperature().get("data", 0),
             "temp_pi": round(CPUTemperature().temperature),
             "temp_oak": round(device.getChipTemperature().average),
             "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
-            "pi_cpu_used": psutil.cpu_percent(interval=None)
+            "pi_cpu_used": psutil.cpu_percent(interval=None),
+            "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", 0),
+            "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", 0),
+            "charge_level": chargelevel,
+            "temp_batt": pijuice.status.GetBatteryTemperature().get("data", 0),
+            "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", 0),
+            "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", 0),
+            "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", 0)
         }
         log_info.writerow(logs_info)
         log_info_file.flush()

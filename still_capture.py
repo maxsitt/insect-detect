@@ -6,7 +6,7 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- save still frames in highest possible resolution to .jpg at specified time interval
+- save encoded still frames in highest possible resolution to .jpg at specified time interval
 - optional argument:
   "-min [min]" (default = 2) set recording time in minutes
                (e.g. "-min 5" for 5 min recording time)
@@ -72,7 +72,7 @@ script.outputs["capture_still"].link(cam_rgb.inputControl)
 # Connect to OAK device and start pipeline
 with dai.Device(pipeline, usb2Mode=True) as device:
 
-    # Create output queue to get the encoded still frames
+    # Create output queue to get the encoded still frames from the output defined above
     q_still = device.getOutputQueue(name="still", maxSize=1, blocking=False)
 
     # Create folder to save the still frames

@@ -77,7 +77,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     RES = "1080p"
     if args.four_k_resolution:
         RES = "4K"
-    with av.open(f"{save_path}/{timestamp}_{FPS}fps_{RES}_video.mp4", "wb") as container:
+    with av.open(f"{save_path}/{timestamp}_{FPS}fps_{RES}_video.mp4", "w") as container:
         stream = container.add_stream("hevc", rate=FPS)
         stream.time_base = Fraction(1, 1000 * 1000)
         stream.width = 1920

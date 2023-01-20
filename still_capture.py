@@ -6,7 +6,7 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- save still images in highest possible resolution to .jpg at specified time interval
+- save still frames in highest possible resolution to .jpg at specified time interval
 - optional argument:
   "-min [min]" (default = 2) set recording time in minutes
                (e.g. "-min 5" for 5 min recording time)
@@ -72,14 +72,15 @@ script.outputs["capture_still"].link(cam_rgb.inputControl)
 # Connect to OAK device and start pipeline
 with dai.Device(pipeline, usb2Mode=True) as device:
 
-    # Create output queue to get the encoded still images
+    # Create output queue to get the encoded still frames
     q_still = device.getOutputQueue(name="still", maxSize=1, blocking=False)
 
-    # Set recording start time and create folder to save the still images
+    # Create folder to save the still frames
     rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
     save_path = f"./insect-detect/stills/{rec_start[:8]}/{rec_start}"
     Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
 
+    # Set recording start time
     start_time = time.monotonic()
 
     # Get recording time in min from optional argument (default: 2)
@@ -89,9 +90,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     # Record until recording time is finished
     while time.monotonic() < start_time + rec_time:
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
-
         # Get encoded still frames and save to .jpg at specified time interval
+        timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
         enc_still = q_still.get().getData()
         with open(f"{save_path}/{timestamp}_still.jpg", "wb") as still_jpg:
             still_jpg.write(enc_still)

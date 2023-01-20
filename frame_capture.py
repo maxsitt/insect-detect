@@ -66,13 +66,14 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     if args.save_lq_frames:
         q_lq_frame = device.getOutputQueue(name="lq_frame", maxSize=4, blocking=False)
 
-    # Set recording start time and create folders to save the frames
+    # Create folders to save the frames
     rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
     save_path = f"./insect-detect/frames/{rec_start[:8]}/{rec_start}"
     Path(f"{save_path}/HQ_frames").mkdir(parents=True, exist_ok=True)
     if args.save_lq_frames:
         Path(f"{save_path}/LQ_frames").mkdir(parents=True, exist_ok=True)
 
+    # Set recording start time
     start_time = time.monotonic()
 
     # Get recording time in min from optional argument (default: 2)
@@ -82,9 +83,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     # Record until recording time is finished
     while time.monotonic() < start_time + rec_time:
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
-
         # Get HQ (+ LQ) frames and save to .jpg at specified time interval
+        timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
         hq_path = f"{save_path}/HQ_frames/{timestamp}_HQ.jpg"
         hq_frame = q_hq_frame.get().getCvFrame()
         cv2.imwrite(hq_path, hq_frame)

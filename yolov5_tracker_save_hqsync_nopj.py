@@ -310,6 +310,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
+    # Set recording start time
     start_time = time.monotonic()
 
     # Get recording time in min from optional argument (default: 2)
@@ -329,7 +330,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                     store_data(frame_synced, tracklets_data)
                     time.sleep(1) # wait 1 second to save the cropped detections (+ HQ frames)
 
-            # Write RPi CPU and OAK VPU temp, RPi info to .csv log file
+            # Write RPi CPU + OAK VPU temp and RPi info to .csv log file
             if args.save_logs:
                 save_logs()
 

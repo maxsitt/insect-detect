@@ -324,6 +324,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
+    # Set battery charge level and recording start time
     chargelevel = chargelevel_start
     start_time = time.monotonic()
 
@@ -356,7 +357,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                     store_data(frame_synced, tracklets_data)
                     time.sleep(1) # wait 1 second to save the cropped detections (+ HQ frames)
 
-            # Write PiJuice battery info + temp, RPi CPU and OAK VPU temp, RPi info to .csv log file
+            # Write RPi CPU + OAK VPU temp, RPi info and battery info + temp to .csv log file
             if args.save_logs:
                 save_logs()
 

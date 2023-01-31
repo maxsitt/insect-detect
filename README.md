@@ -42,12 +42,12 @@ continuous automated insect monitoring:
 
 ## Detection models
 
-| Model<br><sup>(.blob)        | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<sup>OAK<br><sup>(fps) |
-| ---------------------------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | --------------------------- |
-| **YOLOv5n** (5 shaves)       | 416                   | 58.2                 | 97.4              | **97.0**              | 95.0               | **~32**                     |
-| YOLOv5n (4 shaves) + tracker | 416                   | 58.2                 | 97.4              | 97.0                  | 95.0               | ~30                         |
-| **YOLOv5s** (5 shaves)       | 416                   | **63.4**             | **97.8**          | 96.6                  | **95.6**           | ~17                         |
-| YOLOv5s (4 shaves) + tracker | 416                   | 63.4                 | 97.8              | 96.6                  | 95.6               | ~17                         |
+| Model<br><sup>(.blob)        | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<br><sup>OAK<br>(fps) |
+| ---------------------------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | -------------------------- |
+| **YOLOv5n** (5 shaves)       | 416                   | 58.2                 | 97.4              | **97.0**              | 95.0               | **~32**                    |
+| YOLOv5n (4 shaves) + tracker | 416                   | 58.2                 | 97.4              | 97.0                  | 95.0               | ~30                        |
+| **YOLOv5s** (5 shaves)       | 416                   | **63.4**             | **97.8**          | 96.6                  | **95.6**           | ~17                        |
+| YOLOv5s (4 shaves) + tracker | 416                   | 63.4                 | 97.8              | 96.6                  | 95.6               | ~17                        |
 
 **Table Notes**
 

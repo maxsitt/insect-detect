@@ -42,18 +42,19 @@ continuous automated insect monitoring:
 
 ## Detection models
 
-| Model<br><sup>(.blob)        | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<br><sup>(fps) |
-| ---------------------------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | ------------------- |
-| **YOLOv5n** (5 shaves)       | 416                   | 58.2                 | 97.4              | **97.0**              | 95.0               | **~32**             |
-| YOLOv5n (4 shaves) + tracker | 416                   | 58.2                 | 97.4              | 97.0                  | 95.0               | ~30                 |
-| **YOLOv5s** (5 shaves)       | 416                   | **63.4**             | **97.8**          | 96.6                  | **95.6**           | ~17                 |
-| YOLOv5s (4 shaves) + tracker | 416                   | 63.4                 | 97.8              | 96.6                  | 95.6               | ~17                 |
+| Model<br><sup>(.blob)        | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<sup>OAK<br><sup>(fps) |
+| ---------------------------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | --------------------------- |
+| **YOLOv5n** (5 shaves)       | 416                   | 58.2                 | 97.4              | **97.0**              | 95.0               | **~32**                     |
+| YOLOv5n (4 shaves) + tracker | 416                   | 58.2                 | 97.4              | 97.0                  | 95.0               | ~30                         |
+| **YOLOv5s** (5 shaves)       | 416                   | **63.4**             | **97.8**          | 96.6                  | **95.6**           | ~17                         |
+| YOLOv5s (4 shaves) + tracker | 416                   | 63.4                 | 97.8              | 96.6                  | 95.6               | ~17                         |
 
 **Table Notes**
-- All models are trained to 300 epochs with batch size 32 and default settings. Nano (n) and Small (s) models use
+
+- Both models were trained to 300 epochs with batch size 32 and default settings with
   [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyperparameters.
 - Model metrics (mAP, Precision, Recall) are shown for the original .pt model before converting to ONNX -> OpenVINO -> .blob format.
-- Trained on [dataset](https://universe.roboflow.com/maximilian-sittinger/insect_detect_detection/dataset/4) with only 1 class ("insect").
+- Trained on custom [dataset](https://universe.roboflow.com/maximilian-sittinger/insect_detect_detection/dataset/4) with only 1 class ("insect").
 - To reproduce the correct speed (fps) measurement while connected via SSH (X11 forwarding of the frames), print fps to the
   console and comment out `cv2.imshow()`, as this will significantly slow down the received message output and thereby fps.
 - Set `cam_rgb.setFps()` to the respective fps shown for each model (+ tracker) to reproduce the speed measurements.

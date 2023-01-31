@@ -60,8 +60,8 @@ logger = logging.getLogger()
 sys.stderr.write = logger.error
 
 # Set file paths to the detection model and config JSON
-MODEL_PATH = Path("./insect-detect/models/yolov5s_416_openvino_2022.1_9shave.blob")
-CONFIG_PATH = Path("./insect-detect/models/json/yolov5s_416.json")
+MODEL_PATH = Path("./insect-detect/models/yolov5n_416_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("./insect-detect/models/json/yolov5_416.json")
 
 # Instantiate PiJuice
 pijuice = PiJuice(1, 0x14)
@@ -111,7 +111,7 @@ cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
 cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(20) # frames per second available for focus/exposure/model input
+cam_rgb.setFps(30) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -131,8 +131,6 @@ nn.setNumInferenceThreads(2)
 # Create and configure object tracker node and define inputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
-#tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
-#tracker.setTrackerType(dai.TrackerType.ZERO_TERM_COLOR_HISTOGRAM)
 tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
 nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
@@ -355,7 +353,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                 tracklets_data = track_synced.tracklets
                 if frame_synced is not None:
                     store_data(frame_synced, tracklets_data)
-                    time.sleep(1) # wait 1 second to save the cropped detections (+ HQ frames)
+                    time.sleep(1) # save the cropped detections each second
+                                  # will be slowed down by saving additional HQ frames
 
             # Write RPi CPU + OAK VPU temp, RPi info and battery info + temp to .csv log file
             if args.save_logs:

@@ -36,8 +36,8 @@ if args.print_log:
     import psutil
 
 # Set file paths to the detection model and config JSON
-MODEL_PATH = Path("./insect-detect/models/yolov5s_416_openvino_2022.1_9shave.blob")
-CONFIG_PATH = Path("./insect-detect/models/json/yolov5s_416.json")
+MODEL_PATH = Path("./insect-detect/models/yolov5n_416_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("./insect-detect/models/json/yolov5_416.json")
 
 # Extract detection model metadata from config JSON
 with CONFIG_PATH.open(encoding="utf-8") as f:
@@ -63,7 +63,7 @@ cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(20) # frames per second available for focus/exposure/model input
+cam_rgb.setFps(30) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -83,8 +83,6 @@ nn.setNumInferenceThreads(2)
 # Create and configure object tracker node and define inputs + outputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
-#tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
-#tracker.setTrackerType(dai.TrackerType.ZERO_TERM_COLOR_HISTOGRAM)
 tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
 nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
@@ -128,7 +126,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
         if track_out is not None:
             tracklets_data = track_out.tracklets
-            counter+=1
+            counter += 1
+            fps = counter / (time.monotonic() - start_time)
 
         if frame is not None:
             for t in tracklets_data:
@@ -151,10 +150,11 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                 cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2) # model output
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 130), 1) # tracker output
 
-            cv2.putText(frame, "NN fps: {:.2f}".format(counter / (time.monotonic() - start_time)),
-                        (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            cv2.putText(frame, f"fps: {round(fps, 2)}", (4, frame.shape[0] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
             cv2.imshow("tracker_preview", frame)
+            #print(f"fps: {round(fps, 2)}")
 
         if cv2.waitKey(1) == ord("q"):
             break

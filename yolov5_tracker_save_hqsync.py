@@ -252,9 +252,12 @@ def store_data(frame, tracklets):
 
         # Save full raw HQ frame (e.g. for training data collection)
         if args.save_raw_frames:
-            timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
-            raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
-            cv2.imwrite(raw_path, frame)
+            # save only once in case of multiple detections
+            for i, t in enumerate(tracklets):
+                if i == 0:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
+                    raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
+                    cv2.imwrite(raw_path, frame)
 
 def record_log():
     """Write information about each recording interval to .csv file."""

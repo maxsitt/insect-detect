@@ -355,9 +355,9 @@ with dai.Device(pipeline, usb2Mode=True) as device:
             if track_synced is not None:
                 tracklets_data = track_synced.tracklets
                 if frame_synced is not None:
+                    # save cropped detections every second (slower if saving additional HQ frames)
                     store_data(frame_synced, tracklets_data)
-                    time.sleep(1) # save the cropped detections each second
-                                  # will be slowed down by saving additional HQ frames
+                    time.sleep(1)
 
             # Write RPi CPU + OAK VPU temp, RPi info and battery info + temp to .csv log file
             if args.save_logs:

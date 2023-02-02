@@ -18,7 +18,6 @@ compiled with open source scripts available at https://github.com/luxonis
 
 import argparse
 import json
-import sys
 import time
 from pathlib import Path
 

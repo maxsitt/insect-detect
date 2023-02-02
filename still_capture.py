@@ -41,7 +41,7 @@ cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_12_MP) # OA
 #cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_13_MP) # OAK-1 Lite (IMX214)
 #cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_5312X6000) # OAK-1 MAX (LCM48)
 cam_rgb.setNumFramesPool(2,2,2,2,2)
-cam_rgb.setFps(10) # frames per second available for focus/exposure
+cam_rgb.setFps(30) # frames per second available for focus/exposure
 
 # Create and configure video encoder node and define input + output
 still_enc = pipeline.create(dai.node.VideoEncoder)

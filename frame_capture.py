@@ -24,7 +24,7 @@ import cv2
 import depthai as dai
 
 # Set capture frequency in seconds
-# 'CAPTURE_FREQ = 0.2' saves ~57 frames per minute to .jpg
+# 'CAPTURE_FREQ = 0.2' saves ~57 frames per minute to .jpg (RPi Zero 2)
 CAPTURE_FREQ = 0.2
 
 # Define optional arguments
@@ -43,7 +43,7 @@ cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 cam_rgb.setVideoSize(3840, 2160) # HQ frames, aspect ratio 16:9 (4K)
-cam_rgb.setFps(20) # frames per second available for focus/exposure
+cam_rgb.setFps(30) # frames per second available for focus/exposure
 if args.save_lq_frames:
     cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames
     cam_rgb.setInterleaved(False)

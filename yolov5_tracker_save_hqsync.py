@@ -193,7 +193,6 @@ folders_dates = len([f for f in Path("./insect-detect/data").glob("**/20*") if f
 folders_days = len([f for f in Path("./insect-detect/data").glob("20*") if f.is_dir()])
 rec_id = folders_dates - folders_days
 
-
 def frame_norm(frame, bbox):
     """Convert relative bounding box coordinates (0-1) to pixel coordinates."""
     norm_vals = np.full(len(bbox), frame.shape[0])
@@ -316,7 +315,6 @@ def save_logs():
         }
         log_info.writerow(logs_info)
         log_info_file.flush()
-
 
 # Connect to OAK device and start pipeline
 with dai.Device(pipeline, usb2Mode=True) as device:

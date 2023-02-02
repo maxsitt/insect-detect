@@ -62,7 +62,7 @@ cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(32) # frames per second available for focus/exposure/model input
+cam_rgb.setFps(30) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input + outputs
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -134,6 +134,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
             cv2.imshow("yolov5_preview", frame)
+            # streaming the frames via SSH (X11 forwarding) will slow down fps
+            # comment out 'cv2.imshow()' and print fps to console for "true" fps
             #print(f"fps: {round(fps, 2)}")
 
         if cv2.waitKey(1) == ord("q"):

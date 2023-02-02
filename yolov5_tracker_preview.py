@@ -154,6 +154,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
             cv2.imshow("tracker_preview", frame)
+            # streaming the frames via SSH (X11 forwarding) will slow down fps
+            # comment out 'cv2.imshow()' and print fps to console for "true" fps
             #print(f"fps: {round(fps, 2)}")
 
         if cv2.waitKey(1) == ord("q"):

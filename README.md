@@ -36,9 +36,9 @@ continuous automated insect monitoring:
 - All relevant metadata from the detection model and tracker output (timestamp, label, confidence score, tracking ID,
   relative bbox coordinates, .jpg file path) is saved to a metadata .csv file for each cropped detection.
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="500">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="600">
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync.png" width="500">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync.png" width="600">
 
 ## Detection models
 
@@ -61,6 +61,8 @@ continuous automated insect monitoring:
   console and comment out `cv2.imshow()`, as this will significantly slow down the received message output and thereby fps.
   If you are using e.g. a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream.
 - Set `cam_rgb.setFps()` to the respective fps shown for each model (+ tracker) to reproduce the speed measurements.
+
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/images/yolov5n_tracker_episyrphus.gif" width="600">
 
 ## License
 

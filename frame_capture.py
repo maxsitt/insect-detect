@@ -98,8 +98,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
 # Print number and path of saved frames to console
 frames_hq = len(list(Path(f"{save_path}/HQ_frames").glob("*.jpg")))
-if not args.save_lq_frames:
-    print(f"Saved {frames_hq} HQ frames to {save_path}.")
 if args.save_lq_frames:
     frames_lq = len(list(Path(f"{save_path}/LQ_frames").glob("*.jpg")))
     print(f"Saved {frames_hq} HQ and {frames_lq} LQ frames to {save_path}.")
+else:
+    print(f"Saved {frames_hq} HQ frames to {save_path}.")

@@ -112,8 +112,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         container.mux_one(packet)
 
 # Print duration, fps and path of saved video + free disk space to console
-if not args.four_k_resolution:
-    print(f"\nSaved {args.min_rec_time} min 1080p video with {args.frames_per_second} fps to {save_path}.")
 if args.four_k_resolution:
     print(f"\nSaved {args.min_rec_time} min 4K video with {args.frames_per_second} fps to {save_path}.")
+else:
+    print(f"\nSaved {args.min_rec_time} min 1080p video with {args.frames_per_second} fps to {save_path}.")
 print(f"Free disk space left: {disk_free} MB")

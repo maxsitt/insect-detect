@@ -243,7 +243,7 @@ def store_data(frame, tracklets):
                                 cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6)
                     cv2.putText(overlay_frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 140),
                                 cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 5)
-                    cv2.putText(overlay_frame, f"t.ID:{t.id}", (bbox[0], bbox[3] + 240),
+                    cv2.putText(overlay_frame, f"ID:{t.id}", (bbox[0], bbox[3] + 240),
                                 cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6)
                     cv2.rectangle(overlay_frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 3)
                     overlay_path = f"{save_path}/overlay/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_overlay.jpg"

@@ -142,7 +142,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
                 cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 40),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-                cv2.putText(frame, f"t.ID:{t.id}", (bbox[0], bbox[3] + 60),
+                cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 60),
                             cv2.FONT_HERSHEY_SIMPLEX,  0.6, (255, 255, 255), 1)
                 cv2.putText(frame, t.status.name, (bbox[0], bbox[3] + 75),
                             cv2.FONT_HERSHEY_SIMPLEX,  0.4, (255, 255, 255), 1)

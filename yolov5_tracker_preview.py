@@ -138,14 +138,14 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
                 bbox = frame_norm(frame, (t.srcImgDetection.xmin, t.srcImgDetection.ymin,
                                           t.srcImgDetection.xmax, t.srcImgDetection.ymax))
-                cv2.putText(frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 20),
+                cv2.putText(frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 13),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+                cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 25),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+                cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 40),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 40),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-                cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 60),
-                            cv2.FONT_HERSHEY_SIMPLEX,  0.6, (255, 255, 255), 1)
-                cv2.putText(frame, t.status.name, (bbox[0], bbox[3] + 75),
-                            cv2.FONT_HERSHEY_SIMPLEX,  0.4, (255, 255, 255), 1)
+                cv2.putText(frame, t.status.name, (bbox[0], bbox[3] + 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
                 cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2) # model output
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 130), 1) # tracker output
 

@@ -123,10 +123,10 @@ with dai.Device(pipeline, usb2Mode=True) as device:
             for detection in dets:
                 bbox = frame_norm(frame, (detection.xmin, detection.ymin,
                                           detection.xmax, detection.ymax))
-                cv2.putText(frame, labels[detection.label], (bbox[0], bbox[3] + 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                cv2.putText(frame, f"{round(detection.confidence, 2)}", (bbox[0], bbox[3] + 40),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+                cv2.putText(frame, labels[detection.label], (bbox[0], bbox[3] + 13),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+                cv2.putText(frame, f"{round(detection.confidence, 2)}", (bbox[0], bbox[3] + 25),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
                 cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
 
             cv2.putText(frame, f"fps: {round(fps, 2)}", (4, frame.shape[0] - 10),

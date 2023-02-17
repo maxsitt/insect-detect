@@ -38,31 +38,32 @@ continuous automated insect monitoring:
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="600">
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync.png" width="600">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync.gif" width="600">
 
 ## Detection models
 
-| Model<br><sup>(.blob)        | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<br><sup>OAK<br>(fps) |
-| ---------------------------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | -------------------------- |
-| **YOLOv5n** (5 shaves)       | 416                   | 58.2                 | 97.4              | **97.0**              | 95.0               | **~32**                    |
-| YOLOv5n (4 shaves) + tracker | 416                   | 58.2                 | 97.4              | 97.0                  | 95.0               | ~30                        |
-| **YOLOv5s** (5 shaves)       | 416                   | **63.4**             | **97.8**          | 96.6                  | **95.6**           | ~17                        |
-| YOLOv5s (4 shaves) + tracker | 416                   | 63.4                 | 97.8              | 96.6                  | 95.6               | ~17                        |
+| Model<br><sup>(.blob)   | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<br><sup>OAK<br>(fps) |
+| ----------------------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | -------------------------- |
+| **YOLOv5n** (+ tracker) | 320                   | 53.9                 | 97.6              | 96.0                  | **96.6**           | **40**                     |
+| YOLOv5n (+ tracker)     | 416                   | 58.2                 | 97.4              | **97.0**              | 95.0               | 30                         |
+| YOLOv5s (+ tracker)     | 416                   | **63.4**             | **97.8**          | 96.6                  | 95.6               | 17                         |
 
 **Table Notes**
 
-- Both models were trained to 300 epochs with batch size 32 and default settings with
-  [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyperparameters.
-  Reproduce the model training with the provided
+- All models were trained to 300 epochs with batch size 32 and default settings with
+  [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)
+  hyperparameters. Reproduce the model training with the provided
   [Google Colab notebook](https://colab.research.google.com/github/maxsitt/insect-detect-ml/blob/main/notebooks/YOLOv5_detection_training_OAK_conversion.ipynb).
-- Model metrics (mAP, Precision, Recall) are shown for the original .pt model before converting to ONNX -> OpenVINO -> .blob format.
-- Trained on custom [dataset](https://universe.roboflow.com/maximilian-sittinger/insect_detect_detection/dataset/4) with only 1 class ("insect").
+- Trained on custom [dataset_320](https://universe.roboflow.com/maximilian-sittinger/insect_detect_detection/dataset/7) or
+  [dataset_416](https://universe.roboflow.com/maximilian-sittinger/insect_detect_detection/dataset/4) with only 1 class ("insect").
+- Model metrics (mAP, Precision, Recall) are shown for the original .pt model before conversion to ONNX -> OpenVINO -> .blob format.
+- Speed (fps) is shown for the converted model in .blob format, running on the OAK device (same speed with object
+  tracker). Set `cam_rgb.setFps()` to the respective fps shown for each model to reproduce the speed measurements.
 - To reproduce the correct speed (fps) measurement while connected via SSH (X11 forwarding of the frames), print fps to the
   console and comment out `cv2.imshow()`, as this will significantly slow down the received message output and thereby fps.
-  If you are using e.g. a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream.
-- Set `cam_rgb.setFps()` to the respective fps shown for each model (+ tracker) to reproduce the speed measurements.
+  If you are using e.g. a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream (see gif).
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/images/yolov5n_tracker_episyrphus.gif" width="600">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/images/yolov5n_tracker_episyrphus_320.gif" width="400">
 
 ## License
 
@@ -75,5 +76,5 @@ You can cite this repository as:
 
 ```
 Sittinger, M. (2022). Insect Detect - Software for automated insect monitoring
-with a DIY camera trap system (v1.4). Zenodo. https://doi.org/10.5281/zenodo.7598658
+with a DIY camera trap system (v1.5). Zenodo. https://doi.org/10.5281/zenodo.7472238
 ```

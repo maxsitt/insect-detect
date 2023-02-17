@@ -5,8 +5,8 @@
 [![DOI](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)
 [![License badge](https://img.shields.io/badge/license-GPLv3-yellowgreen)](https://choosealicense.com/licenses/gpl-3.0/)
 
-This repository contains Python scripts and a [YOLOv5s](https://github.com/ultralytics/yolov5)
-detection model ([.blob format](https://docs.luxonis.com/en/latest/pages/model_conversion/))
+This repository contains Python scripts and [YOLOv5](https://github.com/ultralytics/yolov5)
+object detection models ([.blob format](https://docs.luxonis.com/en/latest/pages/model_conversion/))
 for testing and deploying the Insect Detect DIY camera trap for automated insect monitoring.
 The camera trap system is composed of low-cost off-the-shelf hardware components
 ([Raspberry Pi Zero 2 W](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/),
@@ -30,7 +30,7 @@ More information about the processing pipeline can be found in the
 Processing pipeline for the `yolov5_tracker_save_hqsync.py` script that can be used for
 continuous automated insect monitoring:
 
-- The object tracker output (+ passthrough detections) from inference on LQ frames (e.g. 416x416) is synchronized
+- The object tracker output (+ passthrough detections) from inference on LQ frames (e.g. 320x320) is synchronized
   with HQ frames (e.g. 3840x2160) in a script node on-device (OAK), using the respective sequence numbers.
 - Detections (area of the bounding box) are cropped from the synced HQ frames and saved to .jpg.
 - All relevant metadata from the detection model and tracker output (timestamp, label, confidence score, tracking ID,
@@ -39,6 +39,10 @@ continuous automated insect monitoring:
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="800">
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync.gif" width="800">
+
+Check out the [classification instructions](https://maxsitt.github.io/insect-detect-docs/deployment/classification/)
+and the [`insect-detect-ml` GitHub repo](https://github.com/maxsitt/insect-detect-ml) for more information on how to
+classify the cropped detections.
 
 ## Detection models
 

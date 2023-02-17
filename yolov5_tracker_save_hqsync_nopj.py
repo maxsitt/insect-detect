@@ -8,7 +8,7 @@ License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 This Python script does the following:
 - run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
 - use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
-- synchronize tracker output (+ detections) from inference on full FOV LQ frames (e.g. 416x416)
+- synchronize tracker output (+ detections) from inference on full FOV LQ frames (e.g. 320x320)
   with HQ frames (e.g. 3840x2160) on-device using the respective sequence numbers
 - save detections (bounding box area) cropped from HQ frames to .jpg
 - save metadata from model + tracker output (time, label, confidence, tracking ID,
@@ -59,8 +59,8 @@ logger = logging.getLogger()
 sys.stderr.write = logger.error
 
 # Set file paths to the detection model and config JSON
-MODEL_PATH = Path("./insect-detect/models/yolov5n_416_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("./insect-detect/models/json/yolov5_416.json")
+MODEL_PATH = Path("./insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("./insect-detect/models/json/yolov5_320.json")
 
 # Continue script only if free disk space is higher than threshold
 disk_free = round(psutil.disk_usage("/").free / 1048576) # free disk space in MB
@@ -105,10 +105,10 @@ cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
-cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames for model input
+cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(30) # frames per second available for focus/exposure/model input
+cam_rgb.setFps(40) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -127,7 +127,7 @@ nn.setNumInferenceThreads(2)
 
 # Create and configure object tracker node and define inputs
 tracker = pipeline.create(dai.node.ObjectTracker)
-tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
+tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
 tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
 nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
@@ -138,6 +138,7 @@ script = pipeline.create(dai.node.Script)
 script.setProcessor(dai.ProcessorType.LEON_CSS)
 tracker.out.link(script.inputs["tracker"]) # tracker output + passthrough detections
 cam_rgb.video.link(script.inputs["frames"]) # HQ frames
+script.inputs["tracker"].setBlocking(False)
 script.inputs["frames"].setBlocking(False)
 
 # Set script that will be run on-device (Luxonis OAK)

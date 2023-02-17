@@ -10,7 +10,7 @@ This Python script does the following:
 - optional arguments:
   "-min [min]" (default = 2) set recording time in minutes
                (e.g. "-min 5" for 5 min recording time)
-  "-lq" additionally save downscaled full FOV LQ frames (e.g. 416x416)
+  "-lq" additionally save downscaled full FOV LQ frames (e.g. 320x320)
 
 includes segments from open source scripts available at https://github.com/luxonis
 '''
@@ -24,7 +24,7 @@ import cv2
 import depthai as dai
 
 # Set capture frequency in seconds
-# 'CAPTURE_FREQ = 0.2' saves ~57 frames per minute to .jpg (RPi Zero 2)
+# 'CAPTURE_FREQ = 0.2' saves ~60 frames per minute to .jpg (RPi Zero 2)
 CAPTURE_FREQ = 0.2
 
 # Define optional arguments
@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721),
                     default=2, help="set record time in minutes")
 parser.add_argument("-lq", "--save_lq_frames", action="store_true",
-    help="additionally save downscaled full FOV LQ frames (e.g. 416x416)")
+    help="additionally save downscaled full FOV LQ frames (e.g. 320x320)")
 args = parser.parse_args()
 
 # Create depthai pipeline
@@ -43,9 +43,9 @@ cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 cam_rgb.setVideoSize(3840, 2160) # HQ frames, aspect ratio 16:9 (4K)
-cam_rgb.setFps(30) # frames per second available for focus/exposure
+cam_rgb.setFps(40) # frames per second available for focus/exposure
 if args.save_lq_frames:
-    cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames
+    cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames
     cam_rgb.setInterleaved(False)
     cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
 

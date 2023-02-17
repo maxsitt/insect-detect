@@ -7,9 +7,9 @@ License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
 - run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
-- use 4K frames downscaled to full FOV LQ frames (e.g. 416x416) as model input
+- use 4K frames downscaled to full FOV LQ frames (e.g. 320x320) as model input
 - use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
-- show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 416x416) + model/tracker output
+- show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 320x320) + model/tracker output
 - optional argument:
   "-log" print available Raspberry Pi memory (MB) and RPi CPU utilization (percent) to console
 
@@ -35,8 +35,8 @@ if args.print_log:
     import psutil
 
 # Set file paths to the detection model and config JSON
-MODEL_PATH = Path("./insect-detect/models/yolov5n_416_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("./insect-detect/models/json/yolov5_416.json")
+MODEL_PATH = Path("./insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("./insect-detect/models/json/yolov5_320.json")
 
 # Extract detection model metadata from config JSON
 with CONFIG_PATH.open(encoding="utf-8") as f:
@@ -59,10 +59,10 @@ pipeline = dai.Pipeline()
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames for model input
+cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(30) # frames per second available for focus/exposure/model input
+cam_rgb.setFps(40) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -81,7 +81,7 @@ nn.setNumInferenceThreads(2)
 
 # Create and configure object tracker node and define inputs + outputs
 tracker = pipeline.create(dai.node.ObjectTracker)
-tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
+tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
 tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
 nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)

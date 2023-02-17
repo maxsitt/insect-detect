@@ -6,7 +6,7 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 416x416)
+- show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 320x320)
 
 compiled with open source scripts available at https://github.com/luxonis
 '''
@@ -21,10 +21,10 @@ pipeline = dai.Pipeline()
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-cam_rgb.setPreviewSize(416, 416) # downscaled LQ frames
+cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(30) # frames per second available for focus/exposure
+cam_rgb.setFps(40) # frames per second available for focus/exposure
 
 xout_rgb = pipeline.create(dai.node.XLinkOut)
 xout_rgb.setStreamName("frame")

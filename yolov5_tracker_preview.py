@@ -82,6 +82,8 @@ nn.setNumInferenceThreads(2)
 # Create and configure object tracker node and define inputs + outputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
+# use short term tracker if fps < ~30 for better tracking performance
+#tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
 tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
 nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)

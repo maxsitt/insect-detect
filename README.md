@@ -3,7 +3,7 @@
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="500">
 
 [![DOI](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)
-[![License badge](https://img.shields.io/badge/license-GPLv3-yellowgreen)](https://choosealicense.com/licenses/gpl-3.0/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 This repository contains Python scripts and [YOLOv5](https://github.com/ultralytics/yolov5)
 object detection models ([.blob format](https://docs.luxonis.com/en/latest/pages/model_conversion/))
@@ -27,8 +27,9 @@ Instructions on how to install all required Python packages can be found in the
 More information about the processing pipeline can be found in the
 [**Insect Detect Docs**](https://maxsitt.github.io/insect-detect-docs/deployment/detection/) 📑.
 
-Processing pipeline for the `yolov5_tracker_save_hqsync.py` script that can be used for
-continuous automated insect monitoring:
+Processing pipeline for the
+[`yolov5_tracker_save_hqsync.py`](https://github.com/maxsitt/insect-detect/blob/main/yolov5_tracker_save_hqsync.py)
+script that can be used for continuous automated insect monitoring:
 
 - The object tracker output (+ passthrough detections) from inference on LQ frames (e.g. 320x320) is synchronized
   with HQ frames (e.g. 3840x2160) in a script node on-device (OAK), using the respective sequence numbers.
@@ -72,7 +73,7 @@ classify the cropped detections.
 ## License
 
 All Python scripts are licensed under the GNU General Public License v3.0
-([GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)).
+([GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0)).
 
 ## Citation
 

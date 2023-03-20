@@ -1,4 +1,4 @@
-# Insect Detect - DIY camera trap for automated monitoring
+# Insect Detect - DIY camera trap for automated insect monitoring
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="500">
 

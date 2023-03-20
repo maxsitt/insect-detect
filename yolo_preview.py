@@ -6,7 +6,7 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
+- run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
 - use 4K frames downscaled to full FOV LQ frames (e.g. 320x320) as model input
 - show a preview of 4K frames downscaled to full FOV LQ frames (e.g. 320x320) + model output
 - optional argument:
@@ -34,8 +34,8 @@ if args.print_log:
     import psutil
 
 # Set file paths to the detection model and config JSON
-MODEL_PATH = Path("./insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("./insect-detect/models/json/yolov5_320.json")
+MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
 
 # Extract detection model metadata from config JSON
 with CONFIG_PATH.open(encoding="utf-8") as f:
@@ -61,7 +61,7 @@ cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames for model input
 cam_rgb.setInterleaved(False)
 cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(40) # frames per second available for focus/exposure/model input
+cam_rgb.setFps(41) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input + outputs
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -132,7 +132,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
             cv2.putText(frame, f"fps: {round(fps, 2)}", (4, frame.shape[0] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-            cv2.imshow("yolov5_preview", frame)
+            cv2.imshow("yolo_preview", frame)
             # streaming the frames via SSH (X11 forwarding) will slow down fps
             # comment out 'cv2.imshow()' and print fps to console for "true" fps
             #print(f"fps: {round(fps, 2)}")

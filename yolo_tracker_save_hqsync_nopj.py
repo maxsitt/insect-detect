@@ -6,7 +6,7 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- run a custom YOLOv5 object detection model (.blob format) on-device (Luxonis OAK)
+- run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
 - use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
 - synchronize tracker output (+ detections) from inference on full FOV LQ frames (e.g. 320x320)
   with HQ frames (e.g. 3840x2160) on-device using the respective sequence numbers
@@ -14,17 +14,17 @@ This Python script does the following:
 - save metadata from model + tracker output (time, label, confidence, tracking ID,
   relative bbox coordinates, .jpg file path) to "metadata_{timestamp}.csv"
 - write info and error (stderr) + traceback messages to log file ("script_log.log")
-- duration of each recording interval conditional on PiJuice battery charge level
-- shut down without recording if charge level or free disk space is lower than threshold
+- shut down without recording if free disk space is lower than threshold
 - write record info (recording ID, start/end time, duration, number of cropped detections,
-  number of unique tracking IDs, free disk space and battery charge level) to "record_log.csv"
-  and safely shut down RPi after recording interval is finished or if charge level drops
-  below threshold or if an error occurs
+  number of unique tracking IDs and free disk space) to "record_log.csv"
+  and safely shut down RPi after recording interval is finished or if an error occurs
 - optional arguments:
+  "-min [min]" (default = 2) set recording time in minutes
+               (e.g. "-min 5" for 5 min recording time)
   "-raw" additionally save HQ frames to .jpg (e.g. for training data collection) OR
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
-  "-log" write RPi CPU + OAK VPU temperatures, RPi available memory (MB) +
-         CPU utilization (percent) and battery info to "info_log_{timestamp}.csv"
+  "-log" write RPi CPU + OAK VPU temperatures and RPi available memory (MB) +
+         CPU utilization (percent) to "info_log_{timestamp}.csv"
 
 includes segments from open source scripts available at https://github.com/luxonis
 '''
@@ -46,7 +46,6 @@ import numpy as np
 import pandas as pd
 import psutil
 from gpiozero import CPUTemperature
-from pijuice import PiJuice
 
 # Create data folder if not already present
 Path("./insect-detect/data").mkdir(parents=True, exist_ok=True)
@@ -60,17 +59,13 @@ logger = logging.getLogger()
 sys.stderr.write = logger.error
 
 # Set file paths to the detection model and config JSON
-MODEL_PATH = Path("./insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("./insect-detect/models/json/yolov5_320.json")
+MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
 
-# Instantiate PiJuice
-pijuice = PiJuice(1, 0x14)
-
-# Continue script only if PiJuice battery charge level and free disk space are higher than thresholds
-chargelevel_start = pijuice.status.GetChargeLevel().get("data", -1)
+# Continue script only if free disk space is higher than threshold
 disk_free = round(psutil.disk_usage("/").free / 1048576) # free disk space in MB
-if chargelevel_start < 10 or disk_free < 200:
-    logger.info(f"Shut down without recording | Charge level: {chargelevel_start}%\n")
+if disk_free < 200:
+    logger.info(f"Shut down without recording | Free disk space left: {disk_free} MB\n")
     subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
     time.sleep(5) # wait 5 seconds for RPi to shut down
 
@@ -81,9 +76,11 @@ group.add_argument("-raw", "--save_raw_frames", action="store_true",
     help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
 group.add_argument("-overlay", "--save_overlay_frames", action="store_true",
     help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
+    help="set record time in minutes")
 parser.add_argument("-log", "--save_logs", action="store_true",
-    help="save RPi CPU + OAK VPU temperatures, RPi available memory (MB) + \
-          CPU utilization (percent) and battery info to .csv file")
+    help="save RPi CPU + OAK VPU temperatures and RPi available memory (MB) + \
+          CPU utilization (percent) to .csv file")
 args = parser.parse_args()
 
 # Extract detection model metadata from config JSON
@@ -271,7 +268,7 @@ def record_log():
     with open("./insect-detect/data/record_log.csv", "a", encoding="utf-8") as log_rec_file:
         log_rec = csv.DictWriter(log_rec_file, fieldnames=
             ["rec_ID", "record_start_date", "record_start_time", "record_end_time", "record_time_min",
-             "num_crops", "num_IDs", "disk_free_gb", "chargelevel_start", "chargelevel_end"])
+             "num_crops", "num_IDs", "disk_free_gb"])
         if log_rec_file.tell() == 0:
             log_rec.writeheader()
         logs_rec = {
@@ -282,23 +279,19 @@ def record_log():
             "record_time_min": round((time.monotonic() - start_time) / 60, 2),
             "num_crops": len(list(Path(f"{save_path}/cropped").glob("**/*.jpg"))),
             "num_IDs": unique_ids,
-            "disk_free_gb": round(psutil.disk_usage("/").free / 1073741824, 1),
-            "chargelevel_start": chargelevel_start,
-            "chargelevel_end": chargelevel
+            "disk_free_gb": round(psutil.disk_usage("/").free / 1073741824, 1)
         }
         log_rec.writerow(logs_rec)
 
 def save_logs():
     """
-    Write recording ID, time, RPi CPU + OAK VPU temp, RPi available memory (MB) +
-    CPU utilization (percent) and PiJuice battery info + temp to .csv file.
+    Write recording ID, time, RPi CPU + OAK VPU temp and RPi available memory (MB) +
+    CPU utilization (percent) to .csv file.
     """
     with open(f"./insect-detect/data/{rec_start[:8]}/info_log_{rec_start[:8]}.csv",
               "a", encoding="utf-8") as log_info_file:
         log_info = csv.DictWriter(log_info_file, fieldnames=
-            ["rec_ID", "timestamp", "temp_pi", "temp_oak", "pi_mem_available", "pi_cpu_used",
-             "power_input", "charge_status", "charge_level", "temp_batt", "voltage_batt_mV",
-             "current_batt_mA", "current_gpio_mA"])
+            ["rec_ID", "timestamp", "temp_pi", "temp_oak", "pi_mem_available", "pi_cpu_used"])
         if log_info_file.tell() == 0:
             log_info.writeheader()
         logs_info = {
@@ -307,14 +300,7 @@ def save_logs():
             "temp_pi": round(CPUTemperature().temperature),
             "temp_oak": round(device.getChipTemperature().average),
             "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
-            "pi_cpu_used": psutil.cpu_percent(interval=None),
-            "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", 0),
-            "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", 0),
-            "charge_level": chargelevel,
-            "temp_batt": pijuice.status.GetBatteryTemperature().get("data", 0),
-            "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", 0),
-            "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", 0),
-            "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", 0)
+            "pi_cpu_used": psutil.cpu_percent(interval=None)
         }
         log_info.writerow(logs_info)
         log_info_file.flush()
@@ -326,29 +312,16 @@ with dai.Device(pipeline, usb2Mode=True) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    # Set battery charge level and recording start time
-    chargelevel = chargelevel_start
+    # Set recording start time
     start_time = time.monotonic()
 
-    # Define recording time conditional on PiJuice battery charge level
-    if chargelevel >= 70:
-        rec_time = 60 * 40
-    elif 50 <= chargelevel < 70:
-        rec_time = 60 * 30
-    elif 30 <= chargelevel < 50:
-        rec_time = 60 * 20
-    elif 15 <= chargelevel < 30:
-        rec_time = 60 * 10
-    else:
-        rec_time = 60 * 5
-    logger.info(f"Rec ID: {rec_id} | Rec time: {int(rec_time / 60)} min | Charge level: {chargelevel}%")
+    # Get recording time in min from optional argument (default: 2)
+    rec_time = args.min_rec_time * 60
+    logger.info(f"Rec ID: {rec_id} | Rec time: {args.min_rec_time} min")
 
     try:
-        # Record until recording time is finished or chargelevel drops below threshold
-        while time.monotonic() < start_time + rec_time and chargelevel >= 10:
-
-            # Update PiJuice battery charge level
-            chargelevel = pijuice.status.GetChargeLevel().get("data", -1)
+        # Record until recording time is finished
+        while time.monotonic() < start_time + rec_time:
 
             # Get synced HQ frames and tracker output (detections + tracking IDs)
             frame_synced = q_frame.get().getCvFrame()
@@ -360,18 +333,18 @@ with dai.Device(pipeline, usb2Mode=True) as device:
                     store_data(frame_synced, tracklets_data)
                     time.sleep(1)
 
-            # Write RPi CPU + OAK VPU temp, RPi info and battery info + temp to .csv log file
+            # Write RPi CPU + OAK VPU temp and RPi info to .csv log file
             if args.save_logs:
                 save_logs()
 
         # Write record logs to .csv and shutdown Raspberry Pi after recording time is finished
         record_log()
-        logger.info(f"Recording {rec_id} finished | Charge level: {chargelevel}%\n")
+        logger.info(f"Recording {rec_id} finished\n")
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
 
     # Write record logs to .csv, log error traceback and shutdown Raspberry Pi if an error occurs
     except Exception:
         logger.error(traceback.format_exc())
-        logger.error(f"Error during recording {rec_id} | Charge level: {chargelevel}%\n")
+        logger.error(f"Error during recording {rec_id}\n")
         record_log()
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

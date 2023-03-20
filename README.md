@@ -34,12 +34,12 @@ to set up your Raspberry Pi before using the OAK-1 camera.
 
 ## Detection models
 
-| Model       | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<br><sup>OAK<br>(fps) | params<br><sup>(M) |
-| ----------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | -------------------------- | ------------------ |
-| YOLOv5n     | 320                   | 53.8                 | 96.9              | 95.5                  | 96.1               | 41                         | 1.76               |
-| YOLOv6n     | 320                   | 50.3                 | 95.1              | 96.9                  | 89.8               | 42                         | 4.63               |
-| YOLOv7-tiny | 320                   | 53.2                 | 95.7              | 94.7                  | 94.2               | 38                         | 6.01               |
-| YOLOv8n     | 320                   | 55.4                 | 94.4              | 92.2                  | 89.9               | 34                         | 3.01               |
+| Model       | size<br><sup>(pixels) | mAP<sup>val<br>50-95 | mAP<sup>val<br>50 | Precision<sup>val<br> | Recall<sup>val<br> | Speed<sup>OAK<br>(fps) | params<br><sup>(M) |
+| ----------- | --------------------- | -------------------- | ----------------- | --------------------- | ------------------ | ---------------------- | ------------------ |
+| YOLOv5n     | 320                   | 53.8                 | 96.9              | 95.5                  | 96.1               | 41                     | 1.76               |
+| YOLOv6n     | 320                   | 50.3                 | 95.1              | 96.9                  | 89.8               | 42                     | 4.63               |
+| YOLOv7-tiny | 320                   | 53.2                 | 95.7              | 94.7                  | 94.2               | 38                     | 6.01               |
+| YOLOv8n     | 320                   | 55.4                 | 94.4              | 92.2                  | 89.9               | 34                     | 3.01               |
 
 **Table Notes**
 
@@ -49,12 +49,12 @@ to set up your Raspberry Pi before using the OAK-1 camera.
   dataset [version 7](https://universe.roboflow.com/maximilian-sittinger/insect_detect_detection/dataset/7),
   downscaled to 320x320 pixel with only 1 class ("insect").
 - Model metrics (mAP, Precision, Recall) are shown for the original PyTorch (.pt) model before conversion to ONNX ->
-  OpenVINO -> .blob format. Reproduce metrics by using the respective model validation method (e.g. `val.py` for YOLOv5).
+  OpenVINO -> .blob format. Reproduce metrics by using the respective model validation method.
 - Speed (fps) is shown for the converted models (.blob 4 shaves), running on OAK-1 connected to RPi Zero 2 W (same speed with
   object tracker). Set `cam_rgb.setFps()` to the respective fps shown for each model to reproduce the speed measurements.
 - While connected via SSH (X11 forwarding of the frames), print fps to the console and comment out `cv2.imshow()`,
-  as forwarding the frames will significantly slow down the received message output and thereby fps. If you
-  are using a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream (see gif).
+  as forwarding the frames will slow down the received message output and thereby fps. If you are using
+  a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream (see gif).
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/images/yolov5n_tracker_episyrphus_320.gif" width="320">
 
@@ -81,7 +81,9 @@ script that can be used for continuous automated insect monitoring:
 
 Check out the [classification instructions](https://maxsitt.github.io/insect-detect-docs/deployment/classification/)
 and the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml) GitHub repo for more information on how to
-classify the cropped detections. Take a look at the [analysis instructions](https://maxsitt.github.io/insect-detect-docs/deployment/analysis/)
+classify the cropped detections.
+
+Take a look at the [analysis instructions](https://maxsitt.github.io/insect-detect-docs/deployment/analysis/)
 for more information on how to post-process and analyze the combined metadata and classification results.
 
 ---

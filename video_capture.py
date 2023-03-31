@@ -6,14 +6,15 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- save encoded HQ frames (1080p or 4K resolution) with HEVC/H.265 compression to .mp4 video file
+- save encoded HQ frames (1080p or 4K resolution) with H.265 (HEVC) compression to .mp4 video file
 - optional arguments:
   "-min [min]" (default = 2) set recording time in minutes
-               (e.g. "-min 5" for 5 min recording time)
-  "-fps [fps]" (default = 30) set frame rate (frames per second) for video capture
+               -> e.g. "-min 5" for 5 min recording time
   "-4k" (default = 1080p) record video in 4K resolution (3840x2160 px)
+  "-fps [fps]" (default = 25) set frame rate (frames per second) for video capture
+               -> e.g. "-fps 20" to decrease video file size
 
-includes segments from open source scripts available at https://github.com/luxonis
+based on open source scripts available at https://github.com/luxonis
 '''
 
 import argparse
@@ -28,15 +29,15 @@ import psutil
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 61),
-                    default=2, help="set record time in minutes")
-parser.add_argument("-fps", "--frames_per_second", type=int, choices=range(1, 31),
-                    default=30, help="set frame rate (frames per second) for video capture")
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 61), default=2,
+    help="set record time in minutes")
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
-                    help="record video in 4K resolution (3840x2160 px); default = 1080p")
+    help="record video in 4K resolution (3840x2160 px); default = 1080p")
+parser.add_argument("-fps", "--frames_per_second", type=int, choices=range(1, 31), default=25,
+    help="set frame rate (frames per second) for video capture")
 args = parser.parse_args()
 
-# Get frame rate (frames per second) from optional argument (default: 30)
+# Get frame rate (frames per second) from optional argument (default: 25)
 FPS = args.frames_per_second
 
 # Create depthai pipeline
@@ -45,11 +46,9 @@ pipeline = dai.Pipeline()
 # Create and configure camera node
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
-cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-cam_rgb.setVideoSize(1920, 1080)
-if args.four_k_resolution:
-    cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-    cam_rgb.setVideoSize(3840, 2160)
+cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
+if not args.four_k_resolution:
+    cam_rgb.setIspScale(1, 2) # downscale 4K to 1080p HQ frames (1920x1080 px)
 cam_rgb.setFps(FPS) # frames per second available for focus/exposure
 
 # Create and configure video encoder node and define input + output
@@ -69,10 +68,10 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
     # Create folder to save the videos
     rec_start = datetime.now().strftime("%Y%m%d")
-    save_path = f"./insect-detect/videos/{rec_start}"
+    save_path = f"insect-detect/videos/{rec_start}"
     Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
 
-    # Create .mp4 container with HEVC/H.265 compression
+    # Create .mp4 container with H.265 (HEVC) compression
     timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S")
     RES = "1080p"
     if args.four_k_resolution:
@@ -86,20 +85,20 @@ with dai.Device(pipeline, usb2Mode=True) as device:
             stream.width = 3840
             stream.height = 2160
 
-    # Set recording start time
+    # Create start_time variable to set recording time
     start_time = time.monotonic()
 
     # Get recording time in min from optional argument (default: 2)
     rec_time = args.min_rec_time * 60
     print(f"Recording time: {args.min_rec_time} min\n")
 
-    # Get free disk space in MB
+    # Get free disk space (MB)
     disk_free = round(psutil.disk_usage("/").free / 1048576)
 
     # Record until recording time is finished or free disk space drops below threshold
     while time.monotonic() < start_time + rec_time and disk_free > 200:
 
-        # Update free disk space
+        # Update free disk space (MB)
         disk_free = round(psutil.disk_usage("/").free / 1048576)
 
         # Get encoded video frames and save to packet

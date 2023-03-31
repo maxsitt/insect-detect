@@ -6,27 +6,33 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
+- write info and error (stderr) messages (+ traceback) to log file ("script_log.log")
+- shut down without recording if free disk space (MB) is lower than threshold
 - run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
-- use an object tracker (Intel DL Streamer) to track detected objects and set unique tracking IDs
-- synchronize tracker output (+ detections) from inference on full FOV LQ frames (e.g. 320x320)
-  with HQ frames (e.g. 3840x2160) on-device using the respective sequence numbers
+  -> inference on downscaled LQ frames (e.g. 320x320 px)
+- use an object tracker to track detected objects and assign unique tracking IDs (on-device)
+- synchronize tracker output (+ passthrough detections) from inference on LQ frames
+  with HQ frames (e.g. 1920x1080 px) on-device using the respective sequence numbers
+- create new folders for each day, recording interval and object class
 - save detections (bounding box area) cropped from HQ frames to .jpg
-- save metadata from model + tracker output (time, label, confidence, tracking ID,
-  relative bbox coordinates, .jpg file path) to "metadata_{timestamp}.csv"
-- write info and error (stderr) + traceback messages to log file ("script_log.log")
-- shut down without recording if free disk space is lower than threshold
+- save corresponding metadata from model + tracker output (time, label, confidence,
+  tracking ID, relative bbox coordinates, .jpg file path) to "metadata_{timestamp}.csv"
 - write record info (recording ID, start/end time, duration, number of cropped detections,
-  number of unique tracking IDs and free disk space) to "record_log.csv"
+  number of unique tracking IDs, free disk space) to "record_log.csv"
   and safely shut down RPi after recording interval is finished or if an error occurs
 - optional arguments:
   "-min [min]" (default = 2) set recording time in minutes
-               (e.g. "-min 5" for 5 min recording time)
-  "-raw" additionally save HQ frames to .jpg (e.g. for training data collection) OR
+               -> e.g. "-min 5" for 5 min recording time
+  "-4k" (default = 1080p) crop detections from (+ save HQ frames in) 4K resolution
+        -> will slow down pipeline and inference speed to ~3 fps (1080p: ~12 fps)
+  "-raw" additionally save HQ frames to .jpg (e.g. for training data collection)
+         -> will slow down pipeline and inference speed (4-5 fps)
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
+             -> will slow down pipeline and inference speed (4-5 fps)
   "-log" write RPi CPU + OAK VPU temperatures and RPi available memory (MB) +
-         CPU utilization (percent) to "info_log_{timestamp}.csv"
+         CPU utilization (%) to "info_log_{timestamp}.csv"
 
-includes segments from open source scripts available at https://github.com/luxonis
+based on open source scripts available at https://github.com/luxonis
 '''
 
 import argparse
@@ -47,23 +53,17 @@ import pandas as pd
 import psutil
 from gpiozero import CPUTemperature
 
-# Create data folder if not already present
-Path("./insect-detect/data").mkdir(parents=True, exist_ok=True)
+# Create folder to save images + metadata + logs (if not already present)
+Path("insect-detect/data").mkdir(parents=True, exist_ok=True)
 
-# Create logger and send info + error messages to log file
-logging.basicConfig(filename = "./insect-detect/data/script_log.log",
-                    encoding = "utf-8",
-                    format = "%(asctime)s - %(levelname)s: %(message)s",
-                    level = logging.DEBUG)
+# Create logger and write info + error messages to log file
+logging.basicConfig(filename="insect-detect/data/script_log.log", encoding="utf-8",
+                    format="%(asctime)s - %(levelname)s: %(message)s", level=logging.DEBUG)
 logger = logging.getLogger()
 sys.stderr.write = logger.error
 
-# Set file paths to the detection model and config JSON
-MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
-
-# Continue script only if free disk space is higher than threshold
-disk_free = round(psutil.disk_usage("/").free / 1048576) # free disk space in MB
+# Continue script only if free disk space (MB) is higher than threshold
+disk_free = round(psutil.disk_usage("/").free / 1048576)
 if disk_free < 200:
     logger.info(f"Shut down without recording | Free disk space left: {disk_free} MB\n")
     subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
@@ -71,19 +71,24 @@ if disk_free < 200:
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-group = parser.add_mutually_exclusive_group()
-group.add_argument("-raw", "--save_raw_frames", action="store_true",
-    help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
-group.add_argument("-overlay", "--save_overlay_frames", action="store_true",
-    help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
 parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
     help="set record time in minutes")
+parser.add_argument("-4k", "--four_k_resolution", action="store_true",
+    help="crop detections from (+ save HQ frames in) 4K resolution; default = 1080p")
+parser.add_argument("-raw", "--save_raw_frames", action="store_true",
+    help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
+parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
+    help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
 parser.add_argument("-log", "--save_logs", action="store_true",
     help="save RPi CPU + OAK VPU temperatures and RPi available memory (MB) + \
-          CPU utilization (percent) to .csv file")
+          CPU utilization (%) to .csv file")
 args = parser.parse_args()
 
-# Extract detection model metadata from config JSON
+# Set file paths to the detection model and config JSON
+MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
+CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
+
+# Get detection model metadata from config JSON
 with CONFIG_PATH.open(encoding="utf-8") as f:
     config = json.load(f)
 nn_config = config.get("nn_config", {})
@@ -104,11 +109,13 @@ pipeline = dai.Pipeline()
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-cam_rgb.setVideoSize(3840, 2160) # HQ frames for syncing, aspect ratio 16:9 (4K)
+if not args.four_k_resolution:
+    cam_rgb.setIspScale(1, 2) # downscale 4K to 1080p HQ frames (1920x1080 px)
 cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames for model input
-cam_rgb.setInterleaved(False)
-cam_rgb.setPreviewKeepAspectRatio(False) # squash full FOV frames to square
-cam_rgb.setFps(40) # frames per second available for focus/exposure/model input
+cam_rgb.setPreviewKeepAspectRatio(False) # "squeeze" frames (16:9) to square (1:1)
+cam_rgb.setInterleaved(False) # planar layout
+cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
+cam_rgb.setFps(25) # frames per second available for focus/exposure/model input
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -128,19 +135,18 @@ nn.setNumInferenceThreads(2)
 # Create and configure object tracker node and define inputs
 tracker = pipeline.create(dai.node.ObjectTracker)
 tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
-# use short term tracker if fps < ~30 for better tracking performance
-#tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
+#tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS) # better for low fps
 tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
 nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
 nn.out.link(tracker.inputDetections)
 
-# Create script node and define inputs (to sync detections with HQ frames)
+# Create script node and define inputs
 script = pipeline.create(dai.node.Script)
 script.setProcessor(dai.ProcessorType.LEON_CSS)
-tracker.out.link(script.inputs["tracker"]) # tracker output + passthrough detections
-cam_rgb.video.link(script.inputs["frames"]) # HQ frames
+tracker.out.link(script.inputs["tracker"]) # tracklets + passthrough detections
 script.inputs["tracker"].setBlocking(False)
+cam_rgb.video.link(script.inputs["frames"]) # HQ frames
 script.inputs["frames"].setBlocking(False)
 
 # Set script that will be run on-device (Luxonis OAK)
@@ -170,27 +176,27 @@ while True:
 ''')
 
 # Define script node outputs
-xout_track = pipeline.create(dai.node.XLinkOut)
-xout_track.setStreamName("track")
-script.outputs["track_out"].link(xout_track.input) # synced tracker output
+xout_rgb = pipeline.create(dai.node.XLinkOut)
+xout_rgb.setStreamName("frame")
+script.outputs["frame_out"].link(xout_rgb.input) # synced HQ frames
 
-xout_frame = pipeline.create(dai.node.XLinkOut)
-xout_frame.setStreamName("frame")
-script.outputs["frame_out"].link(xout_frame.input) # synced HQ frames
+xout_tracker = pipeline.create(dai.node.XLinkOut)
+xout_tracker.setStreamName("track")
+script.outputs["track_out"].link(xout_tracker.input) # synced tracker output
 
 # Create new folders for each day, recording interval and object class
 rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
-save_path = f"./insect-detect/data/{rec_start[:8]}/{rec_start}"
+save_path = f"insect-detect/data/{rec_start[:8]}/{rec_start}"
 for text in labels:
     Path(f"{save_path}/cropped/{text}").mkdir(parents=True, exist_ok=True)
-    if args.save_overlay_frames:
-        Path(f"{save_path}/overlay/{text}").mkdir(parents=True, exist_ok=True)
 if args.save_raw_frames:
     Path(f"{save_path}/raw").mkdir(parents=True, exist_ok=True)
+if args.save_overlay_frames:
+    Path(f"{save_path}/overlay").mkdir(parents=True, exist_ok=True)
 
 # Calculate current recording ID by subtracting number of directories with date-prefix
-folders_dates = len([f for f in Path("./insect-detect/data").glob("**/20*") if f.is_dir()])
-folders_days = len([f for f in Path("./insect-detect/data").glob("20*") if f.is_dir()])
+folders_dates = len([f for f in Path("insect-detect/data").glob("**/20*") if f.is_dir()])
+folders_days = len([f for f in Path("insect-detect/data").glob("20*") if f.is_dir()])
 rec_id = folders_dates - folders_days
 
 def frame_norm(frame, bbox):
@@ -199,25 +205,36 @@ def frame_norm(frame, bbox):
     norm_vals[::2] = frame.shape[1]
     return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
 
-def store_data(frame, tracklets):
-    """Save synced cropped (+ full) frames and tracker output (+ detections) to .jpg and metadata .csv."""
+def store_data(frame, tracks):
+    """Save cropped detections (+ full HQ frames) to .jpg and tracker output to metadata .csv."""
     with open(f"{save_path}/metadata_{rec_start}.csv", "a", encoding="utf-8") as metadata_file:
         metadata = csv.DictWriter(metadata_file, fieldnames=
             ["rec_ID", "timestamp", "label", "confidence", "track_ID",
              "x_min", "y_min", "x_max", "y_max", "file_path"])
         if metadata_file.tell() == 0:
             metadata.writeheader() # write header only once
-        for t in tracklets:
-            # Do not save (cropped) frames when tracking status == "NEW" or "LOST" or "REMOVED"
-            if t.status.name == "TRACKED":
-                timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
 
-                # Save detection cropped from synced HQ frame
+        # Save full raw HQ frame (e.g. for training data collection)
+        if args.save_raw_frames:
+            for t in tracks:
+                if t == tracks[-1]:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
+                    raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
+                    cv2.imwrite(raw_path, frame)
+                    #cv2.imwrite(raw_path, frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+
+        for t in tracks:
+            # Don't save cropped detections if tracking status == "NEW" or "LOST" or "REMOVED"
+            if t.status.name == "TRACKED":
+
+                # Save detections cropped from HQ frame to .jpg
                 bbox = frame_norm(frame, (t.srcImgDetection.xmin, t.srcImgDetection.ymin,
                                           t.srcImgDetection.xmax, t.srcImgDetection.ymax))
                 det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-                cropped_path = f"{save_path}/cropped/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_cropped.jpg"
-                cv2.imwrite(cropped_path, det_crop)
+                label = labels[t.srcImgDetection.label]
+                timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
+                crop_path = f"{save_path}/cropped/{label}/{timestamp}_{t.id}_crop.jpg"
+                cv2.imwrite(crop_path, det_crop)
 
                 # Save corresponding metadata to .csv file for each cropped detection
                 data = {
@@ -230,45 +247,48 @@ def store_data(frame, tracklets):
                     "y_min": round(t.srcImgDetection.ymin, 4),
                     "x_max": round(t.srcImgDetection.xmax, 4),
                     "y_max": round(t.srcImgDetection.ymax, 4),
-                    "file_path": cropped_path
+                    "file_path": crop_path
                 }
                 metadata.writerow(data)
                 metadata_file.flush() # write data immediately to .csv to avoid potential data loss
 
                 # Save full HQ frame with overlay (bounding box, label, confidence, tracking ID) drawn on frame
-                # text position, font size and thickness optimized for 3840x2160 HQ frame size
                 if args.save_overlay_frames:
-                    overlay_frame = frame.copy()
-                    cv2.putText(overlay_frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 35),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 3)
-                    cv2.putText(overlay_frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 70),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 3)
-                    cv2.putText(overlay_frame, f"ID:{t.id}", (bbox[0], bbox[3] + 130),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 4)
-                    cv2.rectangle(overlay_frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 3)
-                    overlay_path = f"{save_path}/overlay/{labels[t.srcImgDetection.label]}/{timestamp}_{t.id}_overlay.jpg"
-                    cv2.imwrite(overlay_path, overlay_frame)
-
-        # Save full raw HQ frame (e.g. for training data collection)
-        if args.save_raw_frames:
-            # save only once in case of multiple detections
-            for i, t in enumerate(tracklets):
-                if i == 0:
-                    timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
-                    raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
-                    cv2.imwrite(raw_path, frame)
+                    # Text position, font size and thickness optimized for 1920x1080 px HQ frame size
+                    if not args.four_k_resolution:
+                        cv2.putText(frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 28),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+                        cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 55),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                        cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 92),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.1, (255, 255, 255), 2)
+                        cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
+                    # Text position, font size and thickness optimized for 3840x2160 px HQ frame size
+                    else:
+                        cv2.putText(frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 48),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.7, (255, 255, 255), 3)
+                        cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 98),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.6, (255, 255, 255), 3)
+                        cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 164),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
+                        cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 3)
+                    if t == tracks[-1]:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
+                        overlay_path = f"{save_path}/overlay/{timestamp}_overlay.jpg"
+                        cv2.imwrite(overlay_path, frame)
+                        #cv2.imwrite(overlay_path, frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
 
 def record_log():
     """Write information about each recording interval to .csv file."""
     try:
         df_meta = pd.read_csv(f"{save_path}/metadata_{rec_start}.csv", encoding="utf-8")
-        unique_ids = df_meta.track_ID.nunique()
+        unique_ids = df_meta["track_ID"].nunique()
     except pd.errors.EmptyDataError:
         unique_ids = 0
-    with open("./insect-detect/data/record_log.csv", "a", encoding="utf-8") as log_rec_file:
+    with open("insect-detect/data/record_log.csv", "a", encoding="utf-8") as log_rec_file:
         log_rec = csv.DictWriter(log_rec_file, fieldnames=
-            ["rec_ID", "record_start_date", "record_start_time", "record_end_time", "record_time_min",
-             "num_crops", "num_IDs", "disk_free_gb"])
+            ["rec_ID", "record_start_date", "record_start_time", "record_end_time",
+             "record_time_min", "num_crops", "num_IDs", "disk_free_gb"])
         if log_rec_file.tell() == 0:
             log_rec.writeheader()
         logs_rec = {
@@ -286,10 +306,10 @@ def record_log():
 def save_logs():
     """
     Write recording ID, time, RPi CPU + OAK VPU temp and RPi available memory (MB) +
-    CPU utilization (percent) to .csv file.
+    CPU utilization (%) to .csv file.
     """
-    with open(f"./insect-detect/data/{rec_start[:8]}/info_log_{rec_start[:8]}.csv",
-              "a", encoding="utf-8") as log_info_file:
+    with open(f"insect-detect/data/{rec_start[:8]}/info_log_{rec_start[:8]}.csv", "a",
+              encoding="utf-8") as log_info_file:
         log_info = csv.DictWriter(log_info_file, fieldnames=
             ["rec_ID", "timestamp", "temp_pi", "temp_oak", "pi_mem_available", "pi_cpu_used"])
         if log_info_file.tell() == 0:
@@ -305,14 +325,14 @@ def save_logs():
         log_info.writerow(logs_info)
         log_info_file.flush()
 
-# Connect to OAK device and start pipeline
+# Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, usb2Mode=True) as device:
 
-    # Create output queues to get the frames and detections from the outputs defined above
+    # Create output queues to get the frames and tracklets + detections from the outputs defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    # Set recording start time
+    # Create start_time variable to set recording time
     start_time = time.monotonic()
 
     # Get recording time in min from optional argument (default: 2)
@@ -323,14 +343,16 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         # Record until recording time is finished
         while time.monotonic() < start_time + rec_time:
 
-            # Get synced HQ frames and tracker output (detections + tracking IDs)
-            frame_synced = q_frame.get().getCvFrame()
-            track_synced = q_track.get()
-            if track_synced is not None:
-                tracklets_data = track_synced.tracklets
-                if frame_synced is not None:
-                    # save cropped detections every second (slower if saving additional HQ frames)
-                    store_data(frame_synced, tracklets_data)
+            # Get synchronized HQ frames + tracker output (passthrough detections)
+            frame = q_frame.get().getCvFrame()
+            track_out = q_track.get()
+
+            if track_out is not None:
+                tracks = track_out.tracklets
+
+                if frame is not None:
+                    # Save cropped detections every second (slower if saving additional HQ frames)
+                    store_data(frame, tracks)
                     time.sleep(1)
 
             # Write RPi CPU + OAK VPU temp and RPi info to .csv log file

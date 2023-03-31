@@ -6,12 +6,13 @@ Website:  https://maxsitt.github.io/insect-detect-docs/
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
-- save encoded still frames in highest possible resolution to .jpg at specified time interval
+- save encoded still frames in highest possible resolution (e.g. 4032x3040 px)
+  to .jpg at specified time interval
 - optional argument:
   "-min [min]" (default = 2) set recording time in minutes
-               (e.g. "-min 5" for 5 min recording time)
+               -> e.g. "-min 5" for 5 min recording time
 
-includes segments from open source scripts available at https://github.com/luxonis
+based on open source scripts available at https://github.com/luxonis
 '''
 
 import argparse
@@ -21,15 +22,15 @@ from pathlib import Path
 
 import depthai as dai
 
-# Set capture frequency in seconds
-# 'CAPTURE_FREQ = 1' saves ~57 still frames per minute to .jpg
-CAPTURE_FREQ = 1
-
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721),
-                    default=2, help="set record time in minutes")
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
+    help="set record time in minutes")
 args = parser.parse_args()
+
+# Set capture frequency in seconds
+# 'CAPTURE_FREQ = 1' saves ~57 still frames per minute to .jpg (RPi Zero 2)
+CAPTURE_FREQ = 1
 
 # Create depthai pipeline
 pipeline = dai.Pipeline()
@@ -39,9 +40,9 @@ cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_12_MP) # OAK-1 (IMX378)
 #cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_13_MP) # OAK-1 Lite (IMX214)
-#cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_5312X6000) # OAK-1 MAX (LCM48)
+#cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_5312X6000) # OAK-1 MAX (IMX582)
 cam_rgb.setNumFramesPool(2,2,2,2,2)
-cam_rgb.setFps(30) # frames per second available for focus/exposure
+cam_rgb.setFps(25) # frames per second available for focus/exposure
 
 # Create and configure video encoder node and define input + output
 still_enc = pipeline.create(dai.node.VideoEncoder)
@@ -66,10 +67,10 @@ while True:
     node.io["capture_still"].send(ctrl)
 ''')
 
-# Send script output (capture still command) to camera
+# Send script output to camera (capture still command)
 script.outputs["capture_still"].link(cam_rgb.inputControl)
 
-# Connect to OAK device and start pipeline
+# Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, usb2Mode=True) as device:
 
     # Create output queue to get the encoded still frames from the output defined above
@@ -77,10 +78,10 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
     # Create folder to save the still frames
     rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
-    save_path = f"./insect-detect/stills/{rec_start[:8]}/{rec_start}"
+    save_path = f"insect-detect/stills/{rec_start[:8]}/{rec_start}"
     Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
 
-    # Set recording start time
+    # Create start_time variable to set recording time
     start_time = time.monotonic()
 
     # Get recording time in min from optional argument (default: 2)
@@ -93,7 +94,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         # Get encoded still frames and save to .jpg at specified time interval
         timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
         enc_still = q_still.get().getData()
-        with open(f"{save_path}/{timestamp}_still.jpg", "wb") as still_jpg:
+        with open(f"{save_path}/{timestamp}.jpg", "wb") as still_jpg:
             still_jpg.write(enc_still)
 
         time.sleep(CAPTURE_FREQ)

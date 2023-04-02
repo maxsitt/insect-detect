@@ -30,7 +30,7 @@ Instructions on how to install all required Python packages can be found in the
 Please make sure that you followed [all steps](https://maxsitt.github.io/insect-detect-docs/software/pisetup/)
 to set up your Raspberry Pi before using the OAK-1 camera.
 
-Check out the [Programming](https://maxsitt.github.io/insect-detect-docs/software/programming/)
+Check out the [**Programming**](https://maxsitt.github.io/insect-detect-docs/software/programming/)
 section for more details about the scripts and tips on possible software modifications.
 
 ---
@@ -72,11 +72,14 @@ Processing pipeline for the
 [`yolo_tracker_save_hqsync.py`](https://github.com/maxsitt/insect-detect/blob/main/yolo_tracker_save_hqsync.py)
 script that can be used for continuous automated insect monitoring:
 
-- The object tracker output (+ passthrough detections) from inference on LQ frames (e.g. 320x320) is synchronized
-  with HQ frames (e.g. 1920x1080) in a script node on-device (OAK), using the respective sequence numbers.
+- The object tracker output (+ passthrough detections) from inference on LQ frames (e.g. 320x320 px) is synchronized
+  with HQ frames (1920x1080 px) in a script node on-device (OAK), using the respective sequence numbers.
 - Detections (area of the bounding box) are cropped from the synced HQ frames and saved to .jpg.
 - All relevant metadata from the detection model and tracker output (timestamp, label, confidence score, tracking ID,
   relative bbox coordinates, .jpg file path) is saved to a metadata .csv file for each cropped detection.
+- Using the default 1080p resolution for the HQ frames will result in an inference and pipeline speed of **~12 fps**,
+  which is fast enough to track moving insects. If 4K resolution is used instead, the pipeline speed will decrease
+  to **~3 fps**, which reduces tracking accuracy for fast moving insects.
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="800">
 
@@ -84,10 +87,11 @@ script that can be used for continuous automated insect monitoring:
 
 Check out the [classification instructions](https://maxsitt.github.io/insect-detect-docs/deployment/classification/)
 and the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml) GitHub repo for more information on how to
-classify the cropped detections.
+classify the cropped detections on your local PC with the provided classification model and script.
 
 Take a look at the [analysis instructions](https://maxsitt.github.io/insect-detect-docs/deployment/analysis/)
-for more information on how to post-process and analyze the combined metadata and classification results.
+for more information on how to post-process and analyze the combined metadata and classification results
+to create the final data table for further analysis.
 
 ---
 
@@ -102,5 +106,5 @@ You can cite this repository as:
 
 ```
 Sittinger, M. (2022). Insect Detect - Software for automated insect monitoring
-with a DIY camera trap system (v1.5). Zenodo. https://doi.org/10.5281/zenodo.7472238
+with a DIY camera trap system (v1.6). Zenodo. https://doi.org/10.5281/zenodo.7472238
 ```

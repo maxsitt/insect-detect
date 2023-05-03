@@ -59,7 +59,7 @@ section for more details about the scripts and tips on possible software modific
   as forwarding the frames will slow down the received message output and thereby fps. If you are using
   a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream (see gif).
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/images/yolov5n_tracker_episyrphus_320.gif" width="320">
+  <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/images/yolov5n_tracker_episyrphus_320.gif" width="320">
 
 ---
 
@@ -83,7 +83,7 @@ script that can be used for continuous automated insect monitoring:
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="800">
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync.gif" width="800">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync_1080p.gif" width="800">
 
 Check out the [classification instructions](https://maxsitt.github.io/insect-detect-docs/deployment/classification/)
 and the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml) GitHub repo for more information on how to

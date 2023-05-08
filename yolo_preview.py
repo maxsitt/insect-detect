@@ -11,7 +11,8 @@ This Python script does the following:
 - show downscaled LQ frames + model output (bounding box, label, confidence) + fps
   in a new window (e.g. via X11 forwarding)
 - optional argument:
-  "-log" print available Raspberry Pi memory (MB) and RPi CPU utilization (%) to console
+  "-log" print available Raspberry Pi memory, RPi CPU utilization + temperature,
+         OAK memory + CPU usage and OAK chip temperature to console
 
 based on open source scripts available at https://github.com/luxonis
 '''
@@ -27,12 +28,15 @@ import numpy as np
 
 # Define optional argument
 parser = argparse.ArgumentParser()
-parser.add_argument("-log", "--print_log", action="store_true",
-    help="print RPi available memory (MB) + CPU utilization (%)")
+parser.add_argument("-log", "--print_logs", action="store_true",
+    help="print RPi available memory, RPi CPU utilization + temperature, \
+          OAK memory + CPU usage and OAK chip temperature to console")
 args = parser.parse_args()
 
-if args.print_log:
+if args.print_logs:
     import psutil
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from gpiozero import CPUTemperature
 
 # Set file paths to the detection model and config JSON
 MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
@@ -88,15 +92,29 @@ nn.setIouThreshold(iou_threshold)
 nn.setConfidenceThreshold(confidence_threshold)
 nn.setNumInferenceThreads(2)
 
-# Define function to convert relative bounding box coordinates (0-1) to pixel coordinates
+# Define functions
 def frame_norm(frame, bbox):
     """Convert relative bounding box coordinates (0-1) to pixel coordinates."""
     norm_vals = np.full(len(bbox), frame.shape[0])
     norm_vals[::2] = frame.shape[1]
     return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
 
+def print_logs():
+    """Print Raspberry Pi info to console."""
+    print(f"\nAvailable RPi memory: {round(psutil.virtual_memory().available / 1048576)} MB")
+    print(f"RPi CPU utilization:  {round(psutil.cpu_percent(interval=None))} %")
+    print(f"RPi CPU temperature:  {round(CPUTemperature().temperature)} °C\n")
+
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, usb2Mode=True) as device:
+
+    # Print RPi + OAK info to console every second
+    if args.print_logs:
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(print_logs, "interval", seconds=1, id="log")
+        scheduler.start()
+        device.setLogLevel(dai.LogLevel.INFO)
+        device.setLogOutputLevel(dai.LogLevel.INFO)
 
     # Create output queues to get the frames and detections from the outputs defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
@@ -108,34 +126,29 @@ with dai.Device(pipeline, usb2Mode=True) as device:
 
     # Get LQ frames + model output (detections) and show in new window
     while True:
-        if args.print_log:
-            print(f"Available RPi memory: {round(psutil.virtual_memory().available / 1048576)} MB")
-            print(f"RPi CPU utilization:  {psutil.cpu_percent(interval=None)}%\n")
+        if q_frame.has():
+            frame = q_frame.get().getCvFrame()
 
-        frame = q_frame.get().getCvFrame()
-        nn_out = q_nn.get()
+            if q_nn.has():
+                dets = q_nn.get().detections
+                counter += 1
+                fps = round(counter / (time.monotonic() - start_time), 2)
 
-        if nn_out is not None:
-            dets = nn_out.detections
-            counter += 1
-            fps = round(counter / (time.monotonic() - start_time), 2)
+                for detection in dets:
+                    bbox = frame_norm(frame, (detection.xmin, detection.ymin,
+                                              detection.xmax, detection.ymax))
+                    cv2.putText(frame, labels[detection.label], (bbox[0], bbox[3] + 13),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+                    cv2.putText(frame, f"{round(detection.confidence, 2)}", (bbox[0], bbox[3] + 25),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
 
-        if frame is not None:
-            for detection in dets:
-                bbox = frame_norm(frame, (detection.xmin, detection.ymin,
-                                          detection.xmax, detection.ymax))
-                cv2.putText(frame, labels[detection.label], (bbox[0], bbox[3] + 13),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                cv2.putText(frame, f"{round(detection.confidence, 2)}", (bbox[0], bbox[3] + 25),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
-
-            cv2.putText(frame, f"fps: {fps}", (4, frame.shape[0] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            cv2.imshow("yolo_preview", frame)
-            #print(f"fps: {fps}")
-            # streaming the frames via SSH (X11 forwarding) will slow down fps
-            # comment out "cv2.imshow()" and print fps to console for true fps
+                cv2.putText(frame, f"fps: {fps}", (4, frame.shape[0] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.imshow("yolo_preview", frame)
+                #print(f"fps: {fps}")
+                # streaming the frames via SSH (X11 forwarding) will slow down fps
+                # comment out "cv2.imshow()" and print fps to console for true fps
 
         # Stop script and close window by pressing "Q"
         if cv2.waitKey(1) == ord("q"):

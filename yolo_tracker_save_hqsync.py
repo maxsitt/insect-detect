@@ -30,7 +30,7 @@ This Python script does the following:
          -> will slow down pipeline and inference speed (4-5 fps)
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
              -> will slow down pipeline and inference speed (4-5 fps)
-  "-log" write RPi CPU + OAK VPU temperatures, RPi available memory (MB) +
+  "-log" write RPi CPU + OAK chip temperature, RPi available memory (MB) +
          CPU utilization (%) and battery info to "info_log_{timestamp}.csv"
 
 based on open source scripts available at https://github.com/luxonis
@@ -52,7 +52,6 @@ import depthai as dai
 import numpy as np
 import pandas as pd
 import psutil
-from gpiozero import CPUTemperature
 from pijuice import PiJuice
 
 # Create folder to save images + metadata + logs (if not already present)
@@ -63,6 +62,23 @@ logging.basicConfig(filename="insect-detect/data/script_log.log", encoding="utf-
                     format="%(asctime)s - %(levelname)s: %(message)s", level=logging.DEBUG)
 logger = logging.getLogger()
 sys.stderr.write = logger.error
+
+# Define optional arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-4k", "--four_k_resolution", action="store_true",
+    help="crop detections from (+ save HQ frames in) 4K resolution; default = 1080p")
+parser.add_argument("-raw", "--save_raw_frames", action="store_true",
+    help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
+parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
+    help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
+parser.add_argument("-log", "--save_logs", action="store_true",
+    help="save RPi CPU + OAK chip temperature, RPi available memory (MB) + \
+          CPU utilization (%) and battery info to .csv file")
+args = parser.parse_args()
+
+if args.save_logs:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from gpiozero import CPUTemperature
 
 # Instantiate PiJuice
 pijuice = PiJuice(1, 0x14)
@@ -75,18 +91,9 @@ if chargelevel_start < 10 or disk_free < 200:
     subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
     time.sleep(5) # wait 5 seconds for RPi to shut down
 
-# Define optional arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("-4k", "--four_k_resolution", action="store_true",
-    help="crop detections from (+ save HQ frames in) 4K resolution; default = 1080p")
-parser.add_argument("-raw", "--save_raw_frames", action="store_true",
-    help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
-parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
-    help="additionally save full HQ frames with overlay (bbox + info) in separate folder")
-parser.add_argument("-log", "--save_logs", action="store_true",
-    help="save RPi CPU + OAK VPU temperatures, RPi available memory (MB) + \
-          CPU utilization (%) and battery info to .csv file")
-args = parser.parse_args()
+# Optional: Disable charging of PiJuice battery if charge level is higher than threshold
+#if chargelevel_start > 70:
+#    pijuice.config.SetChargingConfig({"charging_enabled": False})
 
 # Set file paths to the detection model and config JSON
 MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
@@ -203,6 +210,7 @@ folders_dates = len([f for f in Path("insect-detect/data").glob("**/20*") if f.i
 folders_days = len([f for f in Path("insect-detect/data").glob("20*") if f.is_dir()])
 rec_id = folders_dates - folders_days
 
+# Define functions
 def frame_norm(frame, bbox):
     """Convert relative bounding box coordinates (0-1) to pixel coordinates."""
     norm_vals = np.full(len(bbox), frame.shape[0])
@@ -220,37 +228,37 @@ def store_data(frame, tracks):
 
         # Save full raw HQ frame (e.g. for training data collection)
         if args.save_raw_frames:
-            for t in tracks:
-                if t == tracks[-1]:
+            for track in tracks:
+                if track == tracks[-1]:
                     timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
                     raw_path = f"{save_path}/raw/{timestamp}_raw.jpg"
                     cv2.imwrite(raw_path, frame)
                     #cv2.imwrite(raw_path, frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
 
-        for t in tracks:
+        for track in tracks:
             # Don't save cropped detections if tracking status == "NEW" or "LOST" or "REMOVED"
-            if t.status.name == "TRACKED":
+            if track.status.name == "TRACKED":
 
                 # Save detections cropped from HQ frame to .jpg
-                bbox = frame_norm(frame, (t.srcImgDetection.xmin, t.srcImgDetection.ymin,
-                                          t.srcImgDetection.xmax, t.srcImgDetection.ymax))
+                bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
+                                          track.srcImgDetection.xmax, track.srcImgDetection.ymax))
                 det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-                label = labels[t.srcImgDetection.label]
+                label = labels[track.srcImgDetection.label]
                 timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
-                crop_path = f"{save_path}/cropped/{label}/{timestamp}_{t.id}_crop.jpg"
+                crop_path = f"{save_path}/cropped/{label}/{timestamp}_{track.id}_crop.jpg"
                 cv2.imwrite(crop_path, det_crop)
 
                 # Save corresponding metadata to .csv file for each cropped detection
                 data = {
                     "rec_ID": rec_id,
                     "timestamp": timestamp,
-                    "label": labels[t.srcImgDetection.label],
-                    "confidence": round(t.srcImgDetection.confidence, 2),
-                    "track_ID": t.id,
-                    "x_min": round(t.srcImgDetection.xmin, 4),
-                    "y_min": round(t.srcImgDetection.ymin, 4),
-                    "x_max": round(t.srcImgDetection.xmax, 4),
-                    "y_max": round(t.srcImgDetection.ymax, 4),
+                    "label": label,
+                    "confidence": round(track.srcImgDetection.confidence, 2),
+                    "track_ID": track.id,
+                    "x_min": round(track.srcImgDetection.xmin, 4),
+                    "y_min": round(track.srcImgDetection.ymin, 4),
+                    "x_max": round(track.srcImgDetection.xmax, 4),
+                    "y_max": round(track.srcImgDetection.ymax, 4),
                     "file_path": crop_path
                 }
                 metadata.writerow(data)
@@ -260,23 +268,23 @@ def store_data(frame, tracks):
                 if args.save_overlay_frames:
                     # Text position, font size and thickness optimized for 1920x1080 px HQ frame size
                     if not args.four_k_resolution:
-                        cv2.putText(frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 28),
+                        cv2.putText(frame, labels[track.srcImgDetection.label], (bbox[0], bbox[3] + 28),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
-                        cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 55),
+                        cv2.putText(frame, f"{round(track.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 55),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-                        cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 92),
+                        cv2.putText(frame, f"ID:{track.id}", (bbox[0], bbox[3] + 92),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1.1, (255, 255, 255), 2)
                         cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
                     # Text position, font size and thickness optimized for 3840x2160 px HQ frame size
                     else:
-                        cv2.putText(frame, labels[t.srcImgDetection.label], (bbox[0], bbox[3] + 48),
+                        cv2.putText(frame, labels[track.srcImgDetection.label], (bbox[0], bbox[3] + 48),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1.7, (255, 255, 255), 3)
-                        cv2.putText(frame, f"{round(t.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 98),
+                        cv2.putText(frame, f"{round(track.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 98),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1.6, (255, 255, 255), 3)
-                        cv2.putText(frame, f"ID:{t.id}", (bbox[0], bbox[3] + 164),
+                        cv2.putText(frame, f"ID:{track.id}", (bbox[0], bbox[3] + 164),
                                     cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
                         cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 3)
-                    if t == tracks[-1]:
+                    if track == tracks[-1]:
                         timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
                         overlay_path = f"{save_path}/overlay/{timestamp}_overlay.jpg"
                         cv2.imwrite(overlay_path, frame)
@@ -311,7 +319,7 @@ def record_log():
 
 def save_logs():
     """
-    Write recording ID, time, RPi CPU + OAK VPU temp, RPi available memory (MB) +
+    Write recording ID, time, RPi CPU + OAK chip temperature, RPi available memory (MB) +
     CPU utilization (%) and PiJuice battery info + temp to .csv file.
     """
     with open(f"insect-detect/data/{rec_start[:8]}/info_log_{rec_start[:8]}.csv", "a",
@@ -322,20 +330,24 @@ def save_logs():
              "current_batt_mA", "current_gpio_mA"])
         if log_info_file.tell() == 0:
             log_info.writeheader()
+        try:
+            temp_oak = round(device.getChipTemperature().average)
+        except RuntimeError:
+            temp_oak = "NA"
         logs_info = {
             "rec_ID": rec_id,
             "timestamp": datetime.now().strftime("%Y%m%d_%H-%M-%S"),
             "temp_pi": round(CPUTemperature().temperature),
-            "temp_oak": round(device.getChipTemperature().average),
+            "temp_oak": temp_oak,
             "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
             "pi_cpu_used": psutil.cpu_percent(interval=None),
-            "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", 0),
-            "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", 0),
+            "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", "NA"),
+            "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", "NA"),
             "charge_level": chargelevel,
-            "temp_batt": pijuice.status.GetBatteryTemperature().get("data", 0),
-            "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", 0),
-            "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", 0),
-            "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", 0)
+            "temp_batt": pijuice.status.GetBatteryTemperature().get("data", "NA"),
+            "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", "NA"),
+            "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", "NA"),
+            "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", "NA")
         }
         log_info.writerow(logs_info)
         log_info_file.flush()
@@ -343,11 +355,18 @@ def save_logs():
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, usb2Mode=True) as device:
 
+    # Write RPi + OAK + battery info to .csv log file at specified interval
+    if args.save_logs:
+        logging.getLogger("apscheduler").setLevel(logging.WARNING)
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(save_logs, "interval", seconds=30, id="log")
+        scheduler.start()
+
     # Create output queues to get the frames and tracklets + detections from the outputs defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    # Create start_time variable to set recording time and chargelevel variable
+    # Create start_time variable to set recording time + chargelevel variable
     start_time = time.monotonic()
     chargelevel = chargelevel_start
 
@@ -362,39 +381,48 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         rec_time = 60 * 10
     else:
         rec_time = 60 * 5
+
+    # Write info on start of recording to log file
     logger.info(f"Rec ID: {rec_id} | Rec time: {int(rec_time / 60)} min | Charge level: {chargelevel}%")
 
     try:
         # Record until recording time is finished or chargelevel drops below threshold
         while time.monotonic() < start_time + rec_time and chargelevel >= 10:
 
-            # Update PiJuice battery charge level
-            chargelevel = pijuice.status.GetChargeLevel().get("data", -1)
+            # Update PiJuice battery charge level (return "10" if not readable)
+            chargelevel = pijuice.status.GetChargeLevel().get("data", 10)
 
             # Get synchronized HQ frames + tracker output (passthrough detections)
-            frame = q_frame.get().getCvFrame()
-            track_out = q_track.get()
+            if q_frame.has():
+                frame = q_frame.get().getCvFrame()
 
-            if track_out is not None:
-                tracks = track_out.tracklets
+                if q_track.has():
+                    tracks = q_track.get().tracklets
 
-                if frame is not None:
                     # Save cropped detections every second (slower if saving additional HQ frames)
                     store_data(frame, tracks)
                     time.sleep(1)
 
-            # Write RPi CPU + OAK VPU temp, RPi info and battery info + temp to .csv log file
-            if args.save_logs:
-                save_logs()
-
-        # Write record logs to .csv and shutdown Raspberry Pi after recording time is finished
-        record_log()
+        # Write info on end of recording to log file and write record logs to .csv
         logger.info(f"Recording {rec_id} finished | Charge level: {chargelevel}%\n")
+        record_log()
+
+        # Enable charging of PiJuice battery if charge level is lower than threshold
+        if chargelevel < 70:
+            pijuice.config.SetChargingConfig({"charging_enabled": True})
+
+        # Shutdown Raspberry Pi
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
 
-    # Write record logs to .csv, log error traceback and shutdown Raspberry Pi if an error occurs
+    # Write info on error during recording to log file and write record logs to .csv
     except Exception:
         logger.error(traceback.format_exc())
         logger.error(f"Error during recording {rec_id} | Charge level: {chargelevel}%\n")
         record_log()
+
+        # Enable charging of PiJuice battery if charge level is lower than threshold
+        if chargelevel < 70:
+            pijuice.config.SetChargingConfig({"charging_enabled": True})
+
+        # Shutdown Raspberry Pi
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

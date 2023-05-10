@@ -92,7 +92,7 @@ if chargelevel_start < 10 or disk_free < 200:
     time.sleep(5) # wait 5 seconds for RPi to shut down
 
 # Optional: Disable charging of PiJuice battery if charge level is higher than threshold
-#if chargelevel_start > 70:
+#if chargelevel_start > 80:
 #    pijuice.config.SetChargingConfig({"charging_enabled": False})
 
 # Set file paths to the detection model and config JSON
@@ -334,21 +334,24 @@ def save_logs():
             temp_oak = round(device.getChipTemperature().average)
         except RuntimeError:
             temp_oak = "NA"
-        logs_info = {
-            "rec_ID": rec_id,
-            "timestamp": datetime.now().strftime("%Y%m%d_%H-%M-%S"),
-            "temp_pi": round(CPUTemperature().temperature),
-            "temp_oak": temp_oak,
-            "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
-            "pi_cpu_used": psutil.cpu_percent(interval=None),
-            "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", "NA"),
-            "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", "NA"),
-            "charge_level": chargelevel,
-            "temp_batt": pijuice.status.GetBatteryTemperature().get("data", "NA"),
-            "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", "NA"),
-            "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", "NA"),
-            "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", "NA")
-        }
+        try:
+            logs_info = {
+                "rec_ID": rec_id,
+                "timestamp": datetime.now().strftime("%Y%m%d_%H-%M-%S"),
+                "temp_pi": round(CPUTemperature().temperature),
+                "temp_oak": temp_oak,
+                "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
+                "pi_cpu_used": psutil.cpu_percent(interval=None),
+                "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", "NA"),
+                "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", "NA"),
+                "charge_level": chargelevel,
+                "temp_batt": pijuice.status.GetBatteryTemperature().get("data", "NA"),
+                "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", "NA"),
+                "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", "NA"),
+                "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", "NA")
+            }
+        except IndexError:
+            logs_info = {}
         log_info.writerow(logs_info)
         log_info_file.flush()
 
@@ -389,8 +392,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         # Record until recording time is finished or chargelevel drops below threshold
         while time.monotonic() < start_time + rec_time and chargelevel >= 10:
 
-            # Update PiJuice battery charge level (return "10" if not readable)
-            chargelevel = pijuice.status.GetChargeLevel().get("data", 10)
+            # Update PiJuice battery charge level (return "11" if not readable)
+            chargelevel = pijuice.status.GetChargeLevel().get("data", 11)
 
             # Get synchronized HQ frames + tracker output (passthrough detections)
             if q_frame.has():
@@ -408,7 +411,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         record_log()
 
         # Enable charging of PiJuice battery if charge level is lower than threshold
-        if chargelevel < 70:
+        if chargelevel < 80:
             pijuice.config.SetChargingConfig({"charging_enabled": True})
 
         # Shutdown Raspberry Pi
@@ -421,7 +424,7 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         record_log()
 
         # Enable charging of PiJuice battery if charge level is lower than threshold
-        if chargelevel < 70:
+        if chargelevel < 80:
             pijuice.config.SetChargingConfig({"charging_enabled": True})
 
         # Shutdown Raspberry Pi

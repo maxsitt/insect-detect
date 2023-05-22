@@ -147,10 +147,10 @@ nn.out.link(tracker.inputDetections)
 # Create script node and define inputs
 script = pipeline.create(dai.node.Script)
 script.setProcessor(dai.ProcessorType.LEON_CSS)
-tracker.out.link(script.inputs["tracker"]) # tracklets + passthrough detections
-script.inputs["tracker"].setBlocking(False)
 cam_rgb.video.link(script.inputs["frames"]) # HQ frames
 script.inputs["frames"].setBlocking(False)
+tracker.out.link(script.inputs["tracker"]) # tracklets + passthrough detections
+script.inputs["tracker"].setBlocking(False)
 
 # Set script that will be run on-device (Luxonis OAK)
 script.setScript('''

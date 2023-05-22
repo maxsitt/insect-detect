@@ -155,10 +155,10 @@ nn.out.link(tracker.inputDetections)
 # Create script node and define inputs
 script = pipeline.create(dai.node.Script)
 script.setProcessor(dai.ProcessorType.LEON_CSS)
-tracker.out.link(script.inputs["tracker"]) # tracklets + passthrough detections
-script.inputs["tracker"].setBlocking(False)
 cam_rgb.video.link(script.inputs["frames"]) # HQ frames
 script.inputs["frames"].setBlocking(False)
+tracker.out.link(script.inputs["tracker"]) # tracklets + passthrough detections
+script.inputs["tracker"].setBlocking(False)
 
 # Set script that will be run on-device (Luxonis OAK)
 script.setScript('''
@@ -326,8 +326,7 @@ def save_logs():
               encoding="utf-8") as log_info_file:
         log_info = csv.DictWriter(log_info_file, fieldnames=
             ["rec_ID", "timestamp", "temp_pi", "temp_oak", "pi_mem_available", "pi_cpu_used",
-             "power_input", "charge_status", "charge_level", "temp_batt", "voltage_batt_mV",
-             "current_batt_mA", "current_gpio_mA"])
+             "power_input", "charge_status", "charge_level", "temp_batt", "voltage_batt_mV"])
         if log_info_file.tell() == 0:
             log_info.writeheader()
         try:
@@ -346,9 +345,7 @@ def save_logs():
                 "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", "NA"),
                 "charge_level": chargelevel,
                 "temp_batt": pijuice.status.GetBatteryTemperature().get("data", "NA"),
-                "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", "NA"),
-                "current_batt_mA": pijuice.status.GetBatteryCurrent().get("data", "NA"),
-                "current_gpio_mA": pijuice.status.GetIoCurrent().get("data", "NA")
+                "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", "NA")
             }
         except IndexError:
             logs_info = {}

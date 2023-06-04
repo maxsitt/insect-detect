@@ -389,8 +389,8 @@ with dai.Device(pipeline, usb2Mode=True) as device:
         # Record until recording time is finished or chargelevel drops below threshold
         while time.monotonic() < start_time + rec_time and chargelevel >= 10:
 
-            # Update PiJuice battery charge level (return "11" if not readable)
-            chargelevel = pijuice.status.GetChargeLevel().get("data", 11)
+            # Update PiJuice battery charge level (return "99" if not readable)
+            chargelevel = pijuice.status.GetChargeLevel().get("data", 99)
 
             # Get synchronized HQ frames + tracker output (passthrough detections)
             if q_frame.has():

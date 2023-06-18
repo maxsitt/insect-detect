@@ -34,7 +34,7 @@ xout_rgb.setStreamName("frame")
 cam_rgb.preview.link(xout_rgb.input)
 
 # Connect to OAK device and start pipeline in USB2 mode
-with dai.Device(pipeline, usb2Mode=True) as device:
+with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue to get the frames from the output defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)

@@ -57,7 +57,7 @@ Path("insect-detect/data").mkdir(parents=True, exist_ok=True)
 
 # Create logger and write info + error messages to log file
 logging.basicConfig(filename="insect-detect/data/script_log.log", encoding="utf-8",
-                    format="%(asctime)s - %(levelname)s: %(message)s", level=logging.DEBUG)
+                    format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger()
 sys.stderr.write = logger.error
 
@@ -334,7 +334,7 @@ def save_logs():
         log_info_file.flush()
 
 # Connect to OAK device and start pipeline in USB2 mode
-with dai.Device(pipeline, usb2Mode=True) as device:
+with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Write RPi + OAK info to .csv log file at specified interval
     if args.save_logs:

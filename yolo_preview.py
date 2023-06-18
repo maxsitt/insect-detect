@@ -106,7 +106,7 @@ def print_logs():
     print(f"RPi CPU temperature:  {round(CPUTemperature().temperature)} °C\n")
 
 # Connect to OAK device and start pipeline in USB2 mode
-with dai.Device(pipeline, usb2Mode=True) as device:
+with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Print RPi + OAK info to console every second
     if args.print_logs:

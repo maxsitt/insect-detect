@@ -61,7 +61,7 @@ xout_vid.setStreamName("video")
 video_enc.bitstream.link(xout_vid.input)
 
 # Connect to OAK device and start pipeline
-with dai.Device(pipeline, usb2Mode=True) as device:
+with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue to get the encoded frames from the output defined above
     q_video = device.getOutputQueue(name="video", maxSize=30, blocking=True)

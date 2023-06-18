@@ -71,7 +71,7 @@ while True:
 script.outputs["capture_still"].link(cam_rgb.inputControl)
 
 # Connect to OAK device and start pipeline in USB2 mode
-with dai.Device(pipeline, usb2Mode=True) as device:
+with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue to get the encoded still frames from the output defined above
     q_still = device.getOutputQueue(name="still", maxSize=1, blocking=False)

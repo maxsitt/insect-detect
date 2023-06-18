@@ -65,7 +65,7 @@ if args.save_lq_frames:
     cam_rgb.preview.link(xout_lq.input) # LQ frame
 
 # Connect to OAK device and start pipeline in USB2 mode
-with dai.Device(pipeline, usb2Mode=True) as device:
+with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue(s) to get the frames from the output(s) defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)

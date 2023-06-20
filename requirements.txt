@@ -15,7 +15,7 @@ depthai==2.22.0.0 ; platform_machine != "armv6l"
 --extra-index-url https://artifacts.luxonis.com/artifactory/luxonis-python-release-local/
 depthai==2.20.2.0 ; platform_machine == "armv6l"
 
-opencv-python==4.6.0.66
+opencv-contrib-python==4.5.5.62
 numpy==1.25.0
 pandas==2.0.2
 psutil==5.9.5

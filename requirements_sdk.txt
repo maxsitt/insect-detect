@@ -15,10 +15,8 @@
 # python3 -m pip install --no-dependencies depthai-sdk==1.11.0
 
 -r requirements.txt
-opencv-contrib-python==4.5.5.62
 depthai-pipeline-graph==0.0.5
-PyTurboJPEG==1.7.1
-marshmallow==3.19.0
+PyTurboJPEG==1.6.4
+marshmallow==3.17.0
 xmltodict==0.13.0
-sentry-sdk==1.25.1
-requests==2.31.0
+requests==2.26.0

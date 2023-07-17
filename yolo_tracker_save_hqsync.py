@@ -15,7 +15,7 @@ This Python script does the following:
 - synchronize tracker output (+ passthrough detections) from inference on LQ frames
   with HQ frames (e.g. 1920x1080 px) on-device using the respective sequence numbers
 - create new folders for each day, recording interval and object class
-- save detections (bounding box area) cropped from HQ frames to .jpg
+- save detections (bounding box area) cropped from HQ frames to .jpg (1080p: ~12.5 fps)
 - save corresponding metadata from model + tracker output (time, label, confidence,
   tracking ID, relative bbox coordinates, .jpg file path) to "metadata_{timestamp}.csv"
 - duration of each recording interval conditional on PiJuice battery charge level
@@ -25,11 +25,13 @@ This Python script does the following:
   below the specified threshold or if an error occurs
 - optional arguments:
   "-4k" (default = 1080p) crop detections from (+ save HQ frames in) 4K resolution
-        -> will slow down pipeline and inference speed to ~3 fps (1080p: ~12 fps)
+        -> will slow down pipeline speed to ~3.4 fps (1080p: ~12.5 fps)
+  "-square" save cropped detections with aspect ratio 1:1
+            -> increase bbox size on both sides of the minimum dimension
   "-raw" additionally save HQ frames to .jpg (e.g. for training data collection)
-         -> will slow down pipeline and inference speed (4-5 fps)
+         -> will slow down pipeline speed to ~4.5 fps (4K sync: ~1.2 fps)
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
-             -> will slow down pipeline and inference speed (4-5 fps)
+             -> will slow down pipeline speed to ~4.5 fps (4K sync: ~1.2 fps)
   "-log" write RPi CPU + OAK chip temperature, RPi available memory (MB) +
          CPU utilization (%) and battery info to "info_log_{timestamp}.csv"
 
@@ -67,6 +69,8 @@ sys.stderr.write = logger.error
 parser = argparse.ArgumentParser()
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
     help="crop detections from (+ save HQ frames in) 4K resolution; default = 1080p")
+parser.add_argument("-square", "--square_bbox_crop", action="store_true",
+    help="save cropped detections with aspect ratio 1:1")
 parser.add_argument("-raw", "--save_raw_frames", action="store_true",
     help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
 parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
@@ -242,7 +246,16 @@ def store_data(frame, tracks):
                 # Save detections cropped from HQ frame to .jpg
                 bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
                                           track.srcImgDetection.xmax, track.srcImgDetection.ymax))
-                det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                if args.square_bbox_crop:
+                    bbox_width = bbox[2] - bbox[0]
+                    bbox_height = bbox[3] - bbox[1]
+                    bbox_diff = (max(bbox_width, bbox_height) - min(bbox_width, bbox_height)) // 2
+                    if bbox_width < bbox_height:
+                        det_crop = frame[bbox[1]:bbox[3], bbox[0] - bbox_diff:bbox[2] + bbox_diff]
+                    else:
+                        det_crop = frame[bbox[1] - bbox_diff:bbox[3] + bbox_diff, bbox[0]:bbox[2]]
+                else:
+                    det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
                 label = labels[track.srcImgDetection.label]
                 timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
                 crop_path = f"{save_path}/cropped/{label}/{timestamp}_{track.id}_crop.jpg"

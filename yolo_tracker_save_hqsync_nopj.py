@@ -243,9 +243,15 @@ def store_data(frame, tracks):
                     bbox_height = bbox[3] - bbox[1]
                     bbox_diff = (max(bbox_width, bbox_height) - min(bbox_width, bbox_height)) // 2
                     if bbox_width < bbox_height:
-                        det_crop = frame[bbox[1]:bbox[3], bbox[0] - bbox_diff:bbox[2] + bbox_diff]
+                        if bbox[0] - bbox_diff < 0:
+                            det_crop = frame[bbox[1]:bbox[3], 0:bbox[2] + (bbox_diff * 2)]
+                        else:
+                            det_crop = frame[bbox[1]:bbox[3], bbox[0] - bbox_diff:bbox[2] + bbox_diff]
                     else:
-                        det_crop = frame[bbox[1] - bbox_diff:bbox[3] + bbox_diff, bbox[0]:bbox[2]]
+                        if bbox[1] - bbox_diff < 0:
+                            det_crop = frame[0:bbox[3] + (bbox_diff * 2), bbox[0]:bbox[2]]
+                        else:
+                            det_crop = frame[bbox[1] - bbox_diff:bbox[3] + bbox_diff, bbox[0]:bbox[2]]
                 else:
                     det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
                 label = labels[track.srcImgDetection.label]

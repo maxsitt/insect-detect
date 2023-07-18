@@ -26,7 +26,8 @@ This Python script does the following:
   "-4k" (default = 1080p) crop detections from (+ save HQ frames in) 4K resolution
         -> will slow down pipeline speed to ~3.4 fps (1080p: ~12.5 fps)
   "-square" save cropped detections with aspect ratio 1:1
-            -> increase bbox size on both sides of the minimum dimension
+            -> increase bbox size on both sides of the minimum dimension,
+               or only on one side if object is localized at frame margin
   "-raw" additionally save HQ frames to .jpg (e.g. for training data collection)
          -> will slow down pipeline speed to ~4.5 fps (4K sync: ~1.2 fps)
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
@@ -213,6 +214,31 @@ def frame_norm(frame, bbox):
     norm_vals[::2] = frame.shape[1]
     return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
 
+def make_bbox_square(bbox):
+    """Increase bbox size on both sides of the minimum dimension, or only on one side if localized at frame margin."""
+    bbox_width = bbox[2] - bbox[0]
+    bbox_height = bbox[3] - bbox[1]
+    bbox_diff = (max(bbox_width, bbox_height) - min(bbox_width, bbox_height)) // 2
+    if bbox_width < bbox_height:
+        if bbox[0] - bbox_diff < 0:
+            det_crop = frame[bbox[1]:bbox[3], 0:bbox[2] + (bbox_diff * 2 - bbox[0])]
+        elif not args.four_k_resolution and bbox[2] + bbox_diff > 1920:
+            det_crop = frame[bbox[1]:bbox[3], bbox[0] - (bbox_diff * 2 - (1920 - bbox[2])):1920]
+        elif args.four_k_resolution and bbox[2] + bbox_diff > 3840:
+            det_crop = frame[bbox[1]:bbox[3], bbox[0] - (bbox_diff * 2 - (3840 - bbox[2])):3840]
+        else:
+            det_crop = frame[bbox[1]:bbox[3], bbox[0] - bbox_diff:bbox[2] + bbox_diff]
+    else:
+        if bbox[1] - bbox_diff < 0:
+            det_crop = frame[0:bbox[3] + (bbox_diff * 2 - bbox[1]), bbox[0]:bbox[2]]
+        elif not args.four_k_resolution and bbox[3] + bbox_diff > 1080:
+            det_crop = frame[bbox[1] - (bbox_diff * 2 - (1080 - bbox[3])):1080, bbox[0]:bbox[2]]
+        elif args.four_k_resolution and bbox[3] + bbox_diff > 2160:
+            det_crop = frame[bbox[1] - (bbox_diff * 2 - (2160 - bbox[3])):2160, bbox[0]:bbox[2]]
+        else:
+            det_crop = frame[bbox[1] - bbox_diff:bbox[3] + bbox_diff, bbox[0]:bbox[2]]
+    return det_crop
+
 def store_data(frame, tracks):
     """Save cropped detections (+ full HQ frames) to .jpg and tracker output to metadata .csv."""
     with open(f"{save_path}/metadata_{rec_start}.csv", "a", encoding="utf-8") as metadata_file:
@@ -239,19 +265,7 @@ def store_data(frame, tracks):
                 bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
                                           track.srcImgDetection.xmax, track.srcImgDetection.ymax))
                 if args.square_bbox_crop:
-                    bbox_width = bbox[2] - bbox[0]
-                    bbox_height = bbox[3] - bbox[1]
-                    bbox_diff = (max(bbox_width, bbox_height) - min(bbox_width, bbox_height)) // 2
-                    if bbox_width < bbox_height:
-                        if bbox[0] - bbox_diff < 0:
-                            det_crop = frame[bbox[1]:bbox[3], 0:bbox[2] + (bbox_diff * 2)]
-                        else:
-                            det_crop = frame[bbox[1]:bbox[3], bbox[0] - bbox_diff:bbox[2] + bbox_diff]
-                    else:
-                        if bbox[1] - bbox_diff < 0:
-                            det_crop = frame[0:bbox[3] + (bbox_diff * 2), bbox[0]:bbox[2]]
-                        else:
-                            det_crop = frame[bbox[1] - bbox_diff:bbox[3] + bbox_diff, bbox[0]:bbox[2]]
+                    det_crop = make_bbox_square(bbox)
                 else:
                     det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
                 label = labels[track.srcImgDetection.label]

@@ -395,12 +395,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         scheduler.add_job(save_logs, "interval", seconds=30, id="log")
         scheduler.start()
 
-    # Create output queues to get the frames and tracklets + detections from the outputs defined above
-    q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
-    q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
-
-    # Create start_time variable to set recording time + chargelevel variable
-    start_time = time.monotonic()
+    # Create empty list to save charge level (if < 10) and set charge level
+    lst_chargelevel = []
     chargelevel = chargelevel_start
 
     # Set recording time conditional on PiJuice battery charge level
@@ -418,12 +414,21 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     # Write info on start of recording to log file
     logger.info(f"Rec ID: {rec_id} | Rec time: {int(rec_time / 60)} min | Charge level: {chargelevel}%")
 
-    try:
-        # Record until recording time is finished or chargelevel drops below threshold
-        while time.monotonic() < start_time + rec_time and chargelevel >= 10:
+    # Create output queues to get the frames and tracklets + detections from the outputs defined above
+    q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
+    q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-            # Update PiJuice battery charge level (return "99" if not readable)
+    # Set start time of recording
+    start_time = time.monotonic()
+
+    try:
+        # Record until recording time is finished or charge level dropped below threshold for 10 times
+        while time.monotonic() < start_time + rec_time and len(lst_chargelevel) < 10:
+
+            # Update charge level (return "99" if not readable and write to list if < 10)
             chargelevel = pijuice.status.GetChargeLevel().get("data", 99)
+            if chargelevel < 10:
+                lst_chargelevel.append(chargelevel)
 
             # Get synchronized HQ frames + tracker output (passthrough detections)
             if q_frame.has():
@@ -432,9 +437,11 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
                 if q_track.has():
                     tracks = q_track.get().tracklets
 
-                    # Save cropped detections every second (slower if saving additional HQ frames)
+                    # Save cropped detections (slower if saving additional HQ frames)
                     store_data(frame, tracks)
-                    time.sleep(1)
+
+            # Wait for 1 second
+            time.sleep(1)
 
         # Write info on end of recording to log file and write record logs to .csv
         logger.info(f"Recording {rec_id} finished | Charge level: {chargelevel}%\n")

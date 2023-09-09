@@ -24,11 +24,13 @@ This Python script does the following:
   and safely shut down RPi after recording interval is finished or if charge level drops
   below the specified threshold or if an error occurs
 - optional arguments:
-  "-4k" (default = 1080p) crop detections from (+ save HQ frames in) 4K resolution
+  "-4k" crop detections from (+ save HQ frames in) 4K resolution (default = 1080p)
         -> will slow down pipeline speed to ~3.4 fps (1080p: ~12.5 fps)
-  "-square" save cropped detections with aspect ratio 1:1
-            -> increase bbox size on both sides of the minimum dimension,
-               or only on one side if object is localized at frame margin
+  "-crop [square, tight]" save cropped detections with aspect ratio 1:1 ("-crop square") or
+                          keep original bbox size with variable aspect ratio ("-crop tight")
+                          -> "-crop square" increases bbox size on both sides of the minimum
+                             dimension, or only on one side if object is localized at frame
+                             margin. default + recommended: increases classification accuracy
   "-raw" additionally save HQ frames to .jpg (e.g. for training data collection)
          -> will slow down pipeline speed to ~4.5 fps (4K sync: ~1.2 fps)
   "-overlay" additionally save HQ frames with overlay (bbox + info) to .jpg
@@ -70,8 +72,9 @@ sys.stderr.write = logger.error
 parser = argparse.ArgumentParser()
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
     help="crop detections from (+ save HQ frames in) 4K resolution; default = 1080p")
-parser.add_argument("-square", "--square_bbox_crop", action="store_true",
-    help="save cropped detections with aspect ratio 1:1")
+parser.add_argument("-crop", "--crop_bbox", choices=["square", "tight"], default="square", type=str,
+    help="save cropped detections with aspect ratio 1:1 ('-crop square') or \
+          keep original bbox size with variable aspect ratio ('-crop tight')")
 parser.add_argument("-raw", "--save_raw_frames", action="store_true",
     help="additionally save full raw HQ frames in separate folder (e.g. for training data)")
 parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
@@ -272,7 +275,7 @@ def store_data(frame, tracks):
                 # Save detections cropped from HQ frame to .jpg
                 bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
                                           track.srcImgDetection.xmax, track.srcImgDetection.ymax))
-                if args.square_bbox_crop:
+                if args.crop_bbox == "square":
                     det_crop = make_bbox_square(bbox)
                 else:
                     det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]

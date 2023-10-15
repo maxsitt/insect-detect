@@ -11,10 +11,10 @@
 # Install packages with:
 # python3 -m pip install -r requirements.txt
 
-depthai==2.22.0.0
+depthai==2.23.0.0
 opencv-contrib-python==4.5.5.62
-numpy==1.25.0
-pandas==2.0.2
+numpy==1.25.2
+pandas==2.1.1
 psutil==5.9.5
-APScheduler==3.10.1
+APScheduler==3.10.4
 av==10.0.0

@@ -114,6 +114,6 @@ All Python scripts are licensed under the GNU General Public License v3.0
 You can cite this repository as:
 
 ```
-Sittinger, M. (2022). Insect Detect - Software for automated insect monitoring
+Sittinger, M. (2023). Insect Detect - Software for automated insect monitoring
 with a DIY camera trap system (v1.6). Zenodo. https://doi.org/10.5281/zenodo.7472238
 ```

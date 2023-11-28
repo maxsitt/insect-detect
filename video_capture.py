@@ -37,8 +37,23 @@ parser.add_argument("-fps", "--frames_per_second", type=int, choices=range(1, 31
     help="set frame rate (frames per second) for video capture")
 args = parser.parse_args()
 
+# Get recording time in min from optional argument (default: 2)
+rec_time = args.min_rec_time * 60
+print(f"\nRecording time: {args.min_rec_time} min\n")
+
 # Get frame rate (frames per second) from optional argument (default: 25)
 FPS = args.frames_per_second
+
+# Set video resolution
+if args.four_k_resolution:
+    RES = "4K"
+else:
+    RES = "1080p"
+
+# Create folder to save the videos
+rec_start = datetime.now().strftime("%Y%m%d")
+save_path = f"insect-detect/videos/{rec_start}"
+Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
 
 # Create depthai pipeline
 pipeline = dai.Pipeline()
@@ -66,34 +81,23 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     # Create output queue to get the encoded frames from the output defined above
     q_video = device.getOutputQueue(name="video", maxSize=30, blocking=True)
 
-    # Create folder to save the videos
-    rec_start = datetime.now().strftime("%Y%m%d")
-    save_path = f"insect-detect/videos/{rec_start}"
-    Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
-
     # Create .mp4 container with H.265 (HEVC) compression
     timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S")
-    RES = "1080p"
-    if args.four_k_resolution:
-        RES = "4K"
     with av.open(f"{save_path}/{timestamp}_{FPS}fps_{RES}_video.mp4", "w") as container:
         stream = container.add_stream("hevc", rate=FPS)
         stream.time_base = Fraction(1, 1000 * 1000)
-        stream.width = 1920
-        stream.height = 1080
         if args.four_k_resolution:
             stream.width = 3840
             stream.height = 2160
-
-    # Create start_time variable to set recording time
-    start_time = time.monotonic()
-
-    # Get recording time in min from optional argument (default: 2)
-    rec_time = args.min_rec_time * 60
-    print(f"Recording time: {args.min_rec_time} min\n")
+        else:
+            stream.width = 1920
+            stream.height = 1080
 
     # Get free disk space (MB)
     disk_free = round(psutil.disk_usage("/").free / 1048576)
+
+    # Create start_time variable to set recording time
+    start_time = time.monotonic()
 
     # Record until recording time is finished or free disk space drops below threshold
     while time.monotonic() < start_time + rec_time and disk_free > 200:
@@ -110,9 +114,6 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         # Mux packet into the .mp4 container
         container.mux_one(packet)
 
-# Print duration, fps and path of saved video + free disk space to console
-if args.four_k_resolution:
-    print(f"\nSaved {args.min_rec_time} min 4K video with {args.frames_per_second} fps to {save_path}.")
-else:
-    print(f"\nSaved {args.min_rec_time} min 1080p video with {args.frames_per_second} fps to {save_path}.")
-print(f"Free disk space left: {disk_free} MB")
+# Print duration, resolution, fps and path of saved video + free disk space to console
+print(f"\nSaved {args.min_rec_time} min {RES} video with {FPS} fps to {save_path}.")
+print(f"\nFree disk space left: {disk_free} MB")

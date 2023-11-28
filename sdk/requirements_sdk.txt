@@ -8,15 +8,25 @@
 # If you are using Raspberry Pi Zero W (v1.1), install libusb-1.0 with:
 # sudo apt-get install libusb-1.0-0-dev
 
-# Install packages with:
-# python3 -m pip install -r requirements_sdk.txt
+# Install the required packages with:
+# python3 -m pip install -r insect-detect/sdk/requirements_sdk.txt
 
-# After installing these packages, install the depthai-sdk with:
-# python3 -m pip install --no-dependencies depthai-sdk==1.11.0
+# After installing these packages, install the depthai-sdk package with:
+# python3 -m pip install --no-dependencies depthai-sdk==1.13.1
 
--r requirements.txt
+depthai==2.23.0.0
 depthai-pipeline-graph==0.0.5
-PyTurboJPEG==1.6.4
-marshmallow==3.17.0
+opencv-python==4.6.0.66
+numpy==1.25.2
+psutil==5.9.6
+av==10.0.0
+PyTurboJPEG==1.7.2
+marshmallow==3.20.1
 xmltodict==0.13.0
-requests==2.26.0
+Qt.py==1.3.7
+types-pyside2==5.15.2.1.6
+PyYAML==6.0.1
+jmespath==1.0.1
+six==1.16.0
+requests==2.31.0
+AHRS==0.3.1

@@ -8,8 +8,8 @@
 # If you are using Raspberry Pi Zero W (v1.1), install libusb-1.0 with:
 # sudo apt-get install libusb-1.0-0-dev
 
-# Install packages with:
-# python3 -m pip install -r requirements.txt
+# Install the required packages with:
+# python3 -m pip install -r insect-detect/requirements.txt
 
 depthai==2.23.0.0
 opencv-python==4.6.0.66

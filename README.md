@@ -24,6 +24,9 @@ open source software and can be easily assembled and set up with the
 
 ## Installation
 
+Please make sure that you followed [all steps](https://maxsitt.github.io/insect-detect-docs/software/pisetup/)
+to set up your Raspberry Pi before using the OAK-1 camera.
+
 Install the required dependencies for Raspberry Pi + OAK by running:
 
 ```
@@ -33,11 +36,8 @@ sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
 Install the required packages by running:
 
 ```
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r insect-detect/requirements.txt
 ```
-
-Please make sure that you followed [all steps](https://maxsitt.github.io/insect-detect-docs/software/pisetup/)
-to set up your Raspberry Pi before using the OAK-1 camera.
 
 Check out the [**Programming**](https://maxsitt.github.io/insect-detect-docs/software/programming/)
 section for more details about the scripts and tips on possible software modifications.

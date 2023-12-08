@@ -4,6 +4,7 @@
 
 [![DOI](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://choosealicense.com/licenses/gpl-3.0/)
+[![DOI bioRxiv](https://img.shields.io/badge/bioRxiv-10.1101%2F2023.12.05.570242-B31B1B)](https://doi.org/10.1101/2023.12.05.570242)
 
 # DepthAI SDK
 

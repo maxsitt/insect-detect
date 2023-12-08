@@ -112,6 +112,13 @@ All Python scripts are licensed under the GNU General Public License v3.0
 
 ## Citation
 
+You can cite this project as:
+
+```
+Sittinger, M., Uhler, J., Pink, M. & Herz, A. (2023). Insect Detect: An open-source DIY camera trap
+for automated insect monitoring [Preprint]. bioRxiv. https://doi.org/10.1101/2023.12.05.570242
+```
+
 You can cite this repository as:
 
 ```

@@ -5,6 +5,9 @@
 # First, install the dependencies for Raspberry Pi + OAK with:
 # sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
 
+# Install the package libopenblas-dev (required for latest numpy version):
+# sudo apt-get install libopenblas-dev
+
 # If you are using Raspberry Pi Zero W (v1.1), install libusb-1.0 with:
 # sudo apt-get install libusb-1.0-0-dev
 
@@ -14,11 +17,11 @@
 # After installing these packages, install the depthai-sdk package with:
 # python3 -m pip install --no-dependencies depthai-sdk==1.13.1
 
-depthai==2.23.0.0
+depthai==2.24.0.0
 depthai-pipeline-graph==0.0.5
 opencv-python==4.6.0.66
-numpy==1.25.2
-psutil==5.9.6
+numpy==1.26.3
+psutil==5.9.8
 av==10.0.0
 PyTurboJPEG==1.7.2
 marshmallow==3.20.1

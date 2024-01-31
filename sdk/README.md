@@ -27,6 +27,12 @@ Install the required dependencies for Raspberry Pi + OAK by running:
 sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
 ```
 
+Install the package libopenblas-dev (required for latest numpy version):
+
+```
+sudo apt-get install libopenblas-dev
+```
+
 Install the python3-venv package:
 
 ```

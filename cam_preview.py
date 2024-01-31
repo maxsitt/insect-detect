@@ -58,14 +58,15 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Get LQ frames and show in new window together with fps
     while True:
-        frame = q_frame.get().getCvFrame()
+        if q_frame.has():
+            frame = q_frame.get().getCvFrame()
 
-        counter += 1
-        fps = round(counter / (time.monotonic() - start_time), 2)
+            counter += 1
+            fps = round(counter / (time.monotonic() - start_time), 2)
 
-        cv2.putText(frame, f"fps: {fps}", (4, frame.shape[0] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.imshow("cam_preview", frame)
+            cv2.putText(frame, f"fps: {fps}", (4, frame.shape[0] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.imshow("cam_preview", frame)
 
         # Stop script and close window by pressing "Q"
         if cv2.waitKey(1) == ord("q"):

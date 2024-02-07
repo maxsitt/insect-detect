@@ -1,0 +1,4163 @@
+2023-10-12 19:04:20,886 - ERROR: usage: yolo_tracker_save_hqsync.py [-h] [-4k] [-crop {square,tight}] [-raw] [-overlay] [-log]
+
+2023-10-12 19:04:20,887 - ERROR: yolo_tracker_save_hqsync.py: error: argument -crop/--crop_bbox: expected one argument
+
+2023-10-12 19:09:46,031 - ERROR: Traceback (most recent call last):
+
+2023-10-12 19:09:46,058 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 390, in <module>
+
+2023-10-12 19:09:46,074 - ERROR:     
+2023-10-12 19:09:46,074 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-10-12 19:09:46,075 - ERROR: 
+
+2023-10-12 19:09:46,075 - ERROR: RuntimeError
+2023-10-12 19:09:46,076 - ERROR: : 
+2023-10-12 19:09:46,077 - ERROR: Failed to find device after booting, error message: X_LINK_DEVICE_NOT_FOUND
+2023-10-12 19:09:46,077 - ERROR: 
+
+2023-10-12 19:14:48,568 - INFO: Shut down without recording | Charge level: 0%
+
+2023-10-12 19:16:51,508 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 99%
+2023-10-12 19:19:11,569 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 99%
+2023-10-12 19:19:45,217 - ERROR: Traceback (most recent call last):
+
+2023-10-12 19:19:45,236 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-12 19:19:45,267 - ERROR:     
+2023-10-12 19:19:45,268 - ERROR: time.sleep(1)
+2023-10-12 19:19:45,269 - ERROR: 
+
+2023-10-12 19:19:45,277 - ERROR: KeyboardInterrupt
+2023-10-12 19:19:45,277 - ERROR: 
+2023-10-12 19:19:45,278 - ERROR: 
+
+2023-10-14 17:40:54,926 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 94%
+2023-10-14 17:41:59,898 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 94%
+2023-10-14 17:42:13,175 - ERROR: Traceback (most recent call last):
+
+2023-10-14 17:42:13,186 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 17:42:13,217 - ERROR:     
+2023-10-14 17:42:13,218 - ERROR: time.sleep(1)
+2023-10-14 17:42:13,218 - ERROR: 
+
+2023-10-14 17:42:13,218 - ERROR: KeyboardInterrupt
+2023-10-14 17:42:13,218 - ERROR: 
+2023-10-14 17:42:13,219 - ERROR: 
+
+2023-10-14 17:44:06,609 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 95%
+2023-10-14 17:45:38,718 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 95%
+2023-10-14 17:45:44,571 - ERROR: Traceback (most recent call last):
+
+2023-10-14 17:45:44,707 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 17:45:44,752 - ERROR:     
+2023-10-14 17:45:44,753 - ERROR: time.sleep(1)
+2023-10-14 17:45:44,753 - ERROR: 
+
+2023-10-14 17:45:44,754 - ERROR: KeyboardInterrupt
+2023-10-14 17:45:44,754 - ERROR: 
+2023-10-14 17:45:44,754 - ERROR: 
+
+2023-10-14 17:47:07,632 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 95%
+2023-10-14 17:47:38,937 - ERROR: Traceback (most recent call last):
+
+2023-10-14 17:47:38,968 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 17:47:38,988 - ERROR:     
+2023-10-14 17:47:38,989 - ERROR: time.sleep(1)
+2023-10-14 17:47:38,989 - ERROR: 
+
+2023-10-14 17:47:38,990 - ERROR: KeyboardInterrupt
+2023-10-14 17:47:38,990 - ERROR: 
+2023-10-14 17:47:38,990 - ERROR: 
+
+2023-10-14 17:48:32,094 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 95%
+2023-10-14 17:48:53,877 - ERROR: Traceback (most recent call last):
+
+2023-10-14 17:48:53,914 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 17:48:53,952 - ERROR:     
+2023-10-14 17:48:53,953 - ERROR: time.sleep(1)
+2023-10-14 17:48:53,953 - ERROR: 
+
+2023-10-14 17:48:53,954 - ERROR: KeyboardInterrupt
+2023-10-14 17:48:53,954 - ERROR: 
+2023-10-14 17:48:53,955 - ERROR: 
+
+2023-10-14 17:50:14,163 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 96%
+2023-10-14 17:50:21,311 - ERROR: Traceback (most recent call last):
+
+2023-10-14 17:50:21,347 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 17:50:21,369 - ERROR:     
+2023-10-14 17:50:21,370 - ERROR: time.sleep(1)
+2023-10-14 17:50:21,370 - ERROR: 
+
+2023-10-14 17:50:21,371 - ERROR: KeyboardInterrupt
+2023-10-14 17:50:21,371 - ERROR: 
+2023-10-14 17:50:21,371 - ERROR: 
+
+2023-10-14 17:51:00,116 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 96%
+2023-10-14 17:51:59,223 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 96%
+2023-10-14 17:52:37,069 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 96%
+2023-10-14 17:53:17,002 - ERROR: Traceback (most recent call last):
+
+2023-10-14 17:53:17,061 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 17:53:17,087 - ERROR:     
+2023-10-14 17:53:17,088 - ERROR: time.sleep(1)
+2023-10-14 17:53:17,089 - ERROR: 
+
+2023-10-14 17:53:17,089 - ERROR: KeyboardInterrupt
+2023-10-14 17:53:17,090 - ERROR: 
+2023-10-14 17:53:17,090 - ERROR: 
+
+2023-10-14 18:01:07,289 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 97%
+2023-10-14 18:01:38,417 - ERROR: Traceback (most recent call last):
+
+2023-10-14 18:01:38,453 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 442, in <module>
+
+2023-10-14 18:01:38,476 - ERROR:     
+2023-10-14 18:01:38,477 - ERROR: store_data(frame, tracks)
+2023-10-14 18:01:38,477 - ERROR: 
+
+2023-10-14 18:01:38,478 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 253, in store_data
+
+2023-10-14 18:01:38,480 - ERROR:     
+2023-10-14 18:01:38,480 - ERROR: with open(f"{save_path}/metadata_{rec_start}.csv", "a", encoding="utf-8") as metadata_file:
+2023-10-14 18:01:38,481 - ERROR: 
+
+2023-10-14 18:01:38,481 - ERROR:   File "/usr/lib/python3.9/codecs.py", line 186, in __init__
+
+2023-10-14 18:01:38,493 - ERROR:     
+2023-10-14 18:01:38,494 - ERROR: def __init__(self, errors='strict'):
+2023-10-14 18:01:38,494 - ERROR: 
+
+2023-10-14 18:01:38,495 - ERROR: KeyboardInterrupt
+2023-10-14 18:01:38,496 - ERROR: 
+2023-10-14 18:01:38,496 - ERROR: 
+
+2023-10-14 18:02:44,647 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 97%
+2023-10-14 18:09:31,974 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 93%
+2023-10-14 18:10:06,320 - ERROR: Traceback (most recent call last):
+
+2023-10-14 18:10:06,375 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 438, in <module>
+
+2023-10-14 18:10:06,389 - ERROR:     
+2023-10-14 18:10:06,389 - ERROR: if q_track.has():
+2023-10-14 18:10:06,390 - ERROR: 
+
+2023-10-14 18:10:06,390 - ERROR: KeyboardInterrupt
+2023-10-14 18:10:06,390 - ERROR: 
+2023-10-14 18:10:06,391 - ERROR: 
+
+2023-10-14 18:11:36,494 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 93%
+2023-10-14 18:12:13,985 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 93%
+2023-10-14 18:12:37,405 - ERROR: Traceback (most recent call last):
+
+2023-10-14 18:12:37,408 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 18:12:37,449 - ERROR:     
+2023-10-14 18:12:37,450 - ERROR: time.sleep(1)
+2023-10-14 18:12:37,450 - ERROR: 
+
+2023-10-14 18:12:37,450 - ERROR: KeyboardInterrupt
+2023-10-14 18:12:37,451 - ERROR: 
+2023-10-14 18:12:37,451 - ERROR: 
+
+2023-10-14 18:13:38,978 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 92%
+2023-10-14 18:13:59,007 - ERROR: Traceback (most recent call last):
+
+2023-10-14 18:13:59,034 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 18:13:59,058 - ERROR:     
+2023-10-14 18:13:59,059 - ERROR: time.sleep(1)
+2023-10-14 18:13:59,059 - ERROR: 
+
+2023-10-14 18:13:59,060 - ERROR: KeyboardInterrupt
+2023-10-14 18:13:59,060 - ERROR: 
+2023-10-14 18:13:59,061 - ERROR: 
+
+2023-10-14 18:14:49,161 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 92%
+2023-10-14 18:15:22,540 - ERROR: Traceback (most recent call last):
+
+2023-10-14 18:15:22,564 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 445, in <module>
+
+2023-10-14 18:15:22,588 - ERROR:     
+2023-10-14 18:15:22,589 - ERROR: time.sleep(1)
+2023-10-14 18:15:22,589 - ERROR: 
+
+2023-10-14 18:15:22,589 - ERROR: KeyboardInterrupt
+2023-10-14 18:15:22,589 - ERROR: 
+2023-10-14 18:15:22,590 - ERROR: 
+
+2023-10-16 00:29:29,151 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 95%
+2023-10-16 00:59:19,280 - ERROR: Traceback (most recent call last):
+
+2023-10-16 00:59:19,281 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 00:59:19,284 - ERROR:     
+2023-10-16 00:59:19,285 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 00:59:19,285 - ERROR: 
+
+2023-10-16 00:59:19,285 - ERROR: AttributeError
+2023-10-16 00:59:19,285 - ERROR: : 
+2023-10-16 00:59:19,286 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 00:59:19,286 - ERROR: 
+
+2023-10-16 01:00:19,791 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:00:19,793 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 01:00:19,796 - ERROR:     
+2023-10-16 01:00:19,796 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 01:00:19,797 - ERROR: 
+
+2023-10-16 01:00:19,797 - ERROR: AttributeError
+2023-10-16 01:00:19,797 - ERROR: : 
+2023-10-16 01:00:19,797 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 01:00:19,798 - ERROR: 
+
+2023-10-16 01:02:17,893 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:02:17,898 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 01:02:17,901 - ERROR:     
+2023-10-16 01:02:17,901 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 01:02:17,902 - ERROR: 
+
+2023-10-16 01:02:17,902 - ERROR: AttributeError
+2023-10-16 01:02:17,902 - ERROR: : 
+2023-10-16 01:02:17,903 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 01:02:17,903 - ERROR: 
+
+2023-10-16 01:06:04,012 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:06:04,013 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 01:06:04,017 - ERROR:     
+2023-10-16 01:06:04,017 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 01:06:04,017 - ERROR: 
+
+2023-10-16 01:06:04,018 - ERROR: AttributeError
+2023-10-16 01:06:04,018 - ERROR: : 
+2023-10-16 01:06:04,018 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 01:06:04,019 - ERROR: 
+
+2023-10-16 01:07:15,532 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:07:15,533 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 01:07:15,535 - ERROR:     
+2023-10-16 01:07:15,536 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 01:07:15,536 - ERROR: 
+
+2023-10-16 01:07:15,536 - ERROR: AttributeError
+2023-10-16 01:07:15,537 - ERROR: : 
+2023-10-16 01:07:15,537 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 01:07:15,537 - ERROR: 
+
+2023-10-16 01:07:55,204 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:07:55,212 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 01:07:55,214 - ERROR:     
+2023-10-16 01:07:55,215 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 01:07:55,215 - ERROR: 
+
+2023-10-16 01:07:55,215 - ERROR: AttributeError
+2023-10-16 01:07:55,215 - ERROR: : 
+2023-10-16 01:07:55,216 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 01:07:55,216 - ERROR: 
+
+2023-10-16 01:09:27,754 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:09:27,755 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 130, in <module>
+
+2023-10-16 01:09:27,758 - ERROR:     
+2023-10-16 01:09:27,758 - ERROR: cam_rgb.setManualExposureTime(20000)  # in microseconds
+2023-10-16 01:09:27,758 - ERROR: 
+
+2023-10-16 01:09:27,759 - ERROR: AttributeError
+2023-10-16 01:09:27,759 - ERROR: : 
+2023-10-16 01:09:27,759 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setManualExposureTime'
+2023-10-16 01:09:27,759 - ERROR: 
+
+2023-10-16 01:11:04,204 - ERROR: 
+
+2023-10-16 01:14:22,812 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 95%
+2023-10-16 01:14:54,120 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:14:54,142 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 448, in <module>
+
+2023-10-16 01:14:54,167 - ERROR:     
+2023-10-16 01:14:54,169 - ERROR: time.sleep(1)
+2023-10-16 01:14:54,170 - ERROR: 
+
+2023-10-16 01:14:54,171 - ERROR: KeyboardInterrupt
+2023-10-16 01:14:54,172 - ERROR: 
+2023-10-16 01:14:54,173 - ERROR: 
+
+2023-10-16 01:15:50,559 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 95%
+2023-10-16 01:20:16,562 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 94%
+2023-10-16 01:21:12,278 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:21:12,299 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 448, in <module>
+
+2023-10-16 01:21:12,344 - ERROR:     
+2023-10-16 01:21:12,344 - ERROR: time.sleep(1)
+2023-10-16 01:21:12,345 - ERROR: 
+
+2023-10-16 01:21:12,346 - ERROR: KeyboardInterrupt
+2023-10-16 01:21:12,346 - ERROR: 
+2023-10-16 01:21:12,346 - ERROR: 
+
+2023-10-16 01:23:29,230 - ERROR: usage: yolo_tracker_save_hqsync.py [-h] [-4k] [-crop {square,tight}] [-raw] [-overlay] [-log]
+
+2023-10-16 01:23:29,248 - ERROR: yolo_tracker_save_hqsync.py: error: argument -crop/--crop_bbox: expected one argument
+
+2023-10-16 01:40:38,862 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 88%
+2023-10-16 01:41:14,016 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:41:14,063 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 439, in <module>
+
+2023-10-16 01:41:14,091 - ERROR:     
+2023-10-16 01:41:14,092 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-16 01:41:14,093 - ERROR: 
+
+2023-10-16 01:41:14,094 - ERROR: KeyboardInterrupt
+2023-10-16 01:41:14,095 - ERROR: 
+2023-10-16 01:41:14,096 - ERROR: 
+
+2023-10-16 01:41:14,097 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2023-10-16 01:41:14,099 - ERROR: Traceback (most recent call last):
+
+2023-10-16 01:41:14,100 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 472, in <module>
+
+2023-10-16 01:41:14,107 - ERROR:     
+2023-10-16 01:41:14,108 - ERROR: subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+2023-10-16 01:41:14,114 - ERROR: 
+
+2023-10-16 01:41:14,115 - ERROR: KeyboardInterrupt
+2023-10-16 01:41:14,115 - ERROR: 
+2023-10-16 01:41:14,115 - ERROR: 
+
+2023-10-16 01:42:32,777 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 88%
+2023-10-16 01:46:37,492 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 88%
+2023-10-16 02:01:28,830 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 88%
+2023-10-16 02:01:39,098 - ERROR: Traceback (most recent call last):
+
+2023-10-16 02:01:39,113 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 448, in <module>
+
+2023-10-16 02:01:39,164 - ERROR:     
+2023-10-16 02:01:39,165 - ERROR: time.sleep(1)
+2023-10-16 02:01:39,166 - ERROR: 
+
+2023-10-16 02:01:39,166 - ERROR: KeyboardInterrupt
+2023-10-16 02:01:39,166 - ERROR: 
+2023-10-16 02:01:39,166 - ERROR: 
+
+2023-10-16 02:02:30,648 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 88%
+2023-10-16 02:03:52,628 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 88%
+2023-10-16 02:04:03,430 - ERROR: Traceback (most recent call last):
+
+2023-10-16 02:04:03,467 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 448, in <module>
+
+2023-10-16 02:04:03,498 - ERROR:     
+2023-10-16 02:04:03,498 - ERROR: time.sleep(1)
+2023-10-16 02:04:03,499 - ERROR: 
+
+2023-10-16 02:04:03,499 - ERROR: KeyboardInterrupt
+2023-10-16 02:04:03,500 - ERROR: 
+2023-10-16 02:04:03,500 - ERROR: 
+
+2023-10-16 13:02:03,009 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 88%
+2023-10-16 13:02:48,074 - ERROR: Traceback (most recent call last):
+
+2023-10-16 13:02:48,075 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 448, in <module>
+
+2023-10-16 13:02:48,078 - ERROR:     
+2023-10-16 13:02:48,079 - ERROR: time.sleep(1)
+2023-10-16 13:02:48,079 - ERROR: 
+
+2023-10-16 13:02:48,079 - ERROR: KeyboardInterrupt
+2023-10-16 13:02:48,079 - ERROR: 
+2023-10-16 13:02:48,080 - ERROR: 
+
+2023-10-16 13:04:18,257 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 87%
+2023-10-16 13:04:40,394 - ERROR: Traceback (most recent call last):
+
+2023-10-16 13:04:40,395 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 448, in <module>
+
+2023-10-16 13:04:40,400 - ERROR:     
+2023-10-16 13:04:40,401 - ERROR: time.sleep(1)
+2023-10-16 13:04:40,401 - ERROR: 
+
+2023-10-16 13:04:40,401 - ERROR: KeyboardInterrupt
+2023-10-16 13:04:40,402 - ERROR: 
+2023-10-16 13:04:40,402 - ERROR: 
+
+2023-10-16 13:46:33,178 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 83%
+2023-10-16 13:49:43,547 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 83%
+2023-10-16 13:59:21,049 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 82%
+2023-10-16 13:59:42,204 - ERROR: Traceback (most recent call last):
+
+2023-10-16 13:59:42,204 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 459, in <module>
+
+2023-10-16 13:59:42,208 - ERROR:     
+2023-10-16 13:59:42,209 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-16 13:59:42,209 - ERROR: 
+
+2023-10-16 13:59:42,209 - ERROR: KeyboardInterrupt
+2023-10-16 13:59:42,210 - ERROR: 
+2023-10-16 13:59:42,210 - ERROR: 
+
+2023-10-16 14:02:33,547 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 82%
+2023-10-16 14:05:35,581 - ERROR: Traceback (most recent call last):
+
+2023-10-16 14:05:35,687 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 458, in <module>
+
+2023-10-16 14:05:35,715 - ERROR:     
+2023-10-16 14:05:35,715 - ERROR: if q_frame.has():
+2023-10-16 14:05:35,716 - ERROR: 
+
+2023-10-16 14:05:35,716 - ERROR: RuntimeError
+2023-10-16 14:05:35,717 - ERROR: : 
+2023-10-16 14:05:35,718 - ERROR: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+2023-10-16 14:05:35,718 - ERROR: 
+
+2023-10-16 14:05:35,718 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2023-10-16 14:05:35,719 - ERROR: Traceback (most recent call last):
+
+2023-10-16 14:05:35,719 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 458, in <module>
+
+2023-10-16 14:05:35,721 - ERROR:     
+2023-10-16 14:05:35,722 - ERROR: if q_frame.has():
+2023-10-16 14:05:35,722 - ERROR: 
+
+2023-10-16 14:05:35,722 - ERROR: KeyboardInterrupt
+2023-10-16 14:05:35,723 - ERROR: 
+2023-10-16 14:05:35,723 - ERROR: 
+
+2023-10-16 14:22:16,074 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 85%
+2023-10-16 14:23:02,393 - ERROR: Traceback (most recent call last):
+
+2023-10-16 14:23:02,421 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 465, in <module>
+
+2023-10-16 14:23:02,435 - ERROR:     
+2023-10-16 14:23:02,435 - ERROR: store_data(frame, tracks)
+2023-10-16 14:23:02,436 - ERROR: 
+
+2023-10-16 14:23:02,436 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 298, in store_data
+
+2023-10-16 14:23:02,437 - ERROR:     
+2023-10-16 14:23:02,438 - ERROR: with open(latest_images[track.id], 'rb') as f:
+2023-10-16 14:23:02,438 - ERROR: 
+
+2023-10-16 14:23:02,438 - ERROR: KeyboardInterrupt
+2023-10-16 14:23:02,439 - ERROR: 
+2023-10-16 14:23:02,439 - ERROR: 
+
+2023-10-16 14:25:58,029 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 85%
+2023-10-16 14:26:16,828 - ERROR: Traceback (most recent call last):
+
+2023-10-16 14:26:16,833 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 468, in <module>
+
+2023-10-16 14:26:16,842 - ERROR:     
+2023-10-16 14:26:16,842 - ERROR: time.sleep(1)
+2023-10-16 14:26:16,843 - ERROR: 
+
+2023-10-16 14:26:16,843 - ERROR: KeyboardInterrupt
+2023-10-16 14:26:16,843 - ERROR: 
+2023-10-16 14:26:16,843 - ERROR: 
+
+2023-10-16 14:27:24,990 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 84%
+2023-10-16 14:42:23,662 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 82%
+2023-10-16 14:47:41,585 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 81%
+2023-10-16 14:47:59,097 - ERROR: Traceback (most recent call last):
+
+2023-10-16 14:47:59,142 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 468, in <module>
+
+2023-10-16 14:47:59,165 - ERROR:     
+2023-10-16 14:47:59,166 - ERROR: time.sleep(1)
+2023-10-16 14:47:59,167 - ERROR: 
+
+2023-10-16 14:47:59,169 - ERROR: KeyboardInterrupt
+2023-10-16 14:47:59,170 - ERROR: 
+2023-10-16 14:47:59,170 - ERROR: 
+
+2023-10-16 14:55:06,679 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 81%
+2023-10-16 14:55:22,586 - ERROR: Traceback (most recent call last):
+
+2023-10-16 14:55:22,602 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 468, in <module>
+
+2023-10-16 14:55:22,630 - ERROR:     
+2023-10-16 14:55:22,630 - ERROR: time.sleep(1)
+2023-10-16 14:55:22,631 - ERROR: 
+
+2023-10-16 14:55:22,631 - ERROR: KeyboardInterrupt
+2023-10-16 14:55:22,632 - ERROR: 
+2023-10-16 14:55:22,633 - ERROR: 
+
+2023-10-16 14:57:14,073 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 81%
+2023-10-16 14:59:49,920 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 81%
+2023-10-16 15:00:44,441 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 80%
+2023-10-16 15:01:00,403 - ERROR: Traceback (most recent call last):
+
+2023-10-16 15:01:00,446 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 468, in <module>
+
+2023-10-16 15:01:00,487 - ERROR:     
+2023-10-16 15:01:00,488 - ERROR: time.sleep(1)
+2023-10-16 15:01:00,489 - ERROR: 
+
+2023-10-16 15:01:00,489 - ERROR: KeyboardInterrupt
+2023-10-16 15:01:00,489 - ERROR: 
+2023-10-16 15:01:00,490 - ERROR: 
+
+2023-10-16 15:03:31,924 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 80%
+2023-10-16 15:03:51,236 - ERROR: Traceback (most recent call last):
+
+2023-10-16 15:03:51,322 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 468, in <module>
+
+2023-10-16 15:03:51,337 - ERROR:     
+2023-10-16 15:03:51,338 - ERROR: time.sleep(1)
+2023-10-16 15:03:51,338 - ERROR: 
+
+2023-10-16 15:03:51,339 - ERROR: KeyboardInterrupt
+2023-10-16 15:03:51,339 - ERROR: 
+2023-10-16 15:03:51,340 - ERROR: 
+
+2023-10-16 15:09:31,014 - ERROR: Traceback (most recent call last):
+
+2023-10-16 15:09:31,025 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 339, in <module>
+
+2023-10-16 15:09:31,029 - ERROR:     
+2023-10-16 15:09:31,029 - ERROR: with open(latest_images[track.id], 'rb') as f:
+2023-10-16 15:09:31,029 - ERROR: 
+
+2023-10-16 15:09:31,030 - ERROR: NameError
+2023-10-16 15:09:31,030 - ERROR: : 
+2023-10-16 15:09:31,030 - ERROR: name 'latest_images' is not defined
+2023-10-16 15:09:31,030 - ERROR: 
+
+2023-10-16 15:22:51,589 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 80%
+2023-10-16 15:23:38,018 - ERROR: Traceback (most recent call last):
+
+2023-10-16 15:23:38,019 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 479, in <module>
+
+2023-10-16 15:23:38,033 - ERROR:     
+2023-10-16 15:23:38,035 - ERROR: time.sleep(1)
+2023-10-16 15:23:38,035 - ERROR: 
+
+2023-10-16 15:23:38,035 - ERROR: KeyboardInterrupt
+2023-10-16 15:23:38,036 - ERROR: 
+2023-10-16 15:23:38,036 - ERROR: 
+
+2023-10-16 15:29:11,674 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 79%
+2023-10-16 15:29:28,829 - ERROR: Traceback (most recent call last):
+
+2023-10-16 15:29:28,830 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-16 15:29:28,834 - ERROR:     
+2023-10-16 15:29:28,834 - ERROR: time.sleep(1)
+2023-10-16 15:29:28,835 - ERROR: 
+
+2023-10-16 15:29:28,835 - ERROR: KeyboardInterrupt
+2023-10-16 15:29:28,835 - ERROR: 
+2023-10-16 15:29:28,836 - ERROR: 
+
+2023-10-16 15:31:42,672 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 79%
+2023-10-16 15:32:01,579 - ERROR: Traceback (most recent call last):
+
+2023-10-16 15:32:01,587 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 473, in <module>
+
+2023-10-16 15:32:01,606 - ERROR:     
+2023-10-16 15:32:01,607 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-16 15:32:01,607 - ERROR: 
+
+2023-10-16 15:32:01,608 - ERROR: KeyboardInterrupt
+2023-10-16 15:32:01,608 - ERROR: 
+2023-10-16 15:32:01,608 - ERROR: 
+
+2023-10-16 15:32:42,672 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 79%
+2023-10-16 15:33:04,872 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 472, in <module>
+    if q_frame.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+
+2023-10-16 15:33:04,887 - ERROR: Error during recording 3 | Charge level: 79%
+
+2023-10-16 15:35:10,828 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 80%
+2023-10-16 15:35:29,199 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 472, in <module>
+    if q_frame.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+
+2023-10-16 15:35:29,378 - ERROR: Error during recording 4 | Charge level: 80%
+
+2023-10-16 15:40:04,298 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 83%
+2023-10-16 16:14:44,648 - INFO: Rec ID: 6 | Rec time: 40 min | Charge level: 94%
+2023-10-16 16:15:44,113 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:15:44,135 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-16 16:15:44,155 - ERROR:     
+2023-10-16 16:15:44,155 - ERROR: time.sleep(1)
+2023-10-16 16:15:44,156 - ERROR: 
+
+2023-10-16 16:15:44,156 - ERROR: KeyboardInterrupt
+2023-10-16 16:15:44,156 - ERROR: 
+2023-10-16 16:15:44,157 - ERROR: 
+
+2023-10-16 16:19:17,851 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 95%
+2023-10-16 16:23:48,658 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:23:48,668 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 479, in <module>
+
+2023-10-16 16:23:48,680 - ERROR:     
+2023-10-16 16:23:48,681 - ERROR: store_data(frame, tracks)
+2023-10-16 16:23:48,681 - ERROR: 
+
+2023-10-16 16:23:48,682 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 309, in store_data
+
+2023-10-16 16:23:48,684 - ERROR:     
+2023-10-16 16:23:48,684 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-16 16:23:48,685 - ERROR: 
+
+2023-10-16 16:23:48,685 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-16 16:23:48,689 - ERROR:     
+2023-10-16 16:23:48,690 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-16 16:23:48,690 - ERROR: 
+
+2023-10-16 16:23:48,690 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-16 16:23:48,691 - ERROR:     
+2023-10-16 16:23:48,692 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-16 16:23:48,692 - ERROR: 
+
+2023-10-16 16:23:48,693 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-16 16:23:48,697 - ERROR:     
+2023-10-16 16:23:48,697 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-16 16:23:48,698 - ERROR: 
+
+2023-10-16 16:23:48,698 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-16 16:23:48,701 - ERROR:     
+2023-10-16 16:23:48,701 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-16 16:23:48,702 - ERROR: 
+
+2023-10-16 16:23:48,702 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-16 16:23:48,706 - ERROR:     
+2023-10-16 16:23:48,706 - ERROR: resp = conn.urlopen(
+2023-10-16 16:23:48,707 - ERROR: 
+
+2023-10-16 16:23:48,707 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-16 16:23:48,712 - ERROR:     
+2023-10-16 16:23:48,713 - ERROR: httplib_response = self._make_request(
+2023-10-16 16:23:48,713 - ERROR: 
+
+2023-10-16 16:23:48,714 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-10-16 16:23:48,715 - ERROR:     
+2023-10-16 16:23:48,716 - ERROR: self._validate_conn(conn)
+2023-10-16 16:23:48,716 - ERROR: 
+
+2023-10-16 16:23:48,717 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-10-16 16:23:48,720 - ERROR:     
+2023-10-16 16:23:48,721 - ERROR: conn.connect()
+2023-10-16 16:23:48,721 - ERROR: 
+
+2023-10-16 16:23:48,721 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 411, in connect
+
+2023-10-16 16:23:48,725 - ERROR:     
+2023-10-16 16:23:48,725 - ERROR: self.sock = ssl_wrap_socket(
+2023-10-16 16:23:48,726 - ERROR: 
+
+2023-10-16 16:23:48,727 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/ssl_.py", line 449, in ssl_wrap_socket
+
+2023-10-16 16:23:48,738 - ERROR:     
+2023-10-16 16:23:48,739 - ERROR: ssl_sock = _ssl_wrap_socket_impl(
+2023-10-16 16:23:48,739 - ERROR: 
+
+2023-10-16 16:23:48,740 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/ssl_.py", line 493, in _ssl_wrap_socket_impl
+
+2023-10-16 16:23:48,742 - ERROR:     
+2023-10-16 16:23:48,742 - ERROR: return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+2023-10-16 16:23:48,743 - ERROR: 
+
+2023-10-16 16:23:48,743 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 500, in wrap_socket
+
+2023-10-16 16:23:48,748 - ERROR:     
+2023-10-16 16:23:48,749 - ERROR: return self.sslsocket_class._create(
+2023-10-16 16:23:48,751 - ERROR: 
+
+2023-10-16 16:23:48,752 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1040, in _create
+
+2023-10-16 16:23:48,757 - ERROR:     
+2023-10-16 16:23:48,758 - ERROR: self.do_handshake()
+2023-10-16 16:23:48,759 - ERROR: 
+
+2023-10-16 16:23:48,759 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1309, in do_handshake
+
+2023-10-16 16:23:48,762 - ERROR:     
+2023-10-16 16:23:48,762 - ERROR: self._sslobj.do_handshake()
+2023-10-16 16:23:48,763 - ERROR: 
+
+2023-10-16 16:23:48,763 - ERROR: KeyboardInterrupt
+2023-10-16 16:23:48,763 - ERROR: 
+2023-10-16 16:23:48,763 - ERROR: 
+
+2023-10-16 16:24:28,759 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 96%
+2023-10-16 16:28:43,056 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 96%
+2023-10-16 16:29:00,812 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:29:00,814 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-16 16:29:00,822 - ERROR:     
+2023-10-16 16:29:00,823 - ERROR: time.sleep(1)
+2023-10-16 16:29:00,823 - ERROR: 
+
+2023-10-16 16:29:00,824 - ERROR: KeyboardInterrupt
+2023-10-16 16:29:00,824 - ERROR: 
+2023-10-16 16:29:00,824 - ERROR: 
+
+2023-10-16 16:29:47,527 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 96%
+2023-10-16 16:30:13,369 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:30:13,389 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-16 16:30:13,397 - ERROR:     
+2023-10-16 16:30:13,398 - ERROR: time.sleep(1)
+2023-10-16 16:30:13,399 - ERROR: 
+
+2023-10-16 16:30:13,399 - ERROR: KeyboardInterrupt
+2023-10-16 16:30:13,400 - ERROR: 
+2023-10-16 16:30:13,401 - ERROR: 
+
+2023-10-16 16:32:18,649 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:32:18,650 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 132, in <module>
+
+2023-10-16 16:32:18,651 - ERROR:     
+2023-10-16 16:32:18,651 - ERROR: camRgb.initialControl.setSharpness(0)     # range: 0..4, default: 1
+2023-10-16 16:32:18,652 - ERROR: 
+
+2023-10-16 16:32:18,652 - ERROR: NameError
+2023-10-16 16:32:18,652 - ERROR: : 
+2023-10-16 16:32:18,652 - ERROR: name 'camRgb' is not defined
+2023-10-16 16:32:18,653 - ERROR: 
+
+2023-10-16 16:33:32,533 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 97%
+2023-10-16 16:34:08,717 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:34:08,755 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-16 16:34:08,768 - ERROR:     
+2023-10-16 16:34:08,769 - ERROR: time.sleep(1)
+2023-10-16 16:34:08,769 - ERROR: 
+
+2023-10-16 16:34:08,770 - ERROR: KeyboardInterrupt
+2023-10-16 16:34:08,770 - ERROR: 
+2023-10-16 16:34:08,771 - ERROR: 
+
+2023-10-16 16:37:21,260 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 97%
+2023-10-16 16:38:01,311 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:38:01,332 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 486, in <module>
+
+2023-10-16 16:38:01,355 - ERROR:     
+2023-10-16 16:38:01,356 - ERROR: time.sleep(1)
+2023-10-16 16:38:01,356 - ERROR: 
+
+2023-10-16 16:38:01,357 - ERROR: KeyboardInterrupt
+2023-10-16 16:38:01,357 - ERROR: 
+2023-10-16 16:38:01,358 - ERROR: 
+
+2023-10-16 16:42:03,803 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 98%
+2023-10-16 16:42:51,840 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:42:51,871 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 474, in <module>
+
+2023-10-16 16:42:51,883 - ERROR:     
+2023-10-16 16:42:51,883 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-16 16:42:51,884 - ERROR: 
+
+2023-10-16 16:42:51,884 - ERROR: KeyboardInterrupt
+2023-10-16 16:42:51,884 - ERROR: 
+2023-10-16 16:42:51,885 - ERROR: 
+
+2023-10-16 16:54:32,765 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 98%
+2023-10-16 16:54:48,765 - ERROR: Traceback (most recent call last):
+
+2023-10-16 16:54:48,767 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-16 16:54:48,786 - ERROR:     
+2023-10-16 16:54:48,786 - ERROR: time.sleep(1)
+2023-10-16 16:54:48,787 - ERROR: 
+
+2023-10-16 16:54:48,787 - ERROR: KeyboardInterrupt
+2023-10-16 16:54:48,787 - ERROR: 
+2023-10-16 16:54:48,787 - ERROR: 
+
+2023-10-16 23:14:58,901 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 96%
+2023-10-16 23:16:16,062 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 96%
+2023-10-16 23:19:02,280 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 97%
+2023-10-16 23:19:29,092 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 97%
+2023-10-16 23:21:21,532 - ERROR: Traceback (most recent call last):
+
+2023-10-16 23:21:21,585 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 480, in <module>
+
+2023-10-16 23:21:21,618 - ERROR:     
+2023-10-16 23:21:21,618 - ERROR: store_data(frame, tracks)
+2023-10-16 23:21:21,619 - ERROR: 
+
+2023-10-16 23:21:21,619 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 294, in store_data
+
+2023-10-16 23:21:21,621 - ERROR:     
+2023-10-16 23:21:21,622 - ERROR: label = labels[track.srcImgDetection.label]
+2023-10-16 23:21:21,623 - ERROR: 
+
+2023-10-16 23:21:21,623 - ERROR: KeyboardInterrupt
+2023-10-16 23:21:21,623 - ERROR: 
+2023-10-16 23:21:21,624 - ERROR: 
+
+2023-10-16 23:22:34,583 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 97%
+2023-10-16 23:29:39,297 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 98%
+2023-10-16 23:30:13,283 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 473, in <module>
+    if q_frame.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+
+2023-10-16 23:30:13,285 - ERROR: Error during recording 1 | Charge level: 98%
+
+2023-10-16 23:41:48,445 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 96%
+2023-10-16 23:42:22,049 - ERROR: Traceback (most recent call last):
+
+2023-10-16 23:42:22,295 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 480, in <module>
+
+2023-10-16 23:42:22,322 - ERROR:     
+2023-10-16 23:42:22,322 - ERROR: store_data(frame, tracks)
+2023-10-16 23:42:22,323 - ERROR: 
+
+2023-10-16 23:42:22,323 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 288, in store_data
+
+2023-10-16 23:42:22,325 - ERROR:     
+2023-10-16 23:42:22,326 - ERROR: bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
+2023-10-16 23:42:22,326 - ERROR: 
+
+2023-10-16 23:42:22,327 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 231, in frame_norm
+
+2023-10-16 23:42:22,329 - ERROR:     
+2023-10-16 23:42:22,330 - ERROR: norm_vals = np.full(len(bbox), frame.shape[0])
+2023-10-16 23:42:22,330 - ERROR: 
+
+2023-10-16 23:42:22,331 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/numpy/core/numeric.py", line 327, in full
+
+2023-10-16 23:42:22,354 - ERROR:     
+2023-10-16 23:42:22,354 - ERROR: fill_value = asarray(fill_value)
+2023-10-16 23:42:22,355 - ERROR: 
+
+2023-10-16 23:42:22,355 - ERROR: KeyboardInterrupt
+2023-10-16 23:42:22,355 - ERROR: 
+2023-10-16 23:42:22,356 - ERROR: 
+
+2023-10-16 23:49:56,307 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 96%
+2023-10-16 23:52:11,719 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 96%
+2023-10-16 23:59:15,196 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 96%
+2023-10-16 23:59:32,120 - ERROR: Traceback (most recent call last):
+
+2023-10-16 23:59:32,120 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-16 23:59:32,124 - ERROR:     
+2023-10-16 23:59:32,124 - ERROR: time.sleep(1)
+2023-10-16 23:59:32,125 - ERROR: 
+
+2023-10-16 23:59:32,125 - ERROR: KeyboardInterrupt
+2023-10-16 23:59:32,125 - ERROR: 
+2023-10-16 23:59:32,125 - ERROR: 
+
+2023-10-17 20:58:19,215 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 96%
+2023-10-17 20:58:35,508 - ERROR: Traceback (most recent call last):
+
+2023-10-17 20:58:35,509 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-17 20:58:35,512 - ERROR:     
+2023-10-17 20:58:35,513 - ERROR: time.sleep(1)
+2023-10-17 20:58:35,513 - ERROR: 
+
+2023-10-17 20:58:35,513 - ERROR: KeyboardInterrupt
+2023-10-17 20:58:35,513 - ERROR: 
+2023-10-17 20:58:35,514 - ERROR: 
+
+2023-10-17 21:03:04,338 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:03:43,165 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:03:43,176 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 486, in <module>
+
+2023-10-17 21:03:43,187 - ERROR:     
+2023-10-17 21:03:43,187 - ERROR: time.sleep(1)
+2023-10-17 21:03:43,188 - ERROR: 
+
+2023-10-17 21:03:43,188 - ERROR: KeyboardInterrupt
+2023-10-17 21:03:43,188 - ERROR: 
+2023-10-17 21:03:43,189 - ERROR: 
+
+2023-10-17 21:04:36,739 - INFO: Rec ID: 6 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:04:46,737 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:04:46,738 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 477, in <module>
+
+2023-10-17 21:04:46,744 - ERROR:     
+2023-10-17 21:04:46,744 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-17 21:04:46,745 - ERROR: 
+
+2023-10-17 21:04:46,745 - ERROR: KeyboardInterrupt
+2023-10-17 21:04:46,746 - ERROR: 
+2023-10-17 21:04:46,746 - ERROR: 
+
+2023-10-17 21:05:23,200 - INFO: Rec ID: 7 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:05:32,659 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:05:32,668 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-17 21:05:32,674 - ERROR:     
+2023-10-17 21:05:32,674 - ERROR: store_data(frame, tracks)
+2023-10-17 21:05:32,675 - ERROR: 
+
+2023-10-17 21:05:32,675 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 313, in store_data
+
+2023-10-17 21:05:32,677 - ERROR:     
+2023-10-17 21:05:32,678 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-17 21:05:32,678 - ERROR: 
+
+2023-10-17 21:05:32,679 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-17 21:05:32,682 - ERROR:     
+2023-10-17 21:05:32,683 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-17 21:05:32,683 - ERROR: 
+
+2023-10-17 21:05:32,684 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-17 21:05:32,685 - ERROR:     
+2023-10-17 21:05:32,685 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-17 21:05:32,685 - ERROR: 
+
+2023-10-17 21:05:32,686 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-17 21:05:32,690 - ERROR:     
+2023-10-17 21:05:32,690 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-17 21:05:32,691 - ERROR: 
+
+2023-10-17 21:05:32,691 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-17 21:05:32,693 - ERROR:     
+2023-10-17 21:05:32,694 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-17 21:05:32,694 - ERROR: 
+
+2023-10-17 21:05:32,694 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-17 21:05:32,698 - ERROR:     
+2023-10-17 21:05:32,699 - ERROR: resp = conn.urlopen(
+2023-10-17 21:05:32,699 - ERROR: 
+
+2023-10-17 21:05:32,699 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-17 21:05:32,704 - ERROR:     
+2023-10-17 21:05:32,705 - ERROR: httplib_response = self._make_request(
+2023-10-17 21:05:32,705 - ERROR: 
+
+2023-10-17 21:05:32,706 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-10-17 21:05:32,707 - ERROR:     
+2023-10-17 21:05:32,708 - ERROR: self._validate_conn(conn)
+2023-10-17 21:05:32,708 - ERROR: 
+
+2023-10-17 21:05:32,709 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-10-17 21:05:32,711 - ERROR:     
+2023-10-17 21:05:32,712 - ERROR: conn.connect()
+2023-10-17 21:05:32,712 - ERROR: 
+
+2023-10-17 21:05:32,713 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 411, in connect
+
+2023-10-17 21:05:32,716 - ERROR:     
+2023-10-17 21:05:32,717 - ERROR: self.sock = ssl_wrap_socket(
+2023-10-17 21:05:32,717 - ERROR: 
+
+2023-10-17 21:05:32,717 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/ssl_.py", line 402, in ssl_wrap_socket
+
+2023-10-17 21:05:32,729 - ERROR:     
+2023-10-17 21:05:32,729 - ERROR: context.load_verify_locations(ca_certs, ca_cert_dir, ca_cert_data)
+2023-10-17 21:05:32,730 - ERROR: 
+
+2023-10-17 21:05:32,730 - ERROR: KeyboardInterrupt
+2023-10-17 21:05:32,731 - ERROR: 
+2023-10-17 21:05:32,731 - ERROR: 
+
+2023-10-17 21:06:22,173 - INFO: Rec ID: 8 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:06:29,359 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:06:29,360 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 486, in <module>
+
+2023-10-17 21:06:29,363 - ERROR:     
+2023-10-17 21:06:29,363 - ERROR: time.sleep(1)
+2023-10-17 21:06:29,364 - ERROR: 
+
+2023-10-17 21:06:29,364 - ERROR: KeyboardInterrupt
+2023-10-17 21:06:29,364 - ERROR: 
+2023-10-17 21:06:29,364 - ERROR: 
+
+2023-10-17 21:08:53,441 - INFO: Rec ID: 9 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:09:02,076 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:09:02,078 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-17 21:09:02,082 - ERROR:     
+2023-10-17 21:09:02,083 - ERROR: store_data(frame, tracks)
+2023-10-17 21:09:02,083 - ERROR: 
+
+2023-10-17 21:09:02,083 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 313, in store_data
+
+2023-10-17 21:09:02,084 - ERROR:     
+2023-10-17 21:09:02,085 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-17 21:09:02,085 - ERROR: 
+
+2023-10-17 21:09:02,086 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-17 21:09:02,089 - ERROR:     
+2023-10-17 21:09:02,090 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-17 21:09:02,090 - ERROR: 
+
+2023-10-17 21:09:02,090 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-17 21:09:02,091 - ERROR:     
+2023-10-17 21:09:02,091 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-17 21:09:02,092 - ERROR: 
+
+2023-10-17 21:09:02,092 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-17 21:09:02,095 - ERROR:     
+2023-10-17 21:09:02,096 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-17 21:09:02,096 - ERROR: 
+
+2023-10-17 21:09:02,097 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-17 21:09:02,099 - ERROR:     
+2023-10-17 21:09:02,099 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-17 21:09:02,100 - ERROR: 
+
+2023-10-17 21:09:02,100 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-17 21:09:02,103 - ERROR:     
+2023-10-17 21:09:02,104 - ERROR: resp = conn.urlopen(
+2023-10-17 21:09:02,104 - ERROR: 
+
+2023-10-17 21:09:02,104 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-17 21:09:02,109 - ERROR:     
+2023-10-17 21:09:02,109 - ERROR: httplib_response = self._make_request(
+2023-10-17 21:09:02,110 - ERROR: 
+
+2023-10-17 21:09:02,110 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-10-17 21:09:02,111 - ERROR:     
+2023-10-17 21:09:02,112 - ERROR: self._validate_conn(conn)
+2023-10-17 21:09:02,112 - ERROR: 
+
+2023-10-17 21:09:02,112 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-10-17 21:09:02,115 - ERROR:     
+2023-10-17 21:09:02,116 - ERROR: conn.connect()
+2023-10-17 21:09:02,117 - ERROR: 
+
+2023-10-17 21:09:02,117 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-10-17 21:09:02,121 - ERROR:     
+2023-10-17 21:09:02,121 - ERROR: conn = self._new_conn()
+2023-10-17 21:09:02,122 - ERROR: 
+
+2023-10-17 21:09:02,123 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-10-17 21:09:02,125 - ERROR:     
+2023-10-17 21:09:02,125 - ERROR: conn = connection.create_connection(
+2023-10-17 21:09:02,126 - ERROR: 
+
+2023-10-17 21:09:02,127 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-10-17 21:09:02,137 - ERROR:     
+2023-10-17 21:09:02,138 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-10-17 21:09:02,139 - ERROR: 
+
+2023-10-17 21:09:02,139 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-10-17 21:09:02,146 - ERROR:     
+2023-10-17 21:09:02,146 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-10-17 21:09:02,147 - ERROR: 
+
+2023-10-17 21:09:02,147 - ERROR: KeyboardInterrupt
+2023-10-17 21:09:02,148 - ERROR: 
+2023-10-17 21:09:02,148 - ERROR: 
+
+2023-10-17 21:09:56,159 - INFO: Rec ID: 10 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:10:03,157 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:10:03,158 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 477, in <module>
+
+2023-10-17 21:10:03,162 - ERROR:     
+2023-10-17 21:10:03,163 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-17 21:10:03,163 - ERROR: 
+
+2023-10-17 21:10:03,164 - ERROR: KeyboardInterrupt
+2023-10-17 21:10:03,164 - ERROR: 
+2023-10-17 21:10:03,164 - ERROR: 
+
+2023-10-17 21:10:38,465 - INFO: Rec ID: 11 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:10:50,469 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:10:50,479 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 486, in <module>
+
+2023-10-17 21:10:50,491 - ERROR:     
+2023-10-17 21:10:50,492 - ERROR: time.sleep(1)
+2023-10-17 21:10:50,492 - ERROR: 
+
+2023-10-17 21:10:50,493 - ERROR: KeyboardInterrupt
+2023-10-17 21:10:50,493 - ERROR: 
+2023-10-17 21:10:50,493 - ERROR: 
+
+2023-10-17 21:14:16,463 - INFO: Rec ID: 12 | Rec time: 40 min | Charge level: 96%
+2023-10-17 21:14:23,548 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:14:23,564 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-17 21:14:23,569 - ERROR:     
+2023-10-17 21:14:23,570 - ERROR: store_data(frame, tracks)
+2023-10-17 21:14:23,570 - ERROR: 
+
+2023-10-17 21:14:23,570 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 313, in store_data
+
+2023-10-17 21:14:23,571 - ERROR:     
+2023-10-17 21:14:23,572 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-17 21:14:23,572 - ERROR: 
+
+2023-10-17 21:14:23,572 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-17 21:14:23,576 - ERROR:     
+2023-10-17 21:14:23,576 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-17 21:14:23,577 - ERROR: 
+
+2023-10-17 21:14:23,577 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-17 21:14:23,578 - ERROR:     
+2023-10-17 21:14:23,578 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-17 21:14:23,579 - ERROR: 
+
+2023-10-17 21:14:23,579 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-17 21:14:23,624 - ERROR:     
+2023-10-17 21:14:23,625 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-17 21:14:23,626 - ERROR: 
+
+2023-10-17 21:14:23,626 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-17 21:14:23,629 - ERROR:     
+2023-10-17 21:14:23,629 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-17 21:14:23,630 - ERROR: 
+
+2023-10-17 21:14:23,631 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-17 21:14:23,634 - ERROR:     
+2023-10-17 21:14:23,635 - ERROR: resp = conn.urlopen(
+2023-10-17 21:14:23,636 - ERROR: 
+
+2023-10-17 21:14:23,637 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-17 21:14:23,642 - ERROR:     
+2023-10-17 21:14:23,643 - ERROR: httplib_response = self._make_request(
+2023-10-17 21:14:23,644 - ERROR: 
+
+2023-10-17 21:14:23,644 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-10-17 21:14:23,646 - ERROR:     
+2023-10-17 21:14:23,647 - ERROR: self._validate_conn(conn)
+2023-10-17 21:14:23,648 - ERROR: 
+
+2023-10-17 21:14:23,648 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-10-17 21:14:23,651 - ERROR:     
+2023-10-17 21:14:23,652 - ERROR: conn.connect()
+2023-10-17 21:14:23,653 - ERROR: 
+
+2023-10-17 21:14:23,653 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-10-17 21:14:23,656 - ERROR:     
+2023-10-17 21:14:23,657 - ERROR: conn = self._new_conn()
+2023-10-17 21:14:23,658 - ERROR: 
+
+2023-10-17 21:14:23,659 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-10-17 21:14:23,661 - ERROR:     
+2023-10-17 21:14:23,662 - ERROR: conn = connection.create_connection(
+2023-10-17 21:14:23,663 - ERROR: 
+
+2023-10-17 21:14:23,664 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-10-17 21:14:23,673 - ERROR:     
+2023-10-17 21:14:23,674 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-10-17 21:14:23,675 - ERROR: 
+
+2023-10-17 21:14:23,676 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-10-17 21:14:23,681 - ERROR:     
+2023-10-17 21:14:23,682 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-10-17 21:14:23,683 - ERROR: 
+
+2023-10-17 21:14:23,683 - ERROR: KeyboardInterrupt
+2023-10-17 21:14:23,684 - ERROR: 
+2023-10-17 21:14:23,685 - ERROR: 
+
+2023-10-17 21:16:01,164 - INFO: Rec ID: 13 | Rec time: 40 min | Charge level: 97%
+2023-10-17 21:16:08,798 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:16:08,836 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 483, in <module>
+
+2023-10-17 21:16:08,846 - ERROR:     
+2023-10-17 21:16:08,846 - ERROR: store_data(frame, tracks)
+2023-10-17 21:16:08,847 - ERROR: 
+
+2023-10-17 21:16:08,847 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 313, in store_data
+
+2023-10-17 21:16:08,849 - ERROR:     
+2023-10-17 21:16:08,850 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-17 21:16:08,850 - ERROR: 
+
+2023-10-17 21:16:08,851 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-17 21:16:08,856 - ERROR:     
+2023-10-17 21:16:08,856 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-17 21:16:08,857 - ERROR: 
+
+2023-10-17 21:16:08,858 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-17 21:16:08,859 - ERROR:     
+2023-10-17 21:16:08,859 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-17 21:16:08,860 - ERROR: 
+
+2023-10-17 21:16:08,860 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 528, in request
+
+2023-10-17 21:16:08,864 - ERROR:     
+2023-10-17 21:16:08,865 - ERROR: prep = self.prepare_request(req)
+2023-10-17 21:16:08,865 - ERROR: 
+
+2023-10-17 21:16:08,865 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 456, in prepare_request
+
+2023-10-17 21:16:08,867 - ERROR:     
+2023-10-17 21:16:08,868 - ERROR: p.prepare(
+2023-10-17 21:16:08,868 - ERROR: 
+
+2023-10-17 21:16:08,868 - ERROR:   File "/usr/lib/python3/dist-packages/requests/models.py", line 319, in prepare
+
+2023-10-17 21:16:08,871 - ERROR:     
+2023-10-17 21:16:08,872 - ERROR: self.prepare_body(data, files, json)
+2023-10-17 21:16:08,872 - ERROR: 
+
+2023-10-17 21:16:08,872 - ERROR:   File "/usr/lib/python3/dist-packages/requests/models.py", line 507, in prepare_body
+
+2023-10-17 21:16:08,874 - ERROR:     
+2023-10-17 21:16:08,875 - ERROR: (body, content_type) = self._encode_files(files, data)
+2023-10-17 21:16:08,875 - ERROR: 
+
+2023-10-17 21:16:08,875 - ERROR:   File "/usr/lib/python3/dist-packages/requests/models.py", line 166, in _encode_files
+
+2023-10-17 21:16:08,877 - ERROR:     
+2023-10-17 21:16:08,877 - ERROR: rf.make_multipart(content_type=ft)
+2023-10-17 21:16:08,877 - ERROR: 
+
+2023-10-17 21:16:08,878 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/fields.py", line 268, in make_multipart
+
+2023-10-17 21:16:08,881 - ERROR:     
+2023-10-17 21:16:08,881 - ERROR: self._render_parts(
+2023-10-17 21:16:08,882 - ERROR: 
+
+2023-10-17 21:16:08,882 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/fields.py", line 226, in _render_parts
+
+2023-10-17 21:16:08,883 - ERROR:     
+2023-10-17 21:16:08,883 - ERROR: parts.append(self._render_part(name, value))
+2023-10-17 21:16:08,884 - ERROR: 
+
+2023-10-17 21:16:08,884 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/fields.py", line 206, in _render_part
+
+2023-10-17 21:16:08,885 - ERROR:     
+2023-10-17 21:16:08,886 - ERROR: return self.header_formatter(name, value)
+2023-10-17 21:16:08,886 - ERROR: 
+
+2023-10-17 21:16:08,886 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/fields.py", line 117, in format_header_param_html5
+
+2023-10-17 21:16:08,887 - ERROR:     
+2023-10-17 21:16:08,888 - ERROR: value = _replace_multiple(value, _HTML5_REPLACEMENTS)
+2023-10-17 21:16:08,888 - ERROR: 
+
+2023-10-17 21:16:08,888 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/fields.py", line 86, in _replace_multiple
+
+2023-10-17 21:16:08,889 - ERROR:     
+2023-10-17 21:16:08,890 - ERROR: pattern = re.compile(
+2023-10-17 21:16:08,890 - ERROR: 
+
+2023-10-17 21:16:08,890 - ERROR:   File "/usr/lib/python3.9/re.py", line 252, in compile
+
+2023-10-17 21:16:08,894 - ERROR:     
+2023-10-17 21:16:08,894 - ERROR: return _compile(pattern, flags)
+2023-10-17 21:16:08,895 - ERROR: 
+
+2023-10-17 21:16:08,895 - ERROR:   File "/usr/lib/python3.9/re.py", line 304, in _compile
+
+2023-10-17 21:16:08,897 - ERROR:     
+2023-10-17 21:16:08,898 - ERROR: p = sre_compile.compile(pattern, flags)
+2023-10-17 21:16:08,898 - ERROR: 
+
+2023-10-17 21:16:08,898 - ERROR:   File "/usr/lib/python3.9/sre_compile.py", line 764, in compile
+
+2023-10-17 21:16:08,902 - ERROR:     
+2023-10-17 21:16:08,903 - ERROR: p = sre_parse.parse(p, flags)
+2023-10-17 21:16:08,903 - ERROR: 
+
+2023-10-17 21:16:08,904 - ERROR:   File "/usr/lib/python3.9/sre_parse.py", line 948, in parse
+
+2023-10-17 21:16:08,909 - ERROR:     
+2023-10-17 21:16:08,909 - ERROR: p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+2023-10-17 21:16:08,909 - ERROR: 
+
+2023-10-17 21:16:08,910 - ERROR:   File "/usr/lib/python3.9/sre_parse.py", line 443, in _parse_sub
+
+2023-10-17 21:16:08,911 - ERROR:     
+2023-10-17 21:16:08,912 - ERROR: itemsappend(_parse(source, state, verbose, nested + 1,
+2023-10-17 21:16:08,912 - ERROR: 
+
+2023-10-17 21:16:08,913 - ERROR:   File "/usr/lib/python3.9/sre_parse.py", line 506, in _parse
+
+2023-10-17 21:16:08,914 - ERROR:     
+2023-10-17 21:16:08,915 - ERROR: this = source.next
+2023-10-17 21:16:08,915 - ERROR: 
+
+2023-10-17 21:16:08,916 - ERROR: KeyboardInterrupt
+2023-10-17 21:16:08,916 - ERROR: 
+2023-10-17 21:16:08,916 - ERROR: 
+
+2023-10-17 21:16:51,713 - INFO: Rec ID: 14 | Rec time: 40 min | Charge level: 97%
+2023-10-17 21:17:04,195 - ERROR: Traceback (most recent call last):
+
+2023-10-17 21:17:04,197 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 486, in <module>
+
+2023-10-17 21:17:04,203 - ERROR:     
+2023-10-17 21:17:04,204 - ERROR: time.sleep(1)
+2023-10-17 21:17:04,204 - ERROR: 
+
+2023-10-17 21:17:04,204 - ERROR: KeyboardInterrupt
+2023-10-17 21:17:04,205 - ERROR: 
+2023-10-17 21:17:04,205 - ERROR: 
+
+2023-10-17 21:18:16,199 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 97%
+2023-10-17 21:18:30,078 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 479, in <module>
+    if q_track.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'track' (X_LINK_ERROR)'
+
+2023-10-17 21:18:30,102 - ERROR: Error during recording 1 | Charge level: 97%
+
+2023-10-17 21:23:19,600 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:09:10,786 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:10:21,277 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:11:01,076 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:11:32,040 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:12:15,287 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:14:02,762 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:14:15,255 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:14:15,255 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 481, in <module>
+
+2023-10-18 22:14:15,259 - ERROR:     
+2023-10-18 22:14:15,259 - ERROR: store_data(frame, tracks)
+2023-10-18 22:14:15,260 - ERROR: 
+
+2023-10-18 22:14:15,260 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 311, in store_data
+
+2023-10-18 22:14:15,261 - ERROR:     
+2023-10-18 22:14:15,261 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-18 22:14:15,262 - ERROR: 
+
+2023-10-18 22:14:15,262 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-18 22:14:15,265 - ERROR:     
+2023-10-18 22:14:15,266 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-18 22:14:15,266 - ERROR: 
+
+2023-10-18 22:14:15,266 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-18 22:14:15,267 - ERROR:     
+2023-10-18 22:14:15,267 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-18 22:14:15,267 - ERROR: 
+
+2023-10-18 22:14:15,268 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-18 22:14:15,271 - ERROR:     
+2023-10-18 22:14:15,271 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-18 22:14:15,271 - ERROR: 
+
+2023-10-18 22:14:15,271 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-18 22:14:15,273 - ERROR:     
+2023-10-18 22:14:15,273 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-18 22:14:15,274 - ERROR: 
+
+2023-10-18 22:14:15,274 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-18 22:14:15,277 - ERROR:     
+2023-10-18 22:14:15,277 - ERROR: resp = conn.urlopen(
+2023-10-18 22:14:15,277 - ERROR: 
+
+2023-10-18 22:14:15,277 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-18 22:14:15,282 - ERROR:     
+2023-10-18 22:14:15,282 - ERROR: httplib_response = self._make_request(
+2023-10-18 22:14:15,283 - ERROR: 
+
+2023-10-18 22:14:15,283 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2023-10-18 22:14:15,284 - ERROR:     
+2023-10-18 22:14:15,284 - ERROR: six.raise_from(e, None)
+2023-10-18 22:14:15,285 - ERROR: 
+
+2023-10-18 22:14:15,285 - ERROR:   File "<string>", line 3, in raise_from
+
+2023-10-18 22:14:15,288 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2023-10-18 22:14:15,289 - ERROR:     
+2023-10-18 22:14:15,290 - ERROR: httplib_response = conn.getresponse()
+2023-10-18 22:14:15,290 - ERROR: 
+
+2023-10-18 22:14:15,290 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2023-10-18 22:14:15,303 - ERROR:     
+2023-10-18 22:14:15,304 - ERROR: response.begin()
+2023-10-18 22:14:15,304 - ERROR: 
+
+2023-10-18 22:14:15,304 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2023-10-18 22:14:15,305 - ERROR:     
+2023-10-18 22:14:15,306 - ERROR: version, status, reason = self._read_status()
+2023-10-18 22:14:15,306 - ERROR: 
+
+2023-10-18 22:14:15,306 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2023-10-18 22:14:15,307 - ERROR:     
+2023-10-18 22:14:15,307 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2023-10-18 22:14:15,308 - ERROR: 
+
+2023-10-18 22:14:15,308 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2023-10-18 22:14:15,312 - ERROR:     
+2023-10-18 22:14:15,312 - ERROR: return self._sock.recv_into(b)
+2023-10-18 22:14:15,313 - ERROR: 
+
+2023-10-18 22:14:15,313 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2023-10-18 22:14:15,318 - ERROR:     
+2023-10-18 22:14:15,318 - ERROR: return self.read(nbytes, buffer)
+2023-10-18 22:14:15,318 - ERROR: 
+
+2023-10-18 22:14:15,319 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2023-10-18 22:14:15,321 - ERROR:     
+2023-10-18 22:14:15,321 - ERROR: return self._sslobj.read(len, buffer)
+2023-10-18 22:14:15,321 - ERROR: 
+
+2023-10-18 22:14:15,322 - ERROR: KeyboardInterrupt
+2023-10-18 22:14:15,322 - ERROR: 
+2023-10-18 22:14:15,322 - ERROR: 
+
+2023-10-18 22:16:37,928 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:16:37,937 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 133, in <module>
+
+2023-10-18 22:16:37,941 - ERROR:     
+2023-10-18 22:16:37,942 - ERROR: cam_rgb.setAutoExposureCompensation(-4)
+2023-10-18 22:16:37,942 - ERROR: 
+
+2023-10-18 22:16:37,943 - ERROR: AttributeError
+2023-10-18 22:16:37,943 - ERROR: : 
+2023-10-18 22:16:37,943 - ERROR: 'depthai.node.ColorCamera' object has no attribute 'setAutoExposureCompensation'
+2023-10-18 22:16:37,943 - ERROR: 
+
+2023-10-18 22:19:23,726 - INFO: Rec ID: 6 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:19:33,715 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:19:33,726 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 481, in <module>
+
+2023-10-18 22:19:33,738 - ERROR:     
+2023-10-18 22:19:33,738 - ERROR: store_data(frame, tracks)
+2023-10-18 22:19:33,739 - ERROR: 
+
+2023-10-18 22:19:33,739 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 311, in store_data
+
+2023-10-18 22:19:33,741 - ERROR:     
+2023-10-18 22:19:33,741 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-18 22:19:33,742 - ERROR: 
+
+2023-10-18 22:19:33,742 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-18 22:19:33,745 - ERROR:     
+2023-10-18 22:19:33,746 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-18 22:19:33,746 - ERROR: 
+
+2023-10-18 22:19:33,746 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-18 22:19:33,747 - ERROR:     
+2023-10-18 22:19:33,747 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-18 22:19:33,748 - ERROR: 
+
+2023-10-18 22:19:33,748 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-18 22:19:33,751 - ERROR:     
+2023-10-18 22:19:33,752 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-18 22:19:33,752 - ERROR: 
+
+2023-10-18 22:19:33,753 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-18 22:19:33,754 - ERROR:     
+2023-10-18 22:19:33,755 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-18 22:19:33,755 - ERROR: 
+
+2023-10-18 22:19:33,755 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-18 22:19:33,758 - ERROR:     
+2023-10-18 22:19:33,759 - ERROR: resp = conn.urlopen(
+2023-10-18 22:19:33,759 - ERROR: 
+
+2023-10-18 22:19:33,759 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-18 22:19:33,764 - ERROR:     
+2023-10-18 22:19:33,764 - ERROR: httplib_response = self._make_request(
+2023-10-18 22:19:33,765 - ERROR: 
+
+2023-10-18 22:19:33,765 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-10-18 22:19:33,766 - ERROR:     
+2023-10-18 22:19:33,766 - ERROR: self._validate_conn(conn)
+2023-10-18 22:19:33,767 - ERROR: 
+
+2023-10-18 22:19:33,767 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-10-18 22:19:33,769 - ERROR:     
+2023-10-18 22:19:33,769 - ERROR: conn.connect()
+2023-10-18 22:19:33,770 - ERROR: 
+
+2023-10-18 22:19:33,770 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-10-18 22:19:33,779 - ERROR:     
+2023-10-18 22:19:33,781 - ERROR: conn = self._new_conn()
+2023-10-18 22:19:33,781 - ERROR: 
+
+2023-10-18 22:19:33,781 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-10-18 22:19:33,783 - ERROR:     
+2023-10-18 22:19:33,784 - ERROR: conn = connection.create_connection(
+2023-10-18 22:19:33,785 - ERROR: 
+
+2023-10-18 22:19:33,785 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-10-18 22:19:33,795 - ERROR:     
+2023-10-18 22:19:33,796 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-10-18 22:19:33,796 - ERROR: 
+
+2023-10-18 22:19:33,797 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-10-18 22:19:33,801 - ERROR:     
+2023-10-18 22:19:33,802 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-10-18 22:19:33,803 - ERROR: 
+
+2023-10-18 22:19:33,806 - ERROR: KeyboardInterrupt
+2023-10-18 22:19:33,807 - ERROR: 
+2023-10-18 22:19:33,807 - ERROR: 
+
+2023-10-18 22:20:27,837 - INFO: Rec ID: 7 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:20:37,221 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:20:37,224 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 481, in <module>
+
+2023-10-18 22:20:37,231 - ERROR:     
+2023-10-18 22:20:37,231 - ERROR: store_data(frame, tracks)
+2023-10-18 22:20:37,232 - ERROR: 
+
+2023-10-18 22:20:37,232 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 311, in store_data
+
+2023-10-18 22:20:37,234 - ERROR:     
+2023-10-18 22:20:37,234 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-18 22:20:37,235 - ERROR: 
+
+2023-10-18 22:20:37,235 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-18 22:20:37,239 - ERROR:     
+2023-10-18 22:20:37,240 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-18 22:20:37,240 - ERROR: 
+
+2023-10-18 22:20:37,240 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-18 22:20:37,241 - ERROR:     
+2023-10-18 22:20:37,242 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-18 22:20:37,242 - ERROR: 
+
+2023-10-18 22:20:37,243 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-18 22:20:37,246 - ERROR:     
+2023-10-18 22:20:37,247 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-18 22:20:37,247 - ERROR: 
+
+2023-10-18 22:20:37,248 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-18 22:20:37,250 - ERROR:     
+2023-10-18 22:20:37,251 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-18 22:20:37,251 - ERROR: 
+
+2023-10-18 22:20:37,251 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-18 22:20:37,255 - ERROR:     
+2023-10-18 22:20:37,255 - ERROR: resp = conn.urlopen(
+2023-10-18 22:20:37,256 - ERROR: 
+
+2023-10-18 22:20:37,256 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-18 22:20:37,261 - ERROR:     
+2023-10-18 22:20:37,262 - ERROR: httplib_response = self._make_request(
+2023-10-18 22:20:37,263 - ERROR: 
+
+2023-10-18 22:20:37,263 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2023-10-18 22:20:37,265 - ERROR:     
+2023-10-18 22:20:37,265 - ERROR: six.raise_from(e, None)
+2023-10-18 22:20:37,265 - ERROR: 
+
+2023-10-18 22:20:37,266 - ERROR:   File "<string>", line 3, in raise_from
+
+2023-10-18 22:20:37,270 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2023-10-18 22:20:37,272 - ERROR:     
+2023-10-18 22:20:37,273 - ERROR: httplib_response = conn.getresponse()
+2023-10-18 22:20:37,273 - ERROR: 
+
+2023-10-18 22:20:37,273 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2023-10-18 22:20:37,282 - ERROR:     
+2023-10-18 22:20:37,282 - ERROR: response.begin()
+2023-10-18 22:20:37,283 - ERROR: 
+
+2023-10-18 22:20:37,284 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2023-10-18 22:20:37,286 - ERROR:     
+2023-10-18 22:20:37,286 - ERROR: version, status, reason = self._read_status()
+2023-10-18 22:20:37,287 - ERROR: 
+
+2023-10-18 22:20:37,287 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2023-10-18 22:20:37,289 - ERROR:     
+2023-10-18 22:20:37,289 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2023-10-18 22:20:37,289 - ERROR: 
+
+2023-10-18 22:20:37,290 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2023-10-18 22:20:37,294 - ERROR:     
+2023-10-18 22:20:37,295 - ERROR: return self._sock.recv_into(b)
+2023-10-18 22:20:37,295 - ERROR: 
+
+2023-10-18 22:20:37,296 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2023-10-18 22:20:37,302 - ERROR:     
+2023-10-18 22:20:37,303 - ERROR: return self.read(nbytes, buffer)
+2023-10-18 22:20:37,303 - ERROR: 
+
+2023-10-18 22:20:37,304 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2023-10-18 22:20:37,308 - ERROR:     
+2023-10-18 22:20:37,309 - ERROR: return self._sslobj.read(len, buffer)
+2023-10-18 22:20:37,309 - ERROR: 
+
+2023-10-18 22:20:37,310 - ERROR: KeyboardInterrupt
+2023-10-18 22:20:37,310 - ERROR: 
+2023-10-18 22:20:37,310 - ERROR: 
+
+2023-10-18 22:21:21,090 - INFO: Rec ID: 8 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:24:26,101 - INFO: Rec ID: 9 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:24:39,472 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:24:39,477 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 475, in <module>
+
+2023-10-18 22:24:39,481 - ERROR:     
+2023-10-18 22:24:39,481 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-18 22:24:39,482 - ERROR: 
+
+2023-10-18 22:24:39,482 - ERROR: KeyboardInterrupt
+2023-10-18 22:24:39,483 - ERROR: 
+2023-10-18 22:24:39,483 - ERROR: 
+
+2023-10-18 22:25:15,087 - INFO: Rec ID: 10 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:25:25,908 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:25:25,925 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 478, in <module>
+
+2023-10-18 22:25:25,954 - ERROR:     
+2023-10-18 22:25:25,956 - ERROR: tracks = q_track.get().tracklets
+2023-10-18 22:25:25,957 - ERROR: 
+
+2023-10-18 22:25:25,958 - ERROR: KeyboardInterrupt
+2023-10-18 22:25:25,958 - ERROR: 
+2023-10-18 22:25:25,958 - ERROR: 
+
+2023-10-18 22:28:10,529 - INFO: Rec ID: 11 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:28:50,591 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:28:50,629 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 484, in <module>
+
+2023-10-18 22:28:50,641 - ERROR:     
+2023-10-18 22:28:50,641 - ERROR: time.sleep(1)
+2023-10-18 22:28:50,642 - ERROR: 
+
+2023-10-18 22:28:50,642 - ERROR: KeyboardInterrupt
+2023-10-18 22:28:50,642 - ERROR: 
+2023-10-18 22:28:50,642 - ERROR: 
+
+2023-10-18 22:29:38,337 - INFO: Rec ID: 12 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:29:49,170 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:29:49,172 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 484, in <module>
+
+2023-10-18 22:29:49,175 - ERROR:     
+2023-10-18 22:29:49,176 - ERROR: time.sleep(1)
+2023-10-18 22:29:49,176 - ERROR: 
+
+2023-10-18 22:29:49,176 - ERROR: KeyboardInterrupt
+2023-10-18 22:29:49,177 - ERROR: 
+2023-10-18 22:29:49,177 - ERROR: 
+
+2023-10-18 22:30:33,351 - INFO: Rec ID: 13 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:30:55,108 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:30:55,122 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 481, in <module>
+
+2023-10-18 22:30:55,128 - ERROR:     
+2023-10-18 22:30:55,129 - ERROR: store_data(frame, tracks)
+2023-10-18 22:30:55,129 - ERROR: 
+
+2023-10-18 22:30:55,130 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 311, in store_data
+
+2023-10-18 22:30:55,133 - ERROR:     
+2023-10-18 22:30:55,134 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-18 22:30:55,134 - ERROR: 
+
+2023-10-18 22:30:55,134 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-18 22:30:55,146 - ERROR:     
+2023-10-18 22:30:55,146 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-18 22:30:55,147 - ERROR: 
+
+2023-10-18 22:30:55,147 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-18 22:30:55,148 - ERROR:     
+2023-10-18 22:30:55,148 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-18 22:30:55,149 - ERROR: 
+
+2023-10-18 22:30:55,149 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-18 22:30:55,153 - ERROR:     
+2023-10-18 22:30:55,154 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-18 22:30:55,154 - ERROR: 
+
+2023-10-18 22:30:55,155 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-18 22:30:55,157 - ERROR:     
+2023-10-18 22:30:55,158 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-18 22:30:55,158 - ERROR: 
+
+2023-10-18 22:30:55,158 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-18 22:30:55,162 - ERROR:     
+2023-10-18 22:30:55,163 - ERROR: resp = conn.urlopen(
+2023-10-18 22:30:55,165 - ERROR: 
+
+2023-10-18 22:30:55,166 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-18 22:30:55,172 - ERROR:     
+2023-10-18 22:30:55,173 - ERROR: httplib_response = self._make_request(
+2023-10-18 22:30:55,174 - ERROR: 
+
+2023-10-18 22:30:55,175 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-10-18 22:30:55,178 - ERROR:     
+2023-10-18 22:30:55,179 - ERROR: self._validate_conn(conn)
+2023-10-18 22:30:55,180 - ERROR: 
+
+2023-10-18 22:30:55,181 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-10-18 22:30:55,185 - ERROR:     
+2023-10-18 22:30:55,187 - ERROR: conn.connect()
+2023-10-18 22:30:55,188 - ERROR: 
+
+2023-10-18 22:30:55,189 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-10-18 22:30:55,193 - ERROR:     
+2023-10-18 22:30:55,194 - ERROR: conn = self._new_conn()
+2023-10-18 22:30:55,196 - ERROR: 
+
+2023-10-18 22:30:55,197 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-10-18 22:30:55,199 - ERROR:     
+2023-10-18 22:30:55,200 - ERROR: conn = connection.create_connection(
+2023-10-18 22:30:55,202 - ERROR: 
+
+2023-10-18 22:30:55,203 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-10-18 22:30:55,214 - ERROR:     
+2023-10-18 22:30:55,215 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-10-18 22:30:55,215 - ERROR: 
+
+2023-10-18 22:30:55,215 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-10-18 22:30:55,220 - ERROR:     
+2023-10-18 22:30:55,221 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-10-18 22:30:55,221 - ERROR: 
+
+2023-10-18 22:30:55,221 - ERROR: KeyboardInterrupt
+2023-10-18 22:30:55,221 - ERROR: 
+2023-10-18 22:30:55,222 - ERROR: 
+
+2023-10-18 22:31:25,367 - INFO: Rec ID: 14 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:31:37,078 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:31:37,079 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 481, in <module>
+
+2023-10-18 22:31:37,083 - ERROR:     
+2023-10-18 22:31:37,083 - ERROR: store_data(frame, tracks)
+2023-10-18 22:31:37,083 - ERROR: 
+
+2023-10-18 22:31:37,084 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 311, in store_data
+
+2023-10-18 22:31:37,085 - ERROR:     
+2023-10-18 22:31:37,085 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-18 22:31:37,086 - ERROR: 
+
+2023-10-18 22:31:37,086 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-18 22:31:37,096 - ERROR:     
+2023-10-18 22:31:37,096 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-18 22:31:37,097 - ERROR: 
+
+2023-10-18 22:31:37,097 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-18 22:31:37,098 - ERROR:     
+2023-10-18 22:31:37,098 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-18 22:31:37,098 - ERROR: 
+
+2023-10-18 22:31:37,098 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-18 22:31:37,102 - ERROR:     
+2023-10-18 22:31:37,102 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-18 22:31:37,102 - ERROR: 
+
+2023-10-18 22:31:37,103 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-10-18 22:31:37,104 - ERROR:     
+2023-10-18 22:31:37,105 - ERROR: r = adapter.send(request, **kwargs)
+2023-10-18 22:31:37,105 - ERROR: 
+
+2023-10-18 22:31:37,105 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-10-18 22:31:37,108 - ERROR:     
+2023-10-18 22:31:37,108 - ERROR: resp = conn.urlopen(
+2023-10-18 22:31:37,108 - ERROR: 
+
+2023-10-18 22:31:37,109 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-10-18 22:31:37,113 - ERROR:     
+2023-10-18 22:31:37,113 - ERROR: httplib_response = self._make_request(
+2023-10-18 22:31:37,114 - ERROR: 
+
+2023-10-18 22:31:37,114 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2023-10-18 22:31:37,115 - ERROR:     
+2023-10-18 22:31:37,115 - ERROR: six.raise_from(e, None)
+2023-10-18 22:31:37,116 - ERROR: 
+
+2023-10-18 22:31:37,116 - ERROR:   File "<string>", line 3, in raise_from
+
+2023-10-18 22:31:37,127 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2023-10-18 22:31:37,128 - ERROR:     
+2023-10-18 22:31:37,129 - ERROR: httplib_response = conn.getresponse()
+2023-10-18 22:31:37,129 - ERROR: 
+
+2023-10-18 22:31:37,129 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2023-10-18 22:31:37,135 - ERROR:     
+2023-10-18 22:31:37,136 - ERROR: response.begin()
+2023-10-18 22:31:37,136 - ERROR: 
+
+2023-10-18 22:31:37,136 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2023-10-18 22:31:37,138 - ERROR:     
+2023-10-18 22:31:37,138 - ERROR: version, status, reason = self._read_status()
+2023-10-18 22:31:37,138 - ERROR: 
+
+2023-10-18 22:31:37,139 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2023-10-18 22:31:37,140 - ERROR:     
+2023-10-18 22:31:37,140 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2023-10-18 22:31:37,140 - ERROR: 
+
+2023-10-18 22:31:37,141 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2023-10-18 22:31:37,144 - ERROR:     
+2023-10-18 22:31:37,145 - ERROR: return self._sock.recv_into(b)
+2023-10-18 22:31:37,145 - ERROR: 
+
+2023-10-18 22:31:37,145 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2023-10-18 22:31:37,150 - ERROR:     
+2023-10-18 22:31:37,151 - ERROR: return self.read(nbytes, buffer)
+2023-10-18 22:31:37,151 - ERROR: 
+
+2023-10-18 22:31:37,151 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2023-10-18 22:31:37,154 - ERROR:     
+2023-10-18 22:31:37,154 - ERROR: return self._sslobj.read(len, buffer)
+2023-10-18 22:31:37,154 - ERROR: 
+
+2023-10-18 22:31:37,154 - ERROR: KeyboardInterrupt
+2023-10-18 22:31:37,155 - ERROR: 
+2023-10-18 22:31:37,155 - ERROR: 
+
+2023-10-18 22:32:42,552 - INFO: Rec ID: 15 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:32:56,535 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:32:56,541 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 484, in <module>
+
+2023-10-18 22:32:56,545 - ERROR:     
+2023-10-18 22:32:56,546 - ERROR: time.sleep(1)
+2023-10-18 22:32:56,546 - ERROR: 
+
+2023-10-18 22:32:56,547 - ERROR: KeyboardInterrupt
+2023-10-18 22:32:56,547 - ERROR: 
+2023-10-18 22:32:56,547 - ERROR: 
+
+2023-10-18 22:34:20,214 - INFO: Rec ID: 16 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:34:49,267 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 474, in <module>
+    if q_frame.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+
+2023-10-18 22:34:49,297 - ERROR: Error during recording 16 | Charge level: 96%
+
+2023-10-18 22:39:19,980 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:39:19,982 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 132, in <module>
+
+2023-10-18 22:39:19,984 - ERROR:     
+2023-10-18 22:39:19,985 - ERROR: cam_rgb.initialControl.setAutoFocusLensRange(150) # platform ~9.5 inches from the camera
+2023-10-18 22:39:19,985 - ERROR: 
+
+2023-10-18 22:39:19,985 - ERROR: TypeError
+2023-10-18 22:39:19,986 - ERROR: : 
+2023-10-18 22:39:19,986 - ERROR: setAutoFocusLensRange(): incompatible function arguments. The following argument types are supported:
+    1. (self: depthai.CameraControl, infinityPosition: int, macroPosition: int) -> depthai.CameraControl
+
+Invoked with: <depthai.CameraControl object at 0x64fa19e0>, 150
+2023-10-18 22:39:19,986 - ERROR: 
+
+2023-10-18 22:40:51,650 - INFO: Rec ID: 17 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:41:23,427 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:41:23,437 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 479, in <module>
+
+2023-10-18 22:41:23,447 - ERROR:     
+2023-10-18 22:41:23,448 - ERROR: tracks = q_track.get().tracklets
+2023-10-18 22:41:23,448 - ERROR: 
+
+2023-10-18 22:41:23,448 - ERROR: KeyboardInterrupt
+2023-10-18 22:41:23,449 - ERROR: 
+2023-10-18 22:41:23,449 - ERROR: 
+
+2023-10-18 22:42:15,559 - INFO: Rec ID: 18 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:42:25,101 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:42:25,101 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:42:25,105 - ERROR:     
+2023-10-18 22:42:25,105 - ERROR: time.sleep(1)
+2023-10-18 22:42:25,105 - ERROR: 
+
+2023-10-18 22:42:25,106 - ERROR: KeyboardInterrupt
+2023-10-18 22:42:25,106 - ERROR: 
+2023-10-18 22:42:25,106 - ERROR: 
+
+2023-10-18 22:43:44,841 - INFO: Rec ID: 19 | Rec time: 40 min | Charge level: 96%
+2023-10-18 22:44:00,624 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:44:00,632 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:44:00,650 - ERROR:     
+2023-10-18 22:44:00,651 - ERROR: time.sleep(1)
+2023-10-18 22:44:00,653 - ERROR: 
+
+2023-10-18 22:44:00,654 - ERROR: KeyboardInterrupt
+2023-10-18 22:44:00,655 - ERROR: 
+2023-10-18 22:44:00,656 - ERROR: 
+
+2023-10-18 22:44:50,265 - INFO: Rec ID: 20 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:45:05,370 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:45:05,373 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:45:05,386 - ERROR:     
+2023-10-18 22:45:05,387 - ERROR: time.sleep(1)
+2023-10-18 22:45:05,387 - ERROR: 
+
+2023-10-18 22:45:05,388 - ERROR: KeyboardInterrupt
+2023-10-18 22:45:05,388 - ERROR: 
+2023-10-18 22:45:05,388 - ERROR: 
+
+2023-10-18 22:45:44,507 - INFO: Rec ID: 21 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:45:53,867 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:45:53,878 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-18 22:45:53,884 - ERROR:     
+2023-10-18 22:45:53,885 - ERROR: store_data(frame, tracks)
+2023-10-18 22:45:53,886 - ERROR: 
+
+2023-10-18 22:45:53,887 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 312, in store_data
+
+2023-10-18 22:45:53,889 - ERROR:     
+2023-10-18 22:45:53,891 - ERROR: response = requests.post(webhook_url, files=files)
+2023-10-18 22:45:53,892 - ERROR: 
+
+2023-10-18 22:45:53,893 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-10-18 22:45:53,897 - ERROR:     
+2023-10-18 22:45:53,898 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-10-18 22:45:53,900 - ERROR: 
+
+2023-10-18 22:45:53,901 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-10-18 22:45:53,902 - ERROR:     
+2023-10-18 22:45:53,904 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-10-18 22:45:53,905 - ERROR: 
+
+2023-10-18 22:45:53,906 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-10-18 22:45:53,910 - ERROR:     
+2023-10-18 22:45:53,912 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-10-18 22:45:53,913 - ERROR: 
+
+2023-10-18 22:45:53,914 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 697, in send
+
+2023-10-18 22:45:53,917 - ERROR:     
+2023-10-18 22:45:53,918 - ERROR: r.content
+2023-10-18 22:45:53,919 - ERROR: 
+
+2023-10-18 22:45:53,920 - ERROR:   File "/usr/lib/python3/dist-packages/requests/models.py", line 831, in content
+
+2023-10-18 22:45:53,925 - ERROR:     
+2023-10-18 22:45:53,927 - ERROR: self._content = b''.join(self.iter_content(CONTENT_CHUNK_SIZE)) or b''
+2023-10-18 22:45:53,928 - ERROR: 
+
+2023-10-18 22:45:53,929 - ERROR:   File "/usr/lib/python3/dist-packages/requests/models.py", line 753, in generate
+
+2023-10-18 22:45:53,932 - ERROR:     
+2023-10-18 22:45:53,933 - ERROR: for chunk in self.raw.stream(chunk_size, decode_content=True):
+2023-10-18 22:45:53,934 - ERROR: 
+
+2023-10-18 22:45:53,935 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/response.py", line 572, in stream
+
+2023-10-18 22:45:53,940 - ERROR:     
+2023-10-18 22:45:53,942 - ERROR: for line in self.read_chunked(amt, decode_content=decode_content):
+2023-10-18 22:45:53,943 - ERROR: 
+
+2023-10-18 22:45:53,944 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/response.py", line 739, in read_chunked
+
+2023-10-18 22:45:53,947 - ERROR:     
+2023-10-18 22:45:53,948 - ERROR: self._init_decoder()
+2023-10-18 22:45:53,949 - ERROR: 
+
+2023-10-18 22:45:53,950 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/response.py", line 378, in _init_decoder
+
+2023-10-18 22:45:53,951 - ERROR:     
+2023-10-18 22:45:53,952 - ERROR: self._decoder = _get_decoder(content_encoding)
+2023-10-18 22:45:53,952 - ERROR: 
+
+2023-10-18 22:45:53,952 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/response.py", line 149, in _get_decoder
+
+2023-10-18 22:45:53,953 - ERROR:     
+2023-10-18 22:45:53,954 - ERROR: return GzipDecoder()
+2023-10-18 22:45:53,954 - ERROR: 
+
+2023-10-18 22:45:53,955 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/response.py", line 76, in __init__
+
+2023-10-18 22:45:53,955 - ERROR:     
+2023-10-18 22:45:53,956 - ERROR: self._obj = zlib.decompressobj(16 + zlib.MAX_WBITS)
+2023-10-18 22:45:53,956 - ERROR: 
+
+2023-10-18 22:45:53,957 - ERROR: KeyboardInterrupt
+2023-10-18 22:45:53,957 - ERROR: 
+2023-10-18 22:45:53,957 - ERROR: 
+
+2023-10-18 22:46:17,031 - INFO: Rec ID: 22 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:46:36,853 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:46:36,874 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:46:36,901 - ERROR:     
+2023-10-18 22:46:36,902 - ERROR: time.sleep(1)
+2023-10-18 22:46:36,902 - ERROR: 
+
+2023-10-18 22:46:36,902 - ERROR: KeyboardInterrupt
+2023-10-18 22:46:36,903 - ERROR: 
+2023-10-18 22:46:36,903 - ERROR: 
+
+2023-10-18 22:47:16,786 - INFO: Rec ID: 23 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:47:29,475 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:47:29,490 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:47:29,497 - ERROR:     
+2023-10-18 22:47:29,498 - ERROR: time.sleep(1)
+2023-10-18 22:47:29,498 - ERROR: 
+
+2023-10-18 22:47:29,499 - ERROR: KeyboardInterrupt
+2023-10-18 22:47:29,499 - ERROR: 
+2023-10-18 22:47:29,500 - ERROR: 
+
+2023-10-18 22:48:10,354 - INFO: Rec ID: 24 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:48:29,510 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:48:29,579 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-18 22:48:29,636 - ERROR:     
+2023-10-18 22:48:29,637 - ERROR: store_data(frame, tracks)
+2023-10-18 22:48:29,638 - ERROR: 
+
+2023-10-18 22:48:29,638 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 293, in store_data
+
+2023-10-18 22:48:29,640 - ERROR:     
+2023-10-18 22:48:29,642 - ERROR: det_crop = make_bbox_square(bbox)
+2023-10-18 22:48:29,642 - ERROR: 
+
+2023-10-18 22:48:29,643 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 239, in make_bbox_square
+
+2023-10-18 22:48:29,644 - ERROR:     
+2023-10-18 22:48:29,645 - ERROR: bbox_width = bbox[2] - bbox[0]
+2023-10-18 22:48:29,645 - ERROR: 
+
+2023-10-18 22:48:29,646 - ERROR: KeyboardInterrupt
+2023-10-18 22:48:29,646 - ERROR: 
+2023-10-18 22:48:29,647 - ERROR: 
+
+2023-10-18 22:49:28,746 - INFO: Rec ID: 25 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:49:39,458 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:49:39,461 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:49:39,468 - ERROR:     
+2023-10-18 22:49:39,468 - ERROR: time.sleep(1)
+2023-10-18 22:49:39,469 - ERROR: 
+
+2023-10-18 22:49:39,469 - ERROR: KeyboardInterrupt
+2023-10-18 22:49:39,470 - ERROR: 
+2023-10-18 22:49:39,470 - ERROR: 
+
+2023-10-18 22:50:17,286 - INFO: Rec ID: 26 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:50:30,423 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:50:30,432 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:50:30,442 - ERROR:     
+2023-10-18 22:50:30,442 - ERROR: time.sleep(1)
+2023-10-18 22:50:30,443 - ERROR: 
+
+2023-10-18 22:50:30,443 - ERROR: KeyboardInterrupt
+2023-10-18 22:50:30,444 - ERROR: 
+2023-10-18 22:50:30,444 - ERROR: 
+
+2023-10-18 22:54:34,030 - INFO: Rec ID: 27 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:54:51,296 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:54:51,316 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 476, in <module>
+
+2023-10-18 22:54:51,337 - ERROR:     
+2023-10-18 22:54:51,337 - ERROR: frame = q_frame.get().getCvFrame()
+2023-10-18 22:54:51,338 - ERROR: 
+
+2023-10-18 22:54:51,338 - ERROR: KeyboardInterrupt
+2023-10-18 22:54:51,339 - ERROR: 
+2023-10-18 22:54:51,339 - ERROR: 
+
+2023-10-18 22:58:32,271 - INFO: Rec ID: 28 | Rec time: 40 min | Charge level: 97%
+2023-10-18 22:58:44,997 - ERROR: Traceback (most recent call last):
+
+2023-10-18 22:58:45,001 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 22:58:45,007 - ERROR:     
+2023-10-18 22:58:45,008 - ERROR: time.sleep(1)
+2023-10-18 22:58:45,008 - ERROR: 
+
+2023-10-18 22:58:45,009 - ERROR: KeyboardInterrupt
+2023-10-18 22:58:45,009 - ERROR: 
+2023-10-18 22:58:45,009 - ERROR: 
+
+2023-10-18 23:01:52,283 - INFO: Rec ID: 29 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:02:51,784 - INFO: Rec ID: 30 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:03:33,550 - INFO: Rec ID: 31 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:05:40,070 - INFO: Rec ID: 32 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:06:23,083 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:06:56,367 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:07:18,143 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 478, in <module>
+    if q_track.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'track' (X_LINK_ERROR)'
+
+2023-10-18 23:07:18,161 - ERROR: Error during recording 1 | Charge level: 97%
+
+2023-10-18 23:08:59,643 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:10:18,139 - ERROR: Traceback (most recent call last):
+
+2023-10-18 23:10:18,141 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 23:10:18,155 - ERROR:     
+2023-10-18 23:10:18,156 - ERROR: time.sleep(1)
+2023-10-18 23:10:18,157 - ERROR: 
+
+2023-10-18 23:10:18,157 - ERROR: KeyboardInterrupt
+2023-10-18 23:10:18,158 - ERROR: 
+2023-10-18 23:10:18,159 - ERROR: 
+
+2023-10-18 23:10:32,274 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 97%
+2023-10-18 23:11:35,626 - ERROR: Traceback (most recent call last):
+
+2023-10-18 23:11:35,628 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-18 23:11:35,644 - ERROR:     
+2023-10-18 23:11:35,644 - ERROR: time.sleep(1)
+2023-10-18 23:11:35,645 - ERROR: 
+
+2023-10-18 23:11:35,646 - ERROR: KeyboardInterrupt
+2023-10-18 23:11:35,646 - ERROR: 
+2023-10-18 23:11:35,647 - ERROR: 
+
+2023-10-25 19:57:26,974 - INFO: Rec ID: 4 | Rec time: 30 min | Charge level: 54%
+2023-10-25 19:58:52,638 - ERROR: Traceback (most recent call last):
+
+2023-10-25 19:58:52,676 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 19:58:52,692 - ERROR:     
+2023-10-25 19:58:52,692 - ERROR: time.sleep(1)
+2023-10-25 19:58:52,693 - ERROR: 
+
+2023-10-25 19:58:52,694 - ERROR: KeyboardInterrupt
+2023-10-25 19:58:52,694 - ERROR: 
+2023-10-25 19:58:52,695 - ERROR: 
+
+2023-10-25 19:59:43,280 - ERROR: Traceback (most recent call last):
+
+2023-10-25 19:59:43,281 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 430, in <module>
+
+2023-10-25 19:59:43,283 - ERROR:     
+2023-10-25 19:59:43,284 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-10-25 19:59:43,284 - ERROR: 
+
+2023-10-25 19:59:43,285 - ERROR: RuntimeError
+2023-10-25 19:59:43,285 - ERROR: : 
+2023-10-25 19:59:43,285 - ERROR: No available devices
+2023-10-25 19:59:43,286 - ERROR: 
+
+2023-10-25 20:22:55,859 - INFO: Rec ID: 6 | Rec time: 30 min | Charge level: 64%
+2023-10-25 20:23:15,281 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:23:15,283 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:23:15,287 - ERROR:     
+2023-10-25 20:23:15,288 - ERROR: time.sleep(1)
+2023-10-25 20:23:15,289 - ERROR: 
+
+2023-10-25 20:23:15,289 - ERROR: KeyboardInterrupt
+2023-10-25 20:23:15,289 - ERROR: 
+2023-10-25 20:23:15,290 - ERROR: 
+
+2023-10-25 20:24:01,079 - INFO: Rec ID: 7 | Rec time: 30 min | Charge level: 64%
+2023-10-25 20:24:18,369 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:24:18,370 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:24:18,373 - ERROR:     
+2023-10-25 20:24:18,374 - ERROR: time.sleep(1)
+2023-10-25 20:24:18,374 - ERROR: 
+
+2023-10-25 20:24:18,374 - ERROR: KeyboardInterrupt
+2023-10-25 20:24:18,374 - ERROR: 
+2023-10-25 20:24:18,375 - ERROR: 
+
+2023-10-25 20:27:58,395 - INFO: Rec ID: 8 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:28:22,125 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:28:22,131 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:28:22,136 - ERROR:     
+2023-10-25 20:28:22,137 - ERROR: time.sleep(1)
+2023-10-25 20:28:22,137 - ERROR: 
+
+2023-10-25 20:28:22,138 - ERROR: KeyboardInterrupt
+2023-10-25 20:28:22,138 - ERROR: 
+2023-10-25 20:28:22,138 - ERROR: 
+
+2023-10-25 20:30:07,669 - INFO: Rec ID: 9 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:31:18,794 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:31:18,811 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:31:18,822 - ERROR:     
+2023-10-25 20:31:18,823 - ERROR: time.sleep(1)
+2023-10-25 20:31:18,823 - ERROR: 
+
+2023-10-25 20:31:18,824 - ERROR: KeyboardInterrupt
+2023-10-25 20:31:18,825 - ERROR: 
+2023-10-25 20:31:18,825 - ERROR: 
+
+2023-10-25 20:31:30,652 - INFO: Rec ID: 10 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:32:49,441 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:32:49,461 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:32:49,472 - ERROR:     
+2023-10-25 20:32:49,472 - ERROR: time.sleep(1)
+2023-10-25 20:32:49,473 - ERROR: 
+
+2023-10-25 20:32:49,474 - ERROR: KeyboardInterrupt
+2023-10-25 20:32:49,474 - ERROR: 
+2023-10-25 20:32:49,475 - ERROR: 
+
+2023-10-25 20:33:03,180 - INFO: Rec ID: 11 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:33:36,759 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:33:36,760 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:33:36,763 - ERROR:     
+2023-10-25 20:33:36,763 - ERROR: time.sleep(1)
+2023-10-25 20:33:36,764 - ERROR: 
+
+2023-10-25 20:33:36,764 - ERROR: KeyboardInterrupt
+2023-10-25 20:33:36,764 - ERROR: 
+2023-10-25 20:33:36,765 - ERROR: 
+
+2023-10-25 20:33:54,411 - INFO: Rec ID: 12 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:34:23,189 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:34:23,189 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:34:23,191 - ERROR:     
+2023-10-25 20:34:23,191 - ERROR: time.sleep(1)
+2023-10-25 20:34:23,192 - ERROR: 
+
+2023-10-25 20:34:23,192 - ERROR: KeyboardInterrupt
+2023-10-25 20:34:23,192 - ERROR: 
+2023-10-25 20:34:23,192 - ERROR: 
+
+2023-10-25 20:34:48,652 - INFO: Rec ID: 13 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:35:21,169 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:35:21,169 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:35:21,171 - ERROR:     
+2023-10-25 20:35:21,171 - ERROR: time.sleep(1)
+2023-10-25 20:35:21,171 - ERROR: 
+
+2023-10-25 20:35:21,172 - ERROR: KeyboardInterrupt
+2023-10-25 20:35:21,172 - ERROR: 
+2023-10-25 20:35:21,172 - ERROR: 
+
+2023-10-25 20:35:59,654 - INFO: Rec ID: 1 | Rec time: 30 min | Charge level: 63%
+2023-10-25 20:36:18,889 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:36:18,889 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:36:18,891 - ERROR:     
+2023-10-25 20:36:18,891 - ERROR: time.sleep(1)
+2023-10-25 20:36:18,891 - ERROR: 
+
+2023-10-25 20:36:18,892 - ERROR: KeyboardInterrupt
+2023-10-25 20:36:18,892 - ERROR: 
+2023-10-25 20:36:18,892 - ERROR: 
+
+2023-10-25 20:38:46,749 - INFO: Rec ID: 2 | Rec time: 30 min | Charge level: 62%
+2023-10-25 20:39:22,558 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:39:22,559 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:39:22,562 - ERROR:     
+2023-10-25 20:39:22,563 - ERROR: time.sleep(1)
+2023-10-25 20:39:22,563 - ERROR: 
+
+2023-10-25 20:39:22,563 - ERROR: KeyboardInterrupt
+2023-10-25 20:39:22,564 - ERROR: 
+2023-10-25 20:39:22,564 - ERROR: 
+
+2023-10-25 20:41:05,632 - INFO: Rec ID: 3 | Rec time: 30 min | Charge level: 62%
+2023-10-25 20:41:33,689 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:41:33,690 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:41:33,693 - ERROR:     
+2023-10-25 20:41:33,694 - ERROR: time.sleep(1)
+2023-10-25 20:41:33,694 - ERROR: 
+
+2023-10-25 20:41:33,695 - ERROR: KeyboardInterrupt
+2023-10-25 20:41:33,695 - ERROR: 
+2023-10-25 20:41:33,695 - ERROR: 
+
+2023-10-25 20:42:12,812 - INFO: Rec ID: 4 | Rec time: 30 min | Charge level: 62%
+2023-10-25 20:42:28,366 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 269, in store_data
+    with open(f"{save_path}/metadata_{rec_start}.csv", "a", encoding="utf-8") as metadata_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'insect-detect/data/20231025/20231025_20-42/metadata_20231025_20-42.csv'
+
+2023-10-25 20:42:28,367 - ERROR: Error during recording 4 | Charge level: 62%
+
+2023-10-25 20:42:31,038 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:42:31,039 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 482, in <module>
+
+2023-10-25 20:42:31,040 - ERROR:     
+2023-10-25 20:42:31,041 - ERROR: store_data(frame, tracks)
+2023-10-25 20:42:31,041 - ERROR: 
+
+2023-10-25 20:42:31,041 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 269, in store_data
+
+2023-10-25 20:42:31,043 - ERROR:     
+2023-10-25 20:42:31,043 - ERROR: with open(f"{save_path}/metadata_{rec_start}.csv", "a", encoding="utf-8") as metadata_file:
+2023-10-25 20:42:31,044 - ERROR: 
+
+2023-10-25 20:42:31,044 - ERROR: FileNotFoundError
+2023-10-25 20:42:31,044 - ERROR: : 
+2023-10-25 20:42:31,044 - ERROR: [Errno 2] No such file or directory: 'insect-detect/data/20231025/20231025_20-42/metadata_20231025_20-42.csv'
+2023-10-25 20:42:31,044 - ERROR: 
+
+2023-10-25 20:42:31,045 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2023-10-25 20:42:31,045 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:42:31,045 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 502, in <module>
+
+2023-10-25 20:42:31,047 - ERROR:     
+2023-10-25 20:42:31,047 - ERROR: record_log()
+2023-10-25 20:42:31,047 - ERROR: 
+
+2023-10-25 20:42:31,048 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 370, in record_log
+
+2023-10-25 20:42:31,049 - ERROR:     
+2023-10-25 20:42:31,049 - ERROR: df_meta = pd.read_csv(f"{save_path}/metadata_{rec_start}.csv", encoding="utf-8")
+2023-10-25 20:42:31,050 - ERROR: 
+
+2023-10-25 20:42:31,050 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 912, in read_csv
+
+2023-10-25 20:42:31,054 - ERROR:     
+2023-10-25 20:42:31,055 - ERROR: return _read(filepath_or_buffer, kwds)
+2023-10-25 20:42:31,055 - ERROR: 
+
+2023-10-25 20:42:31,055 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 577, in _read
+
+2023-10-25 20:42:31,057 - ERROR:     
+2023-10-25 20:42:31,057 - ERROR: parser = TextFileReader(filepath_or_buffer, **kwds)
+2023-10-25 20:42:31,058 - ERROR: 
+
+2023-10-25 20:42:31,058 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1407, in __init__
+
+2023-10-25 20:42:31,060 - ERROR:     
+2023-10-25 20:42:31,061 - ERROR: self._engine = self._make_engine(f, self.engine)
+2023-10-25 20:42:31,061 - ERROR: 
+
+2023-10-25 20:42:31,061 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1661, in _make_engine
+
+2023-10-25 20:42:31,064 - ERROR:     
+2023-10-25 20:42:31,065 - ERROR: self.handles = get_handle(
+2023-10-25 20:42:31,065 - ERROR: 
+
+2023-10-25 20:42:31,065 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/common.py", line 868, in get_handle
+
+2023-10-25 20:42:31,069 - ERROR:     
+2023-10-25 20:42:31,070 - ERROR: handle = open(handle, ioargs.mode)
+2023-10-25 20:42:31,070 - ERROR: 
+
+2023-10-25 20:42:31,070 - ERROR: FileNotFoundError
+2023-10-25 20:42:31,070 - ERROR: : 
+2023-10-25 20:42:31,071 - ERROR: [Errno 2] No such file or directory: 'insect-detect/data/20231025/20231025_20-42/metadata_20231025_20-42.csv'
+2023-10-25 20:42:31,071 - ERROR: 
+
+2023-10-25 20:42:31,071 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2023-10-25 20:42:31,071 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:42:31,072 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 509, in <module>
+
+2023-10-25 20:42:31,073 - ERROR:     
+2023-10-25 20:42:31,073 - ERROR: subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+2023-10-25 20:42:31,074 - ERROR: 
+
+2023-10-25 20:42:31,074 - ERROR: KeyboardInterrupt
+2023-10-25 20:42:31,074 - ERROR: 
+2023-10-25 20:42:31,074 - ERROR: 
+
+2023-10-25 20:43:53,302 - INFO: Rec ID: 1 | Rec time: 30 min | Charge level: 62%
+2023-10-25 20:44:40,719 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:44:40,720 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:44:40,725 - ERROR:     
+2023-10-25 20:44:40,725 - ERROR: time.sleep(1)
+2023-10-25 20:44:40,726 - ERROR: 
+
+2023-10-25 20:44:40,726 - ERROR: KeyboardInterrupt
+2023-10-25 20:44:40,727 - ERROR: 
+2023-10-25 20:44:40,727 - ERROR: 
+
+2023-10-25 20:45:26,803 - INFO: Rec ID: 2 | Rec time: 30 min | Charge level: 62%
+2023-10-25 20:45:58,078 - ERROR: Traceback (most recent call last):
+
+2023-10-25 20:45:58,079 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 20:45:58,080 - ERROR:     
+2023-10-25 20:45:58,081 - ERROR: time.sleep(1)
+2023-10-25 20:45:58,081 - ERROR: 
+
+2023-10-25 20:45:58,081 - ERROR: KeyboardInterrupt
+2023-10-25 20:45:58,081 - ERROR: 
+2023-10-25 20:45:58,082 - ERROR: 
+
+2023-10-25 21:41:06,876 - INFO: Rec ID: 3 | Rec time: 30 min | Charge level: 57%
+2023-10-25 21:41:12,490 - ERROR: Traceback (most recent call last):
+
+2023-10-25 21:41:12,491 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-10-25 21:41:12,496 - ERROR:     
+2023-10-25 21:41:12,496 - ERROR: time.sleep(1)
+2023-10-25 21:41:12,497 - ERROR: 
+
+2023-10-25 21:41:12,497 - ERROR: KeyboardInterrupt
+2023-10-25 21:41:12,498 - ERROR: 
+2023-10-25 21:41:12,498 - ERROR: 
+
+2023-12-05 19:56:52,089 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 90%
+2023-12-05 19:57:18,506 - ERROR: Traceback (most recent call last):
+
+2023-12-05 19:57:18,542 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 485, in <module>
+
+2023-12-05 19:57:18,574 - ERROR:     
+2023-12-05 19:57:18,574 - ERROR: time.sleep(1)
+2023-12-05 19:57:18,575 - ERROR: 
+
+2023-12-05 19:57:18,575 - ERROR: KeyboardInterrupt
+2023-12-05 19:57:18,575 - ERROR: 
+2023-12-05 19:57:18,576 - ERROR: 
+
+2023-12-05 20:56:57,686 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 93%
+2023-12-05 20:57:11,687 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 490, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 308, in store_data
+    json_data = json.dumps(data)
+UnboundLocalError: local variable 'data' referenced before assignment
+
+2023-12-05 20:57:11,692 - ERROR: Error during recording 5 | Charge level: 93%
+
+2023-12-05 21:00:08,385 - INFO: Rec ID: 6 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:00:12,395 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 490, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 308, in store_data
+    json_data = json.dumps(data)
+UnboundLocalError: local variable 'data' referenced before assignment
+
+2023-12-05 21:00:12,424 - ERROR: Error during recording 6 | Charge level: 93%
+
+2023-12-05 21:15:17,488 - INFO: Rec ID: 7 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:16:18,174 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 308, in store_data
+UnboundLocalError: local variable 'data' referenced before assignment
+
+2023-12-05 21:16:18,177 - ERROR: Error during recording 7 | Charge level: 93%
+
+2023-12-05 21:23:50,867 - INFO: Rec ID: 8 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:23:56,678 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 348, in store_data
+    metadata_file.flush() # write data immediately to .csv to avoid potential data loss
+ValueError: I/O operation on closed file.
+
+2023-12-05 21:23:56,679 - ERROR: Error during recording 8 | Charge level: 93%
+
+2023-12-05 21:31:29,874 - INFO: Rec ID: 9 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:31:38,429 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 492, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 345, in store_data
+    metadata_file.flush() # write data immediately to .csv to avoid potential data loss
+ValueError: I/O operation on closed file.
+
+2023-12-05 21:31:38,431 - ERROR: Error during recording 9 | Charge level: 93%
+
+2023-12-05 21:39:17,322 - INFO: Rec ID: 1 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:39:41,704 - ERROR: Traceback (most recent call last):
+
+2023-12-05 21:39:41,709 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+
+2023-12-05 21:39:41,720 - ERROR:     
+2023-12-05 21:39:41,720 - ERROR: time.sleep(1)
+2023-12-05 21:39:41,721 - ERROR: 
+
+2023-12-05 21:39:41,721 - ERROR: KeyboardInterrupt
+2023-12-05 21:39:41,721 - ERROR: 
+2023-12-05 21:39:41,721 - ERROR: 
+
+2023-12-05 21:41:26,005 - INFO: Rec ID: 2 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:41:30,227 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 492, in <module>
+    store_data(frame, tracks)
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 345, in store_data
+    metadata_file.flush() # write data immediately to .csv to avoid potential data loss
+ValueError: I/O operation on closed file.
+
+2023-12-05 21:41:30,227 - ERROR: Error during recording 2 | Charge level: 93%
+
+2023-12-05 21:46:16,220 - INFO: Rec ID: 3 | Rec time: 40 min | Charge level: 93%
+2023-12-05 21:46:36,089 - ERROR: Traceback (most recent call last):
+
+2023-12-05 21:46:36,090 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 492, in <module>
+
+2023-12-05 21:46:36,094 - ERROR:     
+2023-12-05 21:46:36,094 - ERROR: store_data(frame, tracks)
+2023-12-05 21:46:36,095 - ERROR: 
+
+2023-12-05 21:46:36,095 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 320, in store_data
+
+2023-12-05 21:46:36,097 - ERROR:     
+2023-12-05 21:46:36,098 - ERROR: response = requests.post(webhook_url, files=files)
+2023-12-05 21:46:36,098 - ERROR: 
+
+2023-12-05 21:46:36,099 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-05 21:46:36,102 - ERROR:     
+2023-12-05 21:46:36,102 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-05 21:46:36,103 - ERROR: 
+
+2023-12-05 21:46:36,103 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-05 21:46:36,104 - ERROR:     
+2023-12-05 21:46:36,105 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-05 21:46:36,105 - ERROR: 
+
+2023-12-05 21:46:36,105 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-05 21:46:36,109 - ERROR:     
+2023-12-05 21:46:36,110 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-05 21:46:36,110 - ERROR: 
+
+2023-12-05 21:46:36,111 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-05 21:46:36,113 - ERROR:     
+2023-12-05 21:46:36,114 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-05 21:46:36,114 - ERROR: 
+
+2023-12-05 21:46:36,114 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-05 21:46:36,118 - ERROR:     
+2023-12-05 21:46:36,119 - ERROR: resp = conn.urlopen(
+2023-12-05 21:46:36,119 - ERROR: 
+
+2023-12-05 21:46:36,119 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-05 21:46:36,124 - ERROR:     
+2023-12-05 21:46:36,124 - ERROR: httplib_response = self._make_request(
+2023-12-05 21:46:36,125 - ERROR: 
+
+2023-12-05 21:46:36,125 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-05 21:46:36,127 - ERROR:     
+2023-12-05 21:46:36,128 - ERROR: self._validate_conn(conn)
+2023-12-05 21:46:36,128 - ERROR: 
+
+2023-12-05 21:46:36,128 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-05 21:46:36,131 - ERROR:     
+2023-12-05 21:46:36,132 - ERROR: conn.connect()
+2023-12-05 21:46:36,132 - ERROR: 
+
+2023-12-05 21:46:36,133 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-05 21:46:36,136 - ERROR:     
+2023-12-05 21:46:36,136 - ERROR: conn = self._new_conn()
+2023-12-05 21:46:36,137 - ERROR: 
+
+2023-12-05 21:46:36,137 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-05 21:46:36,138 - ERROR:     
+2023-12-05 21:46:36,139 - ERROR: conn = connection.create_connection(
+2023-12-05 21:46:36,139 - ERROR: 
+
+2023-12-05 21:46:36,140 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-12-05 21:46:36,142 - ERROR:     
+2023-12-05 21:46:36,143 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-12-05 21:46:36,143 - ERROR: 
+
+2023-12-05 21:46:36,144 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-12-05 21:46:36,149 - ERROR:     
+2023-12-05 21:46:36,150 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-12-05 21:46:36,150 - ERROR: 
+
+2023-12-05 21:46:36,150 - ERROR: KeyboardInterrupt
+2023-12-05 21:46:36,151 - ERROR: 
+2023-12-05 21:46:36,151 - ERROR: 
+
+2023-12-06 13:14:13,723 - INFO: Rec ID: 4 | Rec time: 40 min | Charge level: 89%
+2023-12-06 13:19:32,358 - ERROR: Traceback (most recent call last):
+
+2023-12-06 13:19:32,401 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 492, in <module>
+
+2023-12-06 13:19:32,411 - ERROR:     
+2023-12-06 13:19:32,411 - ERROR: store_data(frame, tracks)
+2023-12-06 13:19:32,412 - ERROR: 
+
+2023-12-06 13:19:32,412 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 320, in store_data
+
+2023-12-06 13:19:32,414 - ERROR:     
+2023-12-06 13:19:32,414 - ERROR: response = requests.post(webhook_url, files=files)
+2023-12-06 13:19:32,415 - ERROR: 
+
+2023-12-06 13:19:32,415 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 13:19:32,419 - ERROR:     
+2023-12-06 13:19:32,420 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 13:19:32,420 - ERROR: 
+
+2023-12-06 13:19:32,420 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 13:19:32,423 - ERROR:     
+2023-12-06 13:19:32,424 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 13:19:32,424 - ERROR: 
+
+2023-12-06 13:19:32,425 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 13:19:32,436 - ERROR:     
+2023-12-06 13:19:32,437 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 13:19:32,437 - ERROR: 
+
+2023-12-06 13:19:32,438 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 13:19:32,440 - ERROR:     
+2023-12-06 13:19:32,441 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 13:19:32,441 - ERROR: 
+
+2023-12-06 13:19:32,442 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 13:19:32,445 - ERROR:     
+2023-12-06 13:19:32,446 - ERROR: resp = conn.urlopen(
+2023-12-06 13:19:32,446 - ERROR: 
+
+2023-12-06 13:19:32,446 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 13:19:32,457 - ERROR:     
+2023-12-06 13:19:32,458 - ERROR: httplib_response = self._make_request(
+2023-12-06 13:19:32,458 - ERROR: 
+
+2023-12-06 13:19:32,459 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 13:19:32,460 - ERROR:     
+2023-12-06 13:19:32,461 - ERROR: self._validate_conn(conn)
+2023-12-06 13:19:32,461 - ERROR: 
+
+2023-12-06 13:19:32,461 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 13:19:32,467 - ERROR:     
+2023-12-06 13:19:32,468 - ERROR: conn.connect()
+2023-12-06 13:19:32,468 - ERROR: 
+
+2023-12-06 13:19:32,469 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 13:19:32,472 - ERROR:     
+2023-12-06 13:19:32,473 - ERROR: conn = self._new_conn()
+2023-12-06 13:19:32,473 - ERROR: 
+
+2023-12-06 13:19:32,474 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 13:19:32,475 - ERROR:     
+2023-12-06 13:19:32,475 - ERROR: conn = connection.create_connection(
+2023-12-06 13:19:32,476 - ERROR: 
+
+2023-12-06 13:19:32,476 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-12-06 13:19:32,492 - ERROR:     
+2023-12-06 13:19:32,493 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-12-06 13:19:32,493 - ERROR: 
+
+2023-12-06 13:19:32,494 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-12-06 13:19:32,499 - ERROR:     
+2023-12-06 13:19:32,499 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-12-06 13:19:32,500 - ERROR: 
+
+2023-12-06 13:19:32,500 - ERROR: KeyboardInterrupt
+2023-12-06 13:19:32,501 - ERROR: 
+2023-12-06 13:19:32,501 - ERROR: 
+
+2023-12-06 14:02:41,778 - INFO: Rec ID: 5 | Rec time: 40 min | Charge level: 72%
+2023-12-06 14:04:26,517 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:04:26,551 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+
+2023-12-06 14:04:26,620 - ERROR:     
+2023-12-06 14:04:26,621 - ERROR: store_data(frame, tracks)
+2023-12-06 14:04:26,621 - ERROR: 
+
+2023-12-06 14:04:26,622 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:04:26,623 - ERROR:     
+2023-12-06 14:04:26,624 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-06 14:04:26,624 - ERROR: 
+
+2023-12-06 14:04:26,624 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:04:26,667 - ERROR:     
+2023-12-06 14:04:26,668 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:04:26,668 - ERROR: 
+
+2023-12-06 14:04:26,668 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:04:26,669 - ERROR:     
+2023-12-06 14:04:26,670 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:04:26,670 - ERROR: 
+
+2023-12-06 14:04:26,671 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:04:26,682 - ERROR:     
+2023-12-06 14:04:26,682 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:04:26,683 - ERROR: 
+
+2023-12-06 14:04:26,683 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:04:26,685 - ERROR:     
+2023-12-06 14:04:26,686 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:04:26,686 - ERROR: 
+
+2023-12-06 14:04:26,687 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:04:26,691 - ERROR:     
+2023-12-06 14:04:26,691 - ERROR: resp = conn.urlopen(
+2023-12-06 14:04:26,692 - ERROR: 
+
+2023-12-06 14:04:26,692 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:04:26,697 - ERROR:     
+2023-12-06 14:04:26,698 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:04:26,698 - ERROR: 
+
+2023-12-06 14:04:26,698 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:04:26,700 - ERROR:     
+2023-12-06 14:04:26,700 - ERROR: self._validate_conn(conn)
+2023-12-06 14:04:26,700 - ERROR: 
+
+2023-12-06 14:04:26,701 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:04:26,703 - ERROR:     
+2023-12-06 14:04:26,704 - ERROR: conn.connect()
+2023-12-06 14:04:26,704 - ERROR: 
+
+2023-12-06 14:04:26,704 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:04:26,707 - ERROR:     
+2023-12-06 14:04:26,708 - ERROR: conn = self._new_conn()
+2023-12-06 14:04:26,708 - ERROR: 
+
+2023-12-06 14:04:26,709 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:04:26,710 - ERROR:     
+2023-12-06 14:04:26,710 - ERROR: conn = connection.create_connection(
+2023-12-06 14:04:26,710 - ERROR: 
+
+2023-12-06 14:04:26,711 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 86, in create_connection
+
+2023-12-06 14:04:26,721 - ERROR:     
+2023-12-06 14:04:26,721 - ERROR: sock.connect(sa)
+2023-12-06 14:04:26,722 - ERROR: 
+
+2023-12-06 14:04:26,722 - ERROR: KeyboardInterrupt
+2023-12-06 14:04:26,722 - ERROR: 
+2023-12-06 14:04:26,723 - ERROR: 
+
+2023-12-06 14:04:52,455 - INFO: Rec ID: 6 | Rec time: 40 min | Charge level: 71%
+2023-12-06 14:05:28,645 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:05:28,749 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+
+2023-12-06 14:05:28,823 - ERROR:     
+2023-12-06 14:05:28,824 - ERROR: store_data(frame, tracks)
+2023-12-06 14:05:28,824 - ERROR: 
+
+2023-12-06 14:05:28,824 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:05:28,826 - ERROR:     
+2023-12-06 14:05:28,827 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-06 14:05:28,827 - ERROR: 
+
+2023-12-06 14:05:28,827 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:05:28,883 - ERROR:     
+2023-12-06 14:05:28,884 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:05:28,884 - ERROR: 
+
+2023-12-06 14:05:28,884 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:05:28,885 - ERROR:     
+2023-12-06 14:05:28,886 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:05:28,886 - ERROR: 
+
+2023-12-06 14:05:28,886 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:05:28,902 - ERROR:     
+2023-12-06 14:05:28,903 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:05:28,903 - ERROR: 
+
+2023-12-06 14:05:28,903 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:05:28,906 - ERROR:     
+2023-12-06 14:05:28,906 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:05:28,907 - ERROR: 
+
+2023-12-06 14:05:28,907 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:05:28,930 - ERROR:     
+2023-12-06 14:05:28,930 - ERROR: resp = conn.urlopen(
+2023-12-06 14:05:28,931 - ERROR: 
+
+2023-12-06 14:05:28,931 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:05:28,963 - ERROR:     
+2023-12-06 14:05:28,964 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:05:28,964 - ERROR: 
+
+2023-12-06 14:05:28,965 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:05:28,966 - ERROR:     
+2023-12-06 14:05:28,967 - ERROR: self._validate_conn(conn)
+2023-12-06 14:05:28,967 - ERROR: 
+
+2023-12-06 14:05:28,968 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:05:28,973 - ERROR:     
+2023-12-06 14:05:28,974 - ERROR: conn.connect()
+2023-12-06 14:05:28,974 - ERROR: 
+
+2023-12-06 14:05:28,975 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:05:28,990 - ERROR:     
+2023-12-06 14:05:28,990 - ERROR: conn = self._new_conn()
+2023-12-06 14:05:28,991 - ERROR: 
+
+2023-12-06 14:05:28,991 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:05:28,992 - ERROR:     
+2023-12-06 14:05:28,992 - ERROR: conn = connection.create_connection(
+2023-12-06 14:05:28,993 - ERROR: 
+
+2023-12-06 14:05:28,993 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 86, in create_connection
+
+2023-12-06 14:05:29,055 - ERROR:     
+2023-12-06 14:05:29,056 - ERROR: sock.connect(sa)
+2023-12-06 14:05:29,056 - ERROR: 
+
+2023-12-06 14:05:29,057 - ERROR: KeyboardInterrupt
+2023-12-06 14:05:29,057 - ERROR: 
+2023-12-06 14:05:29,057 - ERROR: 
+
+2023-12-06 14:07:12,153 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:07:12,156 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 443, in <module>
+
+2023-12-06 14:07:12,161 - ERROR:     
+2023-12-06 14:07:12,161 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-12-06 14:07:12,162 - ERROR: 
+
+2023-12-06 14:07:12,162 - ERROR: RuntimeError
+2023-12-06 14:07:12,163 - ERROR: : 
+2023-12-06 14:07:12,163 - ERROR: No available devices (1 connected, but in use)
+2023-12-06 14:07:12,163 - ERROR: 
+
+2023-12-06 14:07:34,111 - INFO: Rec ID: 7 | Rec time: 40 min | Charge level: 71%
+2023-12-06 14:08:18,401 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:08:18,498 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+
+2023-12-06 14:08:18,666 - ERROR:     
+2023-12-06 14:08:18,667 - ERROR: store_data(frame, tracks)
+2023-12-06 14:08:18,667 - ERROR: 
+
+2023-12-06 14:08:18,668 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:08:18,670 - ERROR:     
+2023-12-06 14:08:18,670 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-06 14:08:18,671 - ERROR: 
+
+2023-12-06 14:08:18,671 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:08:18,749 - ERROR:     
+2023-12-06 14:08:18,750 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:08:18,750 - ERROR: 
+
+2023-12-06 14:08:18,750 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:08:18,751 - ERROR:     
+2023-12-06 14:08:18,752 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:08:18,752 - ERROR: 
+
+2023-12-06 14:08:18,752 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:08:18,780 - ERROR:     
+2023-12-06 14:08:18,781 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:08:18,782 - ERROR: 
+
+2023-12-06 14:08:18,782 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:08:18,785 - ERROR:     
+2023-12-06 14:08:18,786 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:08:18,786 - ERROR: 
+
+2023-12-06 14:08:18,786 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:08:18,836 - ERROR:     
+2023-12-06 14:08:18,836 - ERROR: resp = conn.urlopen(
+2023-12-06 14:08:18,837 - ERROR: 
+
+2023-12-06 14:08:18,837 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:08:18,885 - ERROR:     
+2023-12-06 14:08:18,886 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:08:18,886 - ERROR: 
+
+2023-12-06 14:08:18,887 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:08:18,888 - ERROR:     
+2023-12-06 14:08:18,888 - ERROR: self._validate_conn(conn)
+2023-12-06 14:08:18,889 - ERROR: 
+
+2023-12-06 14:08:18,889 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:08:18,891 - ERROR:     
+2023-12-06 14:08:18,892 - ERROR: conn.connect()
+2023-12-06 14:08:18,892 - ERROR: 
+
+2023-12-06 14:08:18,893 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:08:18,897 - ERROR:     
+2023-12-06 14:08:18,898 - ERROR: conn = self._new_conn()
+2023-12-06 14:08:18,898 - ERROR: 
+
+2023-12-06 14:08:18,898 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:08:18,899 - ERROR:     
+2023-12-06 14:08:18,899 - ERROR: conn = connection.create_connection(
+2023-12-06 14:08:18,900 - ERROR: 
+
+2023-12-06 14:08:18,900 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 86, in create_connection
+
+2023-12-06 14:08:18,926 - ERROR:     
+2023-12-06 14:08:18,927 - ERROR: sock.connect(sa)
+2023-12-06 14:08:18,927 - ERROR: 
+
+2023-12-06 14:08:18,927 - ERROR: KeyboardInterrupt
+2023-12-06 14:08:18,928 - ERROR: 
+2023-12-06 14:08:18,928 - ERROR: 
+
+2023-12-06 14:08:46,257 - INFO: Rec ID: 8 | Rec time: 40 min | Charge level: 71%
+2023-12-06 14:09:09,686 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:09:09,705 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+
+2023-12-06 14:09:09,722 - ERROR:     
+2023-12-06 14:09:09,723 - ERROR: store_data(frame, tracks)
+2023-12-06 14:09:09,727 - ERROR: 
+
+2023-12-06 14:09:09,728 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:09:09,730 - ERROR:     
+2023-12-06 14:09:09,731 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-06 14:09:09,731 - ERROR: 
+
+2023-12-06 14:09:09,732 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:09:09,743 - ERROR:     
+2023-12-06 14:09:09,744 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:09:09,744 - ERROR: 
+
+2023-12-06 14:09:09,744 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:09:09,745 - ERROR:     
+2023-12-06 14:09:09,746 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:09:09,746 - ERROR: 
+
+2023-12-06 14:09:09,746 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:09:09,750 - ERROR:     
+2023-12-06 14:09:09,750 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:09:09,750 - ERROR: 
+
+2023-12-06 14:09:09,751 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:09:09,753 - ERROR:     
+2023-12-06 14:09:09,753 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:09:09,754 - ERROR: 
+
+2023-12-06 14:09:09,754 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:09:09,757 - ERROR:     
+2023-12-06 14:09:09,758 - ERROR: resp = conn.urlopen(
+2023-12-06 14:09:09,758 - ERROR: 
+
+2023-12-06 14:09:09,759 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:09:09,763 - ERROR:     
+2023-12-06 14:09:09,764 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:09:09,764 - ERROR: 
+
+2023-12-06 14:09:09,765 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:09:09,766 - ERROR:     
+2023-12-06 14:09:09,766 - ERROR: self._validate_conn(conn)
+2023-12-06 14:09:09,767 - ERROR: 
+
+2023-12-06 14:09:09,767 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:09:09,770 - ERROR:     
+2023-12-06 14:09:09,770 - ERROR: conn.connect()
+2023-12-06 14:09:09,771 - ERROR: 
+
+2023-12-06 14:09:09,771 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:09:09,774 - ERROR:     
+2023-12-06 14:09:09,774 - ERROR: conn = self._new_conn()
+2023-12-06 14:09:09,775 - ERROR: 
+
+2023-12-06 14:09:09,775 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:09:09,776 - ERROR:     
+2023-12-06 14:09:09,776 - ERROR: conn = connection.create_connection(
+2023-12-06 14:09:09,777 - ERROR: 
+
+2023-12-06 14:09:09,777 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 86, in create_connection
+
+2023-12-06 14:09:09,788 - ERROR:     
+2023-12-06 14:09:09,788 - ERROR: sock.connect(sa)
+2023-12-06 14:09:09,789 - ERROR: 
+
+2023-12-06 14:09:09,789 - ERROR: KeyboardInterrupt
+2023-12-06 14:09:09,789 - ERROR: 
+2023-12-06 14:09:09,789 - ERROR: 
+
+2023-12-06 14:10:17,018 - INFO: Rec ID: 9 | Rec time: 40 min | Charge level: 70%
+2023-12-06 14:10:42,800 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:10:42,861 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 498, in <module>
+
+2023-12-06 14:10:42,879 - ERROR:     
+2023-12-06 14:10:42,880 - ERROR: time.sleep(1)
+2023-12-06 14:10:42,880 - ERROR: 
+
+2023-12-06 14:10:42,880 - ERROR: KeyboardInterrupt
+2023-12-06 14:10:42,880 - ERROR: 
+2023-12-06 14:10:42,881 - ERROR: 
+
+2023-12-06 14:11:07,979 - INFO: Rec ID: 10 | Rec time: 40 min | Charge level: 70%
+2023-12-06 14:11:57,288 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:11:57,398 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 495, in <module>
+
+2023-12-06 14:11:57,429 - ERROR:     
+2023-12-06 14:11:57,430 - ERROR: store_data(frame, tracks)
+2023-12-06 14:11:57,430 - ERROR: 
+
+2023-12-06 14:11:57,431 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:11:57,433 - ERROR:     
+2023-12-06 14:11:57,433 - ERROR: response = requests.post(webhook_url, files=files)
+2023-12-06 14:11:57,434 - ERROR: 
+
+2023-12-06 14:11:57,434 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:11:57,445 - ERROR:     
+2023-12-06 14:11:57,446 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:11:57,446 - ERROR: 
+
+2023-12-06 14:11:57,447 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:11:57,448 - ERROR:     
+2023-12-06 14:11:57,449 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:11:57,449 - ERROR: 
+
+2023-12-06 14:11:57,449 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:11:57,454 - ERROR:     
+2023-12-06 14:11:57,454 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:11:57,455 - ERROR: 
+
+2023-12-06 14:11:57,455 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:11:57,458 - ERROR:     
+2023-12-06 14:11:57,459 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:11:57,459 - ERROR: 
+
+2023-12-06 14:11:57,459 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:11:57,462 - ERROR:     
+2023-12-06 14:11:57,463 - ERROR: resp = conn.urlopen(
+2023-12-06 14:11:57,463 - ERROR: 
+
+2023-12-06 14:11:57,464 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:11:57,468 - ERROR:     
+2023-12-06 14:11:57,469 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:11:57,469 - ERROR: 
+
+2023-12-06 14:11:57,469 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:11:57,471 - ERROR:     
+2023-12-06 14:11:57,471 - ERROR: self._validate_conn(conn)
+2023-12-06 14:11:57,472 - ERROR: 
+
+2023-12-06 14:11:57,472 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:11:57,475 - ERROR:     
+2023-12-06 14:11:57,475 - ERROR: conn.connect()
+2023-12-06 14:11:57,475 - ERROR: 
+
+2023-12-06 14:11:57,476 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:11:57,478 - ERROR:     
+2023-12-06 14:11:57,479 - ERROR: conn = self._new_conn()
+2023-12-06 14:11:57,479 - ERROR: 
+
+2023-12-06 14:11:57,480 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:11:57,481 - ERROR:     
+2023-12-06 14:11:57,481 - ERROR: conn = connection.create_connection(
+2023-12-06 14:11:57,482 - ERROR: 
+
+2023-12-06 14:11:57,483 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 86, in create_connection
+
+2023-12-06 14:11:57,493 - ERROR:     
+2023-12-06 14:11:57,494 - ERROR: sock.connect(sa)
+2023-12-06 14:11:57,494 - ERROR: 
+
+2023-12-06 14:11:57,495 - ERROR: KeyboardInterrupt
+2023-12-06 14:11:57,495 - ERROR: 
+2023-12-06 14:11:57,495 - ERROR: 
+
+2023-12-06 14:12:27,069 - INFO: Rec ID: 11 | Rec time: 40 min | Charge level: 70%
+2023-12-06 14:17:30,831 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:17:31,147 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 494, in <module>
+
+2023-12-06 14:17:31,198 - ERROR:     
+2023-12-06 14:17:31,199 - ERROR: store_data(frame, tracks)
+2023-12-06 14:17:31,199 - ERROR: 
+
+2023-12-06 14:17:31,199 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:17:31,201 - ERROR:     
+2023-12-06 14:17:31,202 - ERROR: response = requests.post(webhook_url, files=files)
+2023-12-06 14:17:31,202 - ERROR: 
+
+2023-12-06 14:17:31,202 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:17:31,226 - ERROR:     
+2023-12-06 14:17:31,226 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:17:31,227 - ERROR: 
+
+2023-12-06 14:17:31,227 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:17:31,228 - ERROR:     
+2023-12-06 14:17:31,229 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:17:31,229 - ERROR: 
+
+2023-12-06 14:17:31,230 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:17:31,244 - ERROR:     
+2023-12-06 14:17:31,245 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:17:31,245 - ERROR: 
+
+2023-12-06 14:17:31,246 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:17:31,248 - ERROR:     
+2023-12-06 14:17:31,249 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:17:31,249 - ERROR: 
+
+2023-12-06 14:17:31,250 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:17:31,262 - ERROR:     
+2023-12-06 14:17:31,263 - ERROR: resp = conn.urlopen(
+2023-12-06 14:17:31,263 - ERROR: 
+
+2023-12-06 14:17:31,263 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:17:31,278 - ERROR:     
+2023-12-06 14:17:31,279 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:17:31,279 - ERROR: 
+
+2023-12-06 14:17:31,279 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:17:31,281 - ERROR:     
+2023-12-06 14:17:31,281 - ERROR: self._validate_conn(conn)
+2023-12-06 14:17:31,281 - ERROR: 
+
+2023-12-06 14:17:31,282 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:17:31,285 - ERROR:     
+2023-12-06 14:17:31,285 - ERROR: conn.connect()
+2023-12-06 14:17:31,286 - ERROR: 
+
+2023-12-06 14:17:31,286 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:17:31,292 - ERROR:     
+2023-12-06 14:17:31,292 - ERROR: conn = self._new_conn()
+2023-12-06 14:17:31,293 - ERROR: 
+
+2023-12-06 14:17:31,293 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:17:31,294 - ERROR:     
+2023-12-06 14:17:31,294 - ERROR: conn = connection.create_connection(
+2023-12-06 14:17:31,295 - ERROR: 
+
+2023-12-06 14:17:31,295 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 86, in create_connection
+
+2023-12-06 14:17:31,319 - ERROR:     
+2023-12-06 14:17:31,319 - ERROR: sock.connect(sa)
+2023-12-06 14:17:31,320 - ERROR: 
+
+2023-12-06 14:17:31,320 - ERROR: KeyboardInterrupt
+2023-12-06 14:17:31,320 - ERROR: 
+2023-12-06 14:17:31,321 - ERROR: 
+
+2023-12-06 14:17:31,321 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2023-12-06 14:17:31,321 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:17:31,321 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 521, in <module>
+
+2023-12-06 14:17:31,324 - ERROR:     
+2023-12-06 14:17:31,324 - ERROR: subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+2023-12-06 14:17:31,325 - ERROR: 
+
+2023-12-06 14:17:31,325 - ERROR: KeyboardInterrupt
+2023-12-06 14:17:31,325 - ERROR: 
+2023-12-06 14:17:31,326 - ERROR: 
+
+2023-12-06 14:17:56,198 - INFO: Rec ID: 12 | Rec time: 30 min | Charge level: 68%
+2023-12-06 14:21:50,738 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:21:50,760 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 494, in <module>
+
+2023-12-06 14:21:50,769 - ERROR:     
+2023-12-06 14:21:50,770 - ERROR: store_data(frame, tracks)
+2023-12-06 14:21:50,771 - ERROR: 
+
+2023-12-06 14:21:50,771 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 323, in store_data
+
+2023-12-06 14:21:50,773 - ERROR:     
+2023-12-06 14:21:50,773 - ERROR: response = requests.post(webhook_url, files=files)
+2023-12-06 14:21:50,774 - ERROR: 
+
+2023-12-06 14:21:50,774 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-06 14:21:50,785 - ERROR:     
+2023-12-06 14:21:50,786 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-06 14:21:50,786 - ERROR: 
+
+2023-12-06 14:21:50,787 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-06 14:21:50,788 - ERROR:     
+2023-12-06 14:21:50,788 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-06 14:21:50,789 - ERROR: 
+
+2023-12-06 14:21:50,789 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-06 14:21:50,793 - ERROR:     
+2023-12-06 14:21:50,793 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-06 14:21:50,794 - ERROR: 
+
+2023-12-06 14:21:50,794 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-06 14:21:50,797 - ERROR:     
+2023-12-06 14:21:50,797 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-06 14:21:50,798 - ERROR: 
+
+2023-12-06 14:21:50,798 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-06 14:21:50,806 - ERROR:     
+2023-12-06 14:21:50,806 - ERROR: resp = conn.urlopen(
+2023-12-06 14:21:50,807 - ERROR: 
+
+2023-12-06 14:21:50,807 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-06 14:21:51,087 - ERROR:     
+2023-12-06 14:21:51,088 - ERROR: httplib_response = self._make_request(
+2023-12-06 14:21:51,088 - ERROR: 
+
+2023-12-06 14:21:51,088 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-06 14:21:51,090 - ERROR:     
+2023-12-06 14:21:51,090 - ERROR: self._validate_conn(conn)
+2023-12-06 14:21:51,090 - ERROR: 
+
+2023-12-06 14:21:51,091 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-06 14:21:51,094 - ERROR:     
+2023-12-06 14:21:51,094 - ERROR: conn.connect()
+2023-12-06 14:21:51,095 - ERROR: 
+
+2023-12-06 14:21:51,095 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 353, in connect
+
+2023-12-06 14:21:51,189 - ERROR:     
+2023-12-06 14:21:51,190 - ERROR: conn = self._new_conn()
+2023-12-06 14:21:51,190 - ERROR: 
+
+2023-12-06 14:21:51,191 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 169, in _new_conn
+
+2023-12-06 14:21:51,192 - ERROR:     
+2023-12-06 14:21:51,193 - ERROR: conn = connection.create_connection(
+2023-12-06 14:21:51,193 - ERROR: 
+
+2023-12-06 14:21:51,194 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+
+2023-12-06 14:21:51,497 - ERROR:     
+2023-12-06 14:21:51,497 - ERROR: for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+2023-12-06 14:21:51,498 - ERROR: 
+
+2023-12-06 14:21:51,498 - ERROR:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+
+2023-12-06 14:21:51,755 - ERROR:     
+2023-12-06 14:21:51,756 - ERROR: for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+2023-12-06 14:21:51,756 - ERROR: 
+
+2023-12-06 14:21:51,756 - ERROR: KeyboardInterrupt
+2023-12-06 14:21:51,757 - ERROR: 
+2023-12-06 14:21:51,757 - ERROR: 
+
+2023-12-06 14:21:51,758 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2023-12-06 14:21:51,758 - ERROR: Traceback (most recent call last):
+
+2023-12-06 14:21:51,759 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 521, in <module>
+
+2023-12-06 14:21:51,761 - ERROR:     
+2023-12-06 14:21:51,762 - ERROR: subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+2023-12-06 14:21:51,762 - ERROR: 
+
+2023-12-06 14:21:51,762 - ERROR: KeyboardInterrupt
+2023-12-06 14:21:51,763 - ERROR: 
+2023-12-06 14:21:51,763 - ERROR: 
+
+1999-12-31 18:46:50,367 - INFO: Rec ID: 12 | Rec time: 40 min | Charge level: 80%
+1999-12-31 18:53:45,361 - ERROR: Traceback (most recent call last):
+
+1999-12-31 18:53:49,804 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 497, in <module>
+
+1999-12-31 18:53:55,061 - ERROR:     
+1999-12-31 18:53:56,972 - ERROR: time.sleep(1)
+1999-12-31 18:53:57,886 - ERROR: 
+
+1999-12-31 18:54:01,954 - ERROR: KeyboardInterrupt
+1999-12-31 18:54:04,524 - ERROR: 
+1999-12-31 18:54:08,018 - ERROR: 
+
+2023-12-06 21:57:36,748 - INFO: Rec ID: 13 | Rec time: 40 min | Charge level: 71%
+2023-12-06 22:00:27,896 - INFO: Rec ID: 14 | Rec time: 40 min | Charge level: 70%
+2023-12-06 22:00:44,288 - ERROR: Traceback (most recent call last):
+
+2023-12-06 22:00:44,289 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 497, in <module>
+
+2023-12-06 22:00:44,292 - ERROR:     
+2023-12-06 22:00:44,293 - ERROR: time.sleep(1)
+2023-12-06 22:00:44,293 - ERROR: 
+
+2023-12-06 22:00:44,293 - ERROR: KeyboardInterrupt
+2023-12-06 22:00:44,293 - ERROR: 
+2023-12-06 22:00:44,294 - ERROR: 
+
+2023-12-06 22:02:15,858 - INFO: Rec ID: 15 | Rec time: 30 min | Charge level: 69%
+2023-12-06 22:02:38,849 - ERROR: Traceback (most recent call last):
+
+2023-12-06 22:02:38,850 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 497, in <module>
+
+2023-12-06 22:02:38,854 - ERROR:     
+2023-12-06 22:02:38,854 - ERROR: time.sleep(1)
+2023-12-06 22:02:38,855 - ERROR: 
+
+2023-12-06 22:02:38,855 - ERROR: KeyboardInterrupt
+2023-12-06 22:02:38,855 - ERROR: 
+2023-12-06 22:02:38,856 - ERROR: 
+
+2023-12-06 22:07:47,573 - INFO: Rec ID: 16 | Rec time: 30 min | Charge level: 68%
+2023-12-06 22:08:20,519 - ERROR: Traceback (most recent call last):
+
+2023-12-06 22:08:20,519 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 496, in <module>
+
+2023-12-06 22:08:20,577 - ERROR:     
+2023-12-06 22:08:20,578 - ERROR: time.sleep(1)
+2023-12-06 22:08:20,578 - ERROR: 
+
+2023-12-06 22:08:20,578 - ERROR: KeyboardInterrupt
+2023-12-06 22:08:20,579 - ERROR: 
+2023-12-06 22:08:20,579 - ERROR: 
+
+2023-12-06 22:11:56,807 - INFO: Rec ID: 17 | Rec time: 30 min | Charge level: 66%
+2023-12-06 22:12:14,109 - ERROR: Traceback (most recent call last):
+
+2023-12-06 22:12:14,110 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 487, in <module>
+
+2023-12-06 22:12:14,115 - ERROR:     
+2023-12-06 22:12:14,116 - ERROR: frame = q_frame.get().getCvFrame()
+2023-12-06 22:12:14,117 - ERROR: 
+
+2023-12-06 22:12:14,117 - ERROR: KeyboardInterrupt
+2023-12-06 22:12:14,118 - ERROR: 
+2023-12-06 22:12:14,118 - ERROR: 
+
+2023-12-07 11:35:38,053 - INFO: Rec ID: 18 | Rec time: 40 min | Charge level: 97%
+2023-12-07 11:36:57,565 - ERROR: Traceback (most recent call last):
+
+2023-12-07 11:36:57,575 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 496, in <module>
+
+2023-12-07 11:36:57,580 - ERROR:     
+2023-12-07 11:36:57,581 - ERROR: time.sleep(1)
+2023-12-07 11:36:57,581 - ERROR: 
+
+2023-12-07 11:36:57,582 - ERROR: KeyboardInterrupt
+2023-12-07 11:36:57,582 - ERROR: 
+2023-12-07 11:36:57,582 - ERROR: 
+
+2023-12-07 12:37:18,898 - INFO: Rec ID: 19 | Rec time: 40 min | Charge level: 95%
+2023-12-07 12:37:34,599 - ERROR: Traceback (most recent call last):
+
+2023-12-07 12:37:34,599 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 496, in <module>
+
+2023-12-07 12:37:34,603 - ERROR:     
+2023-12-07 12:37:34,603 - ERROR: time.sleep(1)
+2023-12-07 12:37:34,604 - ERROR: 
+
+2023-12-07 12:37:34,604 - ERROR: KeyboardInterrupt
+2023-12-07 12:37:34,604 - ERROR: 
+2023-12-07 12:37:34,604 - ERROR: 
+
+2023-12-07 12:55:48,864 - INFO: Rec ID: 20 | Rec time: 40 min | Charge level: 85%
+2023-12-07 12:55:57,665 - ERROR: Traceback (most recent call last):
+
+2023-12-07 12:55:57,665 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 493, in <module>
+
+2023-12-07 12:55:57,669 - ERROR:     
+2023-12-07 12:55:57,669 - ERROR: store_data(frame, tracks)
+2023-12-07 12:55:57,670 - ERROR: 
+
+2023-12-07 12:55:57,670 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 322, in store_data
+
+2023-12-07 12:55:57,671 - ERROR:     
+2023-12-07 12:55:57,671 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-07 12:55:57,672 - ERROR: 
+
+2023-12-07 12:55:57,672 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-07 12:55:57,674 - ERROR:     
+2023-12-07 12:55:57,674 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-07 12:55:57,675 - ERROR: 
+
+2023-12-07 12:55:57,675 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-07 12:55:57,676 - ERROR:     
+2023-12-07 12:55:57,676 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-07 12:55:57,676 - ERROR: 
+
+2023-12-07 12:55:57,676 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-07 12:55:57,740 - ERROR:     
+2023-12-07 12:55:57,740 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-07 12:55:57,741 - ERROR: 
+
+2023-12-07 12:55:57,741 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-07 12:55:57,743 - ERROR:     
+2023-12-07 12:55:57,743 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-07 12:55:57,743 - ERROR: 
+
+2023-12-07 12:55:57,744 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-07 12:55:57,766 - ERROR:     
+2023-12-07 12:55:57,767 - ERROR: resp = conn.urlopen(
+2023-12-07 12:55:57,767 - ERROR: 
+
+2023-12-07 12:55:57,767 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-07 12:55:57,771 - ERROR:     
+2023-12-07 12:55:57,772 - ERROR: httplib_response = self._make_request(
+2023-12-07 12:55:57,772 - ERROR: 
+
+2023-12-07 12:55:57,772 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2023-12-07 12:55:57,773 - ERROR:     
+2023-12-07 12:55:57,774 - ERROR: six.raise_from(e, None)
+2023-12-07 12:55:57,774 - ERROR: 
+
+2023-12-07 12:55:57,774 - ERROR:   File "<string>", line 3, in raise_from
+
+2023-12-07 12:55:57,777 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2023-12-07 12:55:57,778 - ERROR:     
+2023-12-07 12:55:57,778 - ERROR: httplib_response = conn.getresponse()
+2023-12-07 12:55:57,779 - ERROR: 
+
+2023-12-07 12:55:57,779 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2023-12-07 12:55:57,785 - ERROR:     
+2023-12-07 12:55:57,785 - ERROR: response.begin()
+2023-12-07 12:55:57,785 - ERROR: 
+
+2023-12-07 12:55:57,786 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2023-12-07 12:55:57,787 - ERROR:     
+2023-12-07 12:55:57,787 - ERROR: version, status, reason = self._read_status()
+2023-12-07 12:55:57,787 - ERROR: 
+
+2023-12-07 12:55:57,788 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2023-12-07 12:55:57,789 - ERROR:     
+2023-12-07 12:55:57,789 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2023-12-07 12:55:57,789 - ERROR: 
+
+2023-12-07 12:55:57,790 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2023-12-07 12:55:57,793 - ERROR:     
+2023-12-07 12:55:57,794 - ERROR: return self._sock.recv_into(b)
+2023-12-07 12:55:57,794 - ERROR: 
+
+2023-12-07 12:55:57,794 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2023-12-07 12:55:57,799 - ERROR:     
+2023-12-07 12:55:57,800 - ERROR: return self.read(nbytes, buffer)
+2023-12-07 12:55:57,800 - ERROR: 
+
+2023-12-07 12:55:57,800 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2023-12-07 12:55:57,803 - ERROR:     
+2023-12-07 12:55:57,803 - ERROR: return self._sslobj.read(len, buffer)
+2023-12-07 12:55:57,803 - ERROR: 
+
+2023-12-07 12:55:57,804 - ERROR: KeyboardInterrupt
+2023-12-07 12:55:57,804 - ERROR: 
+2023-12-07 12:55:57,804 - ERROR: 
+
+2023-12-07 13:14:04,950 - INFO: Rec ID: 21 | Rec time: 40 min | Charge level: 77%
+2023-12-07 13:14:40,760 - ERROR: Traceback (most recent call last):
+
+2023-12-07 13:14:40,760 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 493, in <module>
+
+2023-12-07 13:14:40,763 - ERROR:     
+2023-12-07 13:14:40,763 - ERROR: store_data(frame, tracks)
+2023-12-07 13:14:40,764 - ERROR: 
+
+2023-12-07 13:14:40,764 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 322, in store_data
+
+2023-12-07 13:14:40,766 - ERROR:     
+2023-12-07 13:14:40,766 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-07 13:14:40,767 - ERROR: 
+
+2023-12-07 13:14:40,767 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-07 13:14:40,770 - ERROR:     
+2023-12-07 13:14:40,770 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-07 13:14:40,771 - ERROR: 
+
+2023-12-07 13:14:40,771 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-07 13:14:40,772 - ERROR:     
+2023-12-07 13:14:40,772 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-07 13:14:40,773 - ERROR: 
+
+2023-12-07 13:14:40,773 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-07 13:14:40,777 - ERROR:     
+2023-12-07 13:14:40,777 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-07 13:14:40,778 - ERROR: 
+
+2023-12-07 13:14:40,778 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-07 13:14:40,781 - ERROR:     
+2023-12-07 13:14:40,781 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-07 13:14:40,781 - ERROR: 
+
+2023-12-07 13:14:40,782 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-07 13:14:40,785 - ERROR:     
+2023-12-07 13:14:40,786 - ERROR: resp = conn.urlopen(
+2023-12-07 13:14:40,786 - ERROR: 
+
+2023-12-07 13:14:40,787 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-07 13:14:40,791 - ERROR:     
+2023-12-07 13:14:40,792 - ERROR: httplib_response = self._make_request(
+2023-12-07 13:14:40,792 - ERROR: 
+
+2023-12-07 13:14:40,792 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 382, in _make_request
+
+2023-12-07 13:14:40,794 - ERROR:     
+2023-12-07 13:14:40,794 - ERROR: self._validate_conn(conn)
+2023-12-07 13:14:40,795 - ERROR: 
+
+2023-12-07 13:14:40,795 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1012, in _validate_conn
+
+2023-12-07 13:14:40,798 - ERROR:     
+2023-12-07 13:14:40,798 - ERROR: conn.connect()
+2023-12-07 13:14:40,799 - ERROR: 
+
+2023-12-07 13:14:40,799 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 411, in connect
+
+2023-12-07 13:14:40,802 - ERROR:     
+2023-12-07 13:14:40,802 - ERROR: self.sock = ssl_wrap_socket(
+2023-12-07 13:14:40,803 - ERROR: 
+
+2023-12-07 13:14:40,803 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/util/ssl_.py", line 402, in ssl_wrap_socket
+
+2023-12-07 13:14:40,806 - ERROR:     
+2023-12-07 13:14:40,807 - ERROR: context.load_verify_locations(ca_certs, ca_cert_dir, ca_cert_data)
+2023-12-07 13:14:40,807 - ERROR: 
+
+2023-12-07 13:14:40,807 - ERROR: KeyboardInterrupt
+2023-12-07 13:14:40,808 - ERROR: 
+2023-12-07 13:14:40,808 - ERROR: 
+
+2023-12-07 16:24:06,863 - INFO: Rec ID: 22 | Rec time: 40 min | Charge level: 81%
+2023-12-07 22:40:31,887 - INFO: Rec ID: 23 | Rec time: 40 min | Charge level: 91%
+2023-12-07 22:42:23,620 - INFO: Rec ID: 24 | Rec time: 40 min | Charge level: 88%
+2023-12-07 22:51:30,202 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 486, in <module>
+    if q_frame.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+
+2023-12-07 22:51:30,204 - ERROR: Error during recording 24 | Charge level: 81%
+
+2023-12-12 01:09:28,220 - INFO: Rec ID: 25 | Rec time: 40 min | Charge level: 87%
+2023-12-12 01:10:33,094 - ERROR: Traceback (most recent call last):
+
+2023-12-12 01:10:33,094 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 496, in <module>
+
+2023-12-12 01:10:33,095 - ERROR:     
+2023-12-12 01:10:33,095 - ERROR: time.sleep(1)
+2023-12-12 01:10:33,096 - ERROR: 
+
+2023-12-12 01:10:33,096 - ERROR: KeyboardInterrupt
+2023-12-12 01:10:33,096 - ERROR: 
+2023-12-12 01:10:33,096 - ERROR: 
+
+2023-12-12 01:18:42,520 - INFO: Rec ID: 26 | Rec time: 40 min | Charge level: 84%
+2023-12-12 01:19:31,370 - ERROR: Traceback (most recent call last):
+
+2023-12-12 01:19:31,370 - ERROR:   File "/home/pi/insect-detect/capture.py", line 523, in <module>
+
+2023-12-12 01:19:31,371 - ERROR:     
+2023-12-12 01:19:31,371 - ERROR: capture()
+2023-12-12 01:19:31,371 - ERROR: 
+
+2023-12-12 01:19:31,371 - ERROR:   File "/home/pi/insect-detect/capture.py", line 496, in capture
+
+2023-12-12 01:19:31,372 - ERROR:     
+2023-12-12 01:19:31,372 - ERROR: time.sleep(1)
+2023-12-12 01:19:31,372 - ERROR: 
+
+2023-12-12 01:19:31,372 - ERROR: KeyboardInterrupt
+2023-12-12 01:19:31,372 - ERROR: 
+2023-12-12 01:19:31,372 - ERROR: 
+
+2023-12-12 12:22:20,574 - INFO: Rec ID: 27 | Rec time: 30 min | Charge level: 65%
+2023-12-12 12:51:28,414 - INFO: Rec ID: 28 | Rec time: 30 min | Charge level: 55%
+2023-12-12 12:51:43,734 - ERROR: Traceback (most recent call last):
+
+2023-12-12 12:51:43,734 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 493, in <module>
+
+2023-12-12 12:51:43,735 - ERROR:     
+2023-12-12 12:51:43,735 - ERROR: store_data(frame, tracks)
+2023-12-12 12:51:43,735 - ERROR: 
+
+2023-12-12 12:51:43,735 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 322, in store_data
+
+2023-12-12 12:51:43,735 - ERROR:     
+2023-12-12 12:51:43,736 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-12 12:51:43,736 - ERROR: 
+
+2023-12-12 12:51:43,736 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-12 12:51:43,737 - ERROR:     
+2023-12-12 12:51:43,737 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-12 12:51:43,737 - ERROR: 
+
+2023-12-12 12:51:43,737 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-12 12:51:43,738 - ERROR:     
+2023-12-12 12:51:43,738 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-12 12:51:43,738 - ERROR: 
+
+2023-12-12 12:51:43,738 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-12 12:51:43,740 - ERROR:     
+2023-12-12 12:51:43,740 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-12 12:51:43,740 - ERROR: 
+
+2023-12-12 12:51:43,740 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-12 12:51:43,741 - ERROR:     
+2023-12-12 12:51:43,741 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-12 12:51:43,741 - ERROR: 
+
+2023-12-12 12:51:43,741 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-12 12:51:43,742 - ERROR:     
+2023-12-12 12:51:43,743 - ERROR: resp = conn.urlopen(
+2023-12-12 12:51:43,743 - ERROR: 
+
+2023-12-12 12:51:43,743 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-12 12:51:43,745 - ERROR:     
+2023-12-12 12:51:43,745 - ERROR: httplib_response = self._make_request(
+2023-12-12 12:51:43,745 - ERROR: 
+
+2023-12-12 12:51:43,745 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2023-12-12 12:51:43,746 - ERROR:     
+2023-12-12 12:51:43,746 - ERROR: six.raise_from(e, None)
+2023-12-12 12:51:43,746 - ERROR: 
+
+2023-12-12 12:51:43,746 - ERROR:   File "<string>", line 3, in raise_from
+
+2023-12-12 12:51:43,746 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2023-12-12 12:51:43,747 - ERROR:     
+2023-12-12 12:51:43,747 - ERROR: httplib_response = conn.getresponse()
+2023-12-12 12:51:43,747 - ERROR: 
+
+2023-12-12 12:51:43,747 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2023-12-12 12:51:43,750 - ERROR:     
+2023-12-12 12:51:43,751 - ERROR: response.begin()
+2023-12-12 12:51:43,751 - ERROR: 
+
+2023-12-12 12:51:43,751 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2023-12-12 12:51:43,751 - ERROR:     
+2023-12-12 12:51:43,751 - ERROR: version, status, reason = self._read_status()
+2023-12-12 12:51:43,751 - ERROR: 
+
+2023-12-12 12:51:43,752 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2023-12-12 12:51:43,752 - ERROR:     
+2023-12-12 12:51:43,752 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2023-12-12 12:51:43,752 - ERROR: 
+
+2023-12-12 12:51:43,752 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2023-12-12 12:51:43,754 - ERROR:     
+2023-12-12 12:51:43,755 - ERROR: return self._sock.recv_into(b)
+2023-12-12 12:51:43,755 - ERROR: 
+
+2023-12-12 12:51:43,755 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2023-12-12 12:51:43,757 - ERROR:     
+2023-12-12 12:51:43,758 - ERROR: return self.read(nbytes, buffer)
+2023-12-12 12:51:43,758 - ERROR: 
+
+2023-12-12 12:51:43,758 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2023-12-12 12:51:43,759 - ERROR:     
+2023-12-12 12:51:43,759 - ERROR: return self._sslobj.read(len, buffer)
+2023-12-12 12:51:43,759 - ERROR: 
+
+2023-12-12 12:51:43,759 - ERROR: KeyboardInterrupt
+2023-12-12 12:51:43,759 - ERROR: 
+2023-12-12 12:51:43,759 - ERROR: 
+
+2023-12-12 16:44:35,084 - INFO: Rec ID: 29 | Rec time: 20 min | Charge level: 37%
+2023-12-12 16:44:48,006 - ERROR: Traceback (most recent call last):
+
+2023-12-12 16:44:48,007 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 563, in <module>
+
+2023-12-12 16:44:48,008 - ERROR:     
+2023-12-12 16:44:48,009 - ERROR: capture()
+2023-12-12 16:44:48,009 - ERROR: 
+
+2023-12-12 16:44:48,009 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 481, in capture
+
+2023-12-12 16:44:48,011 - ERROR:     
+2023-12-12 16:44:48,012 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-12-12 16:44:48,012 - ERROR: 
+
+2023-12-12 16:44:48,012 - ERROR: RuntimeError
+2023-12-12 16:44:48,012 - ERROR: : 
+2023-12-12 16:44:48,013 - ERROR: Failed to connect to device, error message: X_LINK_DEVICE_ALREADY_IN_USE
+2023-12-12 16:44:48,013 - ERROR: 
+
+2023-12-12 16:44:58,851 - ERROR: Traceback (most recent call last):
+
+2023-12-12 16:44:58,851 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 493, in <module>
+
+2023-12-12 16:44:58,852 - ERROR:     
+2023-12-12 16:44:58,852 - ERROR: store_data(frame, tracks)
+2023-12-12 16:44:58,852 - ERROR: 
+
+2023-12-12 16:44:58,852 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 322, in store_data
+
+2023-12-12 16:44:58,853 - ERROR:     
+2023-12-12 16:44:58,853 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2023-12-12 16:44:58,853 - ERROR: 
+
+2023-12-12 16:44:58,853 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2023-12-12 16:44:58,854 - ERROR:     
+2023-12-12 16:44:58,854 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2023-12-12 16:44:58,854 - ERROR: 
+
+2023-12-12 16:44:58,855 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2023-12-12 16:44:58,855 - ERROR:     
+2023-12-12 16:44:58,855 - ERROR: return session.request(method=method, url=url, **kwargs)
+2023-12-12 16:44:58,855 - ERROR: 
+
+2023-12-12 16:44:58,855 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2023-12-12 16:44:58,857 - ERROR:     
+2023-12-12 16:44:58,857 - ERROR: resp = self.send(prep, **send_kwargs)
+2023-12-12 16:44:58,857 - ERROR: 
+
+2023-12-12 16:44:58,857 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2023-12-12 16:44:58,858 - ERROR:     
+2023-12-12 16:44:58,858 - ERROR: r = adapter.send(request, **kwargs)
+2023-12-12 16:44:58,858 - ERROR: 
+
+2023-12-12 16:44:58,858 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2023-12-12 16:44:58,860 - ERROR:     
+2023-12-12 16:44:58,860 - ERROR: resp = conn.urlopen(
+2023-12-12 16:44:58,860 - ERROR: 
+
+2023-12-12 16:44:58,860 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2023-12-12 16:44:58,862 - ERROR:     
+2023-12-12 16:44:58,862 - ERROR: httplib_response = self._make_request(
+2023-12-12 16:44:58,862 - ERROR: 
+
+2023-12-12 16:44:58,862 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2023-12-12 16:44:58,863 - ERROR:     
+2023-12-12 16:44:58,863 - ERROR: six.raise_from(e, None)
+2023-12-12 16:44:58,863 - ERROR: 
+
+2023-12-12 16:44:58,863 - ERROR:   File "<string>", line 3, in raise_from
+
+2023-12-12 16:44:58,864 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2023-12-12 16:44:58,864 - ERROR:     
+2023-12-12 16:44:58,864 - ERROR: httplib_response = conn.getresponse()
+2023-12-12 16:44:58,864 - ERROR: 
+
+2023-12-12 16:44:58,864 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2023-12-12 16:44:58,867 - ERROR:     
+2023-12-12 16:44:58,868 - ERROR: response.begin()
+2023-12-12 16:44:58,868 - ERROR: 
+
+2023-12-12 16:44:58,868 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2023-12-12 16:44:58,868 - ERROR:     
+2023-12-12 16:44:58,868 - ERROR: version, status, reason = self._read_status()
+2023-12-12 16:44:58,869 - ERROR: 
+
+2023-12-12 16:44:58,869 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2023-12-12 16:44:58,869 - ERROR:     
+2023-12-12 16:44:58,869 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2023-12-12 16:44:58,869 - ERROR: 
+
+2023-12-12 16:44:58,869 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2023-12-12 16:44:58,872 - ERROR:     
+2023-12-12 16:44:58,872 - ERROR: return self._sock.recv_into(b)
+2023-12-12 16:44:58,872 - ERROR: 
+
+2023-12-12 16:44:58,872 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2023-12-12 16:44:58,875 - ERROR:     
+2023-12-12 16:44:58,875 - ERROR: return self.read(nbytes, buffer)
+2023-12-12 16:44:58,875 - ERROR: 
+
+2023-12-12 16:44:58,876 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2023-12-12 16:44:58,876 - ERROR:     
+2023-12-12 16:44:58,877 - ERROR: return self._sslobj.read(len, buffer)
+2023-12-12 16:44:58,877 - ERROR: 
+
+2023-12-12 16:44:58,877 - ERROR: KeyboardInterrupt
+2023-12-12 16:44:58,877 - ERROR: 
+2023-12-12 16:44:58,877 - ERROR: 
+
+2023-12-12 16:59:19,576 - INFO: Rec ID: 30 | Rec time: 20 min | Charge level: 37%
+2023-12-12 17:05:01,335 - ERROR: Traceback (most recent call last):
+
+2023-12-12 17:05:01,336 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 564, in <module>
+
+2023-12-12 17:05:01,338 - ERROR:     
+2023-12-12 17:05:01,339 - ERROR: capture()
+2023-12-12 17:05:01,340 - ERROR: 
+
+2023-12-12 17:05:01,340 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 482, in capture
+
+2023-12-12 17:05:01,342 - ERROR:     
+2023-12-12 17:05:01,343 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-12-12 17:05:01,344 - ERROR: 
+
+2023-12-12 17:05:01,344 - ERROR: RuntimeError
+2023-12-12 17:05:01,345 - ERROR: : 
+2023-12-12 17:05:01,346 - ERROR: Failed to connect to device, error message: X_LINK_DEVICE_ALREADY_IN_USE
+2023-12-12 17:05:01,346 - ERROR: 
+
+2023-12-12 17:08:49,471 - ERROR: Traceback (most recent call last):
+
+2023-12-12 17:08:49,472 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 564, in <module>
+
+2023-12-12 17:08:49,474 - ERROR:     
+2023-12-12 17:08:49,475 - ERROR: capture()
+2023-12-12 17:08:49,476 - ERROR: 
+
+2023-12-12 17:08:49,476 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 482, in capture
+
+2023-12-12 17:08:49,478 - ERROR:     
+2023-12-12 17:08:49,479 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-12-12 17:08:49,479 - ERROR: 
+
+2023-12-12 17:08:49,480 - ERROR: RuntimeError
+2023-12-12 17:08:49,480 - ERROR: : 
+2023-12-12 17:08:49,481 - ERROR: Failed to connect to device, error message: X_LINK_DEVICE_ALREADY_IN_USE
+2023-12-12 17:08:49,482 - ERROR: 
+
+2023-12-12 17:14:51,434 - ERROR: Traceback (most recent call last):
+
+2023-12-12 17:14:51,435 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 564, in <module>
+
+2023-12-12 17:14:51,436 - ERROR:     
+2023-12-12 17:14:51,437 - ERROR: capture()
+2023-12-12 17:14:51,437 - ERROR: 
+
+2023-12-12 17:14:51,437 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 482, in capture
+
+2023-12-12 17:14:51,438 - ERROR:     
+2023-12-12 17:14:51,439 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-12-12 17:14:51,439 - ERROR: 
+
+2023-12-12 17:14:51,439 - ERROR: RuntimeError
+2023-12-12 17:14:51,439 - ERROR: : 
+2023-12-12 17:14:51,440 - ERROR: Failed to connect to device, error message: X_LINK_DEVICE_ALREADY_IN_USE
+2023-12-12 17:14:51,440 - ERROR: 
+
+2023-12-12 17:18:14,161 - ERROR: Traceback (most recent call last):
+
+2023-12-12 17:18:14,161 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 564, in <module>
+
+2023-12-12 17:18:14,163 - ERROR:     
+2023-12-12 17:18:14,163 - ERROR: capture()
+2023-12-12 17:18:14,164 - ERROR: 
+
+2023-12-12 17:18:14,164 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 482, in capture
+
+2023-12-12 17:18:14,165 - ERROR:     
+2023-12-12 17:18:14,166 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2023-12-12 17:18:14,166 - ERROR: 
+
+2023-12-12 17:18:14,166 - ERROR: RuntimeError
+2023-12-12 17:18:14,166 - ERROR: : 
+2023-12-12 17:18:14,166 - ERROR: Failed to connect to device, error message: X_LINK_DEVICE_ALREADY_IN_USE
+2023-12-12 17:18:14,167 - ERROR: 
+
+2023-12-12 17:19:19,867 - INFO: Recording 30 finished | Charge level: 31%
+
+2023-12-12 17:43:07,136 - INFO: Rec ID: 35 | Rec time: 20 min | Charge level: 31%
+2023-12-12 17:45:37,077 - INFO: Rec ID: 36 | Rec time: 20 min | Charge level: 32%
+2023-12-12 17:46:45,208 - INFO: Rec ID: 37 | Rec time: 20 min | Charge level: 32%
+2023-12-12 17:51:40,573 - INFO: Rec ID: 39 | Rec time: 20 min | Charge level: 35%
+2024-01-10 22:15:39,980 - INFO: Rec ID: 40 | Rec time: 5 min | Charge level: 12%
+2024-01-10 22:16:09,159 - ERROR: Traceback (most recent call last):
+
+2024-01-10 22:16:09,159 - ERROR:   File "/home/pi/insect-detect/yolo_tracker_save_hqsync.py", line 496, in <module>
+
+2024-01-10 22:16:09,162 - ERROR:     
+2024-01-10 22:16:09,162 - ERROR: time.sleep(1)
+2024-01-10 22:16:09,162 - ERROR: 
+
+2024-01-10 22:16:09,163 - ERROR: KeyboardInterrupt
+2024-01-10 22:16:09,163 - ERROR: 
+2024-01-10 22:16:09,163 - ERROR: 
+
+2024-01-10 22:34:14,478 - INFO: Shut down without recording | Charge level: 7%
+
+2024-01-10 22:35:54,680 - INFO: Shut down without recording | Charge level: 7%
+
+2024-01-24 15:21:50,747 - ERROR: Traceback (most recent call last):
+
+2024-01-24 15:21:50,757 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 564, in <module>
+
+2024-01-24 15:21:50,761 - ERROR:     
+2024-01-24 15:21:50,762 - ERROR: capture()
+2024-01-24 15:21:50,762 - ERROR: 
+
+2024-01-24 15:21:50,762 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 482, in capture
+
+2024-01-24 15:21:50,764 - ERROR:     
+2024-01-24 15:21:50,764 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-01-24 15:21:50,764 - ERROR: 
+
+2024-01-24 15:21:50,764 - ERROR: RuntimeError
+2024-01-24 15:21:50,765 - ERROR: : 
+2024-01-24 15:21:50,765 - ERROR: Failed to connect to device, error message: X_LINK_DEVICE_ALREADY_IN_USE
+2024-01-24 15:21:50,765 - ERROR: 
+
+2024-01-24 15:22:31,817 - INFO: Rec ID: 42 | Rec time: 40 min | Charge level: 92%
+2024-01-24 15:38:49,778 - INFO: Rec ID: 43 | Rec time: 40 min | Charge level: 92%

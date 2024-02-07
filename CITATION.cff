@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+type: software
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Sittinger
+    given-names: Maximilian
+    orcid: "https://orcid.org/0000-0002-4096-8556"
+title: >-
+  "Insect Detect - Software for automated insect
+  monitoring with a DIY camera trap system"
+version: 1.6
+doi: 10.5281/zenodo.7472238
+date-released: 2022-12-22
+license: GPL-3.0
+url: "https://maxsitt.github.io/insect-detect-docs/"

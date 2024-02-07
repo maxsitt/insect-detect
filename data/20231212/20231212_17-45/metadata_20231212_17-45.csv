@@ -1,2 +1,0 @@
-rec_ID,timestamp,label,confidence,track_ID,x_min,y_min,x_max,y_max,file_path
-36,20231212_17-45-39.120095,insect,0.69,3,0.4588,0.4699,0.4835,0.5156,insect-detect/data/20231212/20231212_17-45/cropped/insect/20231212_17-45-39.120095_3_crop.jpg

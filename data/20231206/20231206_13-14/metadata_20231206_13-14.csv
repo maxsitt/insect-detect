@@ -1,5 +1,0 @@
-unique_identifier,rec_ID,timestamp,label,confidence,track_ID,x_min,y_min,x_max,y_max,file_path
-nightlife1,4,20231206_13-15-00.318063,insect,0.91,5,0.4407,0.4616,0.5184,0.5889,insect-detect/data/20231206/20231206_13-14/cropped/insect/20231206_13-15-00.318063_5_crop.jpg
-nightlife1,4,20231206_13-15-02.267564,insect,0.71,6,0.0031,0.4106,0.0375,0.5113,insect-detect/data/20231206/20231206_13-14/cropped/insect/20231206_13-15-02.267564_6_crop.jpg
-nightlife1,4,20231206_13-15-39.457847,insect,0.58,16,0.4314,0.6928,0.4994,0.8748,insect-detect/data/20231206/20231206_13-14/cropped/insect/20231206_13-15-39.457847_16_crop.jpg
-nightlife1,4,20231206_13-15-59.505912,insect,0.73,16,0.4356,0.7584,0.4927,0.9263,insect-detect/data/20231206/20231206_13-14/cropped/insect/20231206_13-15-59.505912_16_crop.jpg

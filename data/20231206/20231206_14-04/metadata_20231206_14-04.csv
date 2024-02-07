@@ -1,3 +1,0 @@
-unique_identifier,rec_ID,timestamp,label,confidence,track_ID,x_min,y_min,x_max,y_max,file_path
-nightlife1,6,20231206_14-05-04.741825,insect,0.56,7,0.877,0.2817,0.8997,0.3435,insect-detect/data/20231206/20231206_14-04/cropped/insect/20231206_14-05-04.741825_7_crop.jpg
-nightlife1,6,20231206_14-05-05.927621,insect,0.56,7,0.8773,0.2811,0.8996,0.3453,insect-detect/data/20231206/20231206_14-04/cropped/insect/20231206_14-05-05.927621_7_crop.jpg

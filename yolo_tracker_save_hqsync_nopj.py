@@ -44,6 +44,10 @@ This Python script does the following:
              -> decreases pipeline speed to ~4.2 fps for 1080p sync (4K sync: ~1.1 fps)
   "-log"     write RPi CPU + OAK chip temperature and RPi available memory (MB) +
              CPU utilization (%) to "info_log_{timestamp}.csv"
+  "-zip"     store all captured data in an uncompressed .zip
+             file for each day and delete original folder
+             -> increases file transfer speed from microSD to computer
+                but also on-device processing time and power consumption
 
 based on open source scripts available at https://github.com/luxonis
 '''
@@ -83,11 +87,18 @@ parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
 parser.add_argument("-log", "--save_logs", action="store_true",
     help="write RPi CPU + OAK chip temperature and RPi available memory (MB) + \
           CPU utilization (%) to .csv file")
+parser.add_argument("-zip", "--save_zip", action="store_true",
+    help="store all captured data in an uncompressed .zip \
+          file for each day and delete original folder")
 args = parser.parse_args()
 
 if args.save_logs:
     from apscheduler.schedulers.background import BackgroundScheduler
     from gpiozero import CPUTemperature
+
+if args.save_zip:
+    import shutil
+    from zipfile import ZipFile
 
 # Create folders for each day and recording interval to save images + metadata + logs
 rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
@@ -408,6 +419,15 @@ def record_log():
         log_rec.writerow(logs_rec)
 
 
+def save_zip():
+    """Store all captured data in an uncompressed .zip
+    file for each day and delete original folder."""
+    with ZipFile(f"{save_path.parent}.zip", "a") as zip_file:
+        for file in save_path.rglob("*"):
+            zip_file.write(file, file.relative_to(save_path.parent))
+    shutil.rmtree(save_path.parent, ignore_errors=True)
+
+
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
@@ -480,6 +500,10 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         logger.info("Recording %s finished\n", rec_id)
         record_log()
 
+        if args.save_zip:
+            # Store data in uncompressed .zip file and delete original folder
+            save_zip()
+
         # Shut down Raspberry Pi
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
 
@@ -488,6 +512,10 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         logger.error(traceback.format_exc())
         logger.error("Error during recording %s\n", rec_id)
         record_log()
+
+        if args.save_zip:
+            # Store data in uncompressed .zip file and delete original folder
+            save_zip()
 
         # Shut down Raspberry Pi
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

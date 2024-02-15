@@ -14,6 +14,8 @@ This Python script does the following:
          -> e.g. "-min 5" for 5 min recording time
   "-4k"  save HQ frames in 4K resolution (3840x2160 px) (default: 1080p)
   "-lq"  additionally save downscaled LQ frames (e.g. 320x320 px)
+  "-af"  set auto focus range in cm (min distance, max distance)
+         -> e.g. "-af 14 20" to restrict auto focus range to 14-20 cm
   "-zip" store all captured data in an uncompressed .zip
          file for each day and delete original folder
          -> increases file transfer speed from microSD to computer
@@ -39,6 +41,8 @@ parser.add_argument("-4k", "--four_k_resolution", action="store_true",
     help="save HQ frames in 4K resolution (default: 1080p)")
 parser.add_argument("-lq", "--save_lq_frames", action="store_true",
     help="additionally save downscaled LQ frames (default: 320x320 px)")
+parser.add_argument("-af", "--af_range", nargs=2, type=int,
+    help="set auto focus range in cm (min distance, max distance)", metavar=("cm_min", "cm_max"))
 parser.add_argument("-zip", "--save_zip", action="store_true",
     help="store all captured data in an uncompressed .zip \
           file for each day and delete original folder")
@@ -91,6 +95,37 @@ if args.save_lq_frames:
     xout_lq.setStreamName("frame_lq")
     cam_rgb.preview.link(xout_lq.input)  # LQ frames
 
+if args.af_range:
+    # Create XLinkIn node to send control commands to color camera node
+    xin_ctrl = pipeline.create(dai.node.XLinkIn)
+    xin_ctrl.setStreamName("control")
+    xin_ctrl.out.link(cam_rgb.inputControl)
+
+
+def set_focus_range():
+    """Convert closest cm values to lens position values and set auto focus range."""
+    cm_lenspos_dict = {
+        6: 250,
+        8: 220,
+        10: 190,
+        12: 170,
+        14: 160,
+        16: 150,
+        20: 140,
+        25: 135,
+        30: 130,
+        40: 125,
+        60: 120
+    }
+
+    closest_cm_min = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[0]))
+    closest_cm_max = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[1]))
+    lenspos_min = cm_lenspos_dict[closest_cm_max]
+    lenspos_max = cm_lenspos_dict[closest_cm_min]
+
+    af_ctrl = dai.CameraControl().setAutoFocusLensRange(lenspos_min, lenspos_max)
+    q_ctrl.send(af_ctrl)
+
 
 def save_zip():
     """Store all captured data in an uncompressed .zip
@@ -114,6 +149,13 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     if args.save_lq_frames:
         q_frame_lq = device.getOutputQueue(name="frame_lq", maxSize=4, blocking=False)
+
+    if args.af_range:
+        # Create input queue to send control commands to OAK camera
+        q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
+
+        # Set auto focus range to specified cm values
+        set_focus_range()
 
     # Set start time of recording
     start_time = time.monotonic()

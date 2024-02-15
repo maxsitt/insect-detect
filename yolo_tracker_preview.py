@@ -13,9 +13,11 @@ This Python script does the following:
 - show downscaled LQ frames + model/tracker output (bounding box, label, confidence,
   tracking ID, tracking status) + fps in a new window (e.g. via X11 forwarding)
 - optional arguments:
+  "-af"  set auto focus range in cm (min distance, max distance)
+         -> e.g. "-af 14 20" to restrict auto focus range to 14-20 cm
+  "-ae"  use bounding box coordinates from detections to set auto exposure region
   "-log" print available Raspberry Pi memory, RPi CPU utilization + temperature,
          OAK memory + CPU usage and OAK chip temperature to console
-  "-ae"  use bounding box coordinates from detections to set auto exposure region
 
 based on open source scripts available at https://github.com/luxonis
 '''
@@ -31,11 +33,13 @@ import numpy as np
 
 # Define optional argument
 parser = argparse.ArgumentParser()
+parser.add_argument("-af", "--af_range", nargs=2, type=int,
+    help="set auto focus range in cm (min distance, max distance)", metavar=("cm_min", "cm_max"))
+parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
+    help="use bounding box coordinates from detections to set auto exposure region")
 parser.add_argument("-log", "--print_logs", action="store_true",
     help="print RPi available memory, RPi CPU utilization + temperature, \
           OAK memory + CPU usage and OAK chip temperature to console")
-parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
-    help="use bounding box coordinates from detections to set auto exposure region")
 args = parser.parse_args()
 
 if args.print_logs:
@@ -109,8 +113,8 @@ xout_tracker = pipeline.create(dai.node.XLinkOut)
 xout_tracker.setStreamName("track")
 tracker.out.link(xout_tracker.input)
 
-if args.bbox_ae_region:
-    # Create XLinkIn node to send control commands to OAK device (e.g. set auto exposure region)
+if args.af_range or args.bbox_ae_region:
+    # Create XLinkIn node to send control commands to color camera node
     xin_ctrl = pipeline.create(dai.node.XLinkIn)
     xin_ctrl.setStreamName("control")
     xin_ctrl.out.link(cam_rgb.inputControl)
@@ -121,6 +125,31 @@ def frame_norm(frame, bbox):
     norm_vals = np.full(len(bbox), frame.shape[0])
     norm_vals[::2] = frame.shape[1]
     return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
+
+
+def set_focus_range():
+    """Convert closest cm values to lens position values and set auto focus range."""
+    cm_lenspos_dict = {
+        6: 250,
+        8: 220,
+        10: 190,
+        12: 170,
+        14: 160,
+        16: 150,
+        20: 140,
+        25: 135,
+        30: 130,
+        40: 125,
+        60: 120
+    }
+
+    closest_cm_min = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[0]))
+    closest_cm_max = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[1]))
+    lenspos_min = cm_lenspos_dict[closest_cm_max]
+    lenspos_max = cm_lenspos_dict[closest_cm_min]
+
+    af_ctrl = dai.CameraControl().setAutoFocusLensRange(lenspos_min, lenspos_max)
+    q_ctrl.send(af_ctrl)
 
 
 def bbox_set_exposure_region(xmin_roi, ymin_roi, xmax_roi, ymax_roi):
@@ -161,11 +190,15 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    if args.bbox_ae_region:
-        # Create input queue to send commands to the OAK device (e.g. set auto exposure region)
+    if args.af_range or args.bbox_ae_region:
+        # Create input queue to send control commands to OAK camera
         q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
 
-    # Create start_time and counter variable to measure fps
+    if args.af_range:
+        # Set auto focus range to specified cm values
+        set_focus_range()
+
+    # Set start time of recording and create counter to measure fps
     start_time = time.monotonic()
     counter = 0
 

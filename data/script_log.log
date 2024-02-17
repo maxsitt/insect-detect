@@ -4161,3 +4161,1169 @@ RuntimeError: Communication exception - possible device error/misconfiguration. 
 
 2024-01-24 15:22:31,817 - INFO: Rec ID: 42 | Rec time: 40 min | Charge level: 92%
 2024-01-24 15:38:49,778 - INFO: Rec ID: 43 | Rec time: 40 min | Charge level: 92%
+2024-02-09 12:13:31,035 - ERROR: Traceback (most recent call last):
+
+2024-02-09 12:13:46,535 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 564, in <module>
+
+2024-02-09 12:14:55,202 - ERROR:     
+2024-02-09 12:15:12,496 - ERROR: capture()
+2024-02-09 12:15:28,201 - ERROR: 
+
+2024-02-09 12:15:46,260 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 482, in capture
+
+2024-02-09 12:17:00,991 - ERROR:     
+2024-02-09 12:17:21,130 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-02-09 12:17:50,064 - ERROR: 
+
+2024-02-09 12:18:17,864 - ERROR: RuntimeError
+2024-02-09 12:18:59,253 - ERROR: : 
+2024-02-09 12:19:31,971 - ERROR: No available devices
+2024-02-09 12:20:09,201 - ERROR: 
+
+2024-02-09 18:26:14,378 - INFO: Logging is configured.
+2024-02-09 18:32:12,740 - INFO: Logging is configured.
+2024-02-09 18:46:08,614 - INFO: Logging is configured.
+2024-02-09 19:08:39,410 - INFO: Logging is configured.
+2024-02-09 19:10:40,802 - INFO: Logging is configured.
+2024-02-09 19:10:41,966 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:10:41,966 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 37, in <module>
+
+2024-02-09 19:10:41,971 - ERROR: capture(args)
+2024-02-09 19:10:41,971 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 30, in capture
+
+2024-02-09 19:10:41,972 - ERROR: script_node = next(filter(lambda x: isinstance(x, dai.node.Script), pipeline.nodes))
+2024-02-09 19:10:41,973 - ERROR: AttributeError
+2024-02-09 19:10:41,973 - ERROR: : 
+2024-02-09 19:10:41,974 - ERROR: 'depthai.Pipeline' object has no attribute 'nodes'
+2024-02-09 19:12:40,717 - INFO: Logging is configured.
+2024-02-09 19:12:40,975 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:12:40,976 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 39, in <module>
+
+2024-02-09 19:12:40,977 - ERROR: capture(args)
+2024-02-09 19:12:40,978 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 27, in capture
+
+2024-02-09 19:12:40,978 - ERROR: pipeline, labels = setup_pipeline(model_path, config)
+2024-02-09 19:12:40,979 - ERROR:   File "/home/pi/insect-detect/refactor/depthai_pipeline_setup.py", line 41, in setup_pipeline
+
+2024-02-09 19:12:40,980 - ERROR: cam_rgb.preview.link(nn.input)
+2024-02-09 19:12:40,980 - ERROR: NameError
+2024-02-09 19:12:40,980 - ERROR: : 
+2024-02-09 19:12:40,981 - ERROR: name 'cam_rgb' is not defined
+2024-02-09 19:13:24,904 - INFO: Logging is configured.
+2024-02-09 19:13:25,137 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:13:25,138 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 40, in <module>
+
+2024-02-09 19:13:25,139 - ERROR: capture(args)
+2024-02-09 19:13:25,139 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 28, in capture
+
+2024-02-09 19:13:25,140 - ERROR: pipeline, labels = setup_pipeline(model_path, config)
+2024-02-09 19:13:25,140 - ERROR:   File "/home/pi/insect-detect/refactor/depthai_pipeline_setup.py", line 41, in setup_pipeline
+
+2024-02-09 19:13:25,142 - ERROR: cam_rgb.preview.link(nn.input)
+2024-02-09 19:13:25,143 - ERROR: NameError
+2024-02-09 19:13:25,143 - ERROR: : 
+2024-02-09 19:13:25,143 - ERROR: name 'cam_rgb' is not defined
+2024-02-09 19:16:08,073 - INFO: Logging is configured.
+2024-02-09 19:16:08,358 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:16:08,358 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 40, in <module>
+
+2024-02-09 19:16:08,360 - ERROR: capture(args)
+2024-02-09 19:16:08,360 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 33, in capture
+
+2024-02-09 19:16:08,361 - ERROR: script_node = next(filter(lambda x: isinstance(x, dai.node.Script), pipeline.nodes))
+2024-02-09 19:16:08,361 - ERROR: AttributeError
+2024-02-09 19:16:08,361 - ERROR: : 
+2024-02-09 19:16:08,362 - ERROR: 'depthai.Pipeline' object has no attribute 'nodes'
+2024-02-09 19:32:00,405 - INFO: Logging is configured.
+2024-02-09 19:32:00,501 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:32:00,502 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 26, in <module>
+
+2024-02-09 19:32:00,513 - ERROR: capture(args)
+2024-02-09 19:32:00,514 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 19, in capture
+
+2024-02-09 19:32:00,515 - ERROR: create_pipeline(four_k_resolution)
+2024-02-09 19:32:00,515 - ERROR: NameError
+2024-02-09 19:32:00,516 - ERROR: : 
+2024-02-09 19:32:00,516 - ERROR: name 'four_k_resolution' is not defined
+2024-02-09 19:32:25,851 - INFO: Logging is configured.
+2024-02-09 19:32:25,854 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:32:25,854 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 26, in <module>
+
+2024-02-09 19:32:25,855 - ERROR: capture(args)
+2024-02-09 19:32:25,856 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 19, in capture
+
+2024-02-09 19:32:25,856 - ERROR: create_pipeline()
+2024-02-09 19:32:25,857 - ERROR: TypeError
+2024-02-09 19:32:25,857 - ERROR: : 
+2024-02-09 19:32:25,857 - ERROR: create_pipeline() missing 1 required positional argument: 'four_k_resolution'
+2024-02-09 19:33:45,104 - INFO: Logging is configured.
+2024-02-09 19:33:45,111 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:33:45,112 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 26, in <module>
+
+2024-02-09 19:33:45,113 - ERROR: capture(args)
+2024-02-09 19:33:45,113 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 19, in capture
+
+2024-02-09 19:33:45,114 - ERROR: create_pipeline()
+2024-02-09 19:33:45,114 - ERROR:   File "/home/pi/insect-detect/refactor/setup_pipeline.py", line 8, in create_pipeline
+
+2024-02-09 19:33:45,115 - ERROR: with CONFIG_PATH.open(encoding="utf-8") as f:
+2024-02-09 19:33:45,116 - ERROR: NameError
+2024-02-09 19:33:45,116 - ERROR: : 
+2024-02-09 19:33:45,116 - ERROR: name 'CONFIG_PATH' is not defined
+2024-02-09 19:35:53,388 - INFO: Logging is configured.
+2024-02-09 19:35:53,451 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:35:53,451 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 26, in <module>
+
+2024-02-09 19:35:53,452 - ERROR: capture(args)
+2024-02-09 19:35:53,452 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 19, in capture
+
+2024-02-09 19:35:53,453 - ERROR: create_pipeline()
+2024-02-09 19:35:53,453 - ERROR:   File "/home/pi/insect-detect/refactor/setup_pipeline.py", line 31, in create_pipeline
+
+2024-02-09 19:35:53,454 - ERROR: if not args.four_k_resolution:
+2024-02-09 19:35:53,454 - ERROR: NameError
+2024-02-09 19:35:53,455 - ERROR: : 
+2024-02-09 19:35:53,455 - ERROR: name 'args' is not defined
+2024-02-09 19:38:03,923 - INFO: Logging is configured.
+2024-02-09 19:38:03,943 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:38:03,945 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 26, in <module>
+
+2024-02-09 19:38:03,946 - ERROR: capture(args)
+2024-02-09 19:38:03,948 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 19, in capture
+
+2024-02-09 19:38:03,950 - ERROR: create_pipeline(args.four_k_resolution)
+2024-02-09 19:38:03,951 - ERROR:   File "/home/pi/insect-detect/refactor/setup_pipeline.py", line 31, in create_pipeline
+
+2024-02-09 19:38:03,957 - ERROR: if not args.four_k_resolution:
+2024-02-09 19:38:03,958 - ERROR: NameError
+2024-02-09 19:38:03,958 - ERROR: : 
+2024-02-09 19:38:03,959 - ERROR: name 'args' is not defined
+2024-02-09 19:39:14,182 - INFO: Logging is configured.
+2024-02-09 19:39:14,208 - ERROR: Traceback (most recent call last):
+
+2024-02-09 19:39:14,209 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 26, in <module>
+
+2024-02-09 19:39:14,211 - ERROR: capture(args)
+2024-02-09 19:39:14,212 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 19, in capture
+
+2024-02-09 19:39:14,213 - ERROR: create_pipeline(args.four_k_resolution)
+2024-02-09 19:39:14,214 - ERROR:   File "/home/pi/insect-detect/refactor/setup_pipeline.py", line 31, in create_pipeline
+
+2024-02-09 19:39:14,216 - ERROR: if not args.four_k_resolution:
+2024-02-09 19:39:14,217 - ERROR: NameError
+2024-02-09 19:39:14,217 - ERROR: : 
+2024-02-09 19:39:14,218 - ERROR: name 'args' is not defined
+2024-02-09 19:40:44,993 - INFO: Logging is configured.
+2024-02-09 23:40:54,254 - INFO: Logging is configured.
+2024-02-09 23:56:42,680 - INFO: Logging is configured.
+2024-02-10 00:39:13,783 - INFO: Logging is configured.
+2024-02-10 00:39:14,184 - ERROR: Traceback (most recent call last):
+
+2024-02-10 00:39:14,185 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 38, in <module>
+
+2024-02-10 00:39:14,188 - ERROR: capture(args)
+2024-02-10 00:39:14,188 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 28, in capture
+
+2024-02-10 00:39:14,189 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-10 00:39:14,190 - ERROR: ValueError
+2024-02-10 00:39:14,190 - ERROR: : 
+2024-02-10 00:39:14,191 - ERROR: not enough values to unpack (expected 3, got 2)
+2024-02-16 17:34:35,359 - INFO: Logging is configured.
+2024-02-16 17:34:35,621 - ERROR: Traceback (most recent call last):
+
+2024-02-16 17:34:35,622 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 38, in <module>
+
+2024-02-16 17:34:35,624 - ERROR: capture(args)
+2024-02-16 17:34:35,624 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 28, in capture
+
+2024-02-16 17:34:35,625 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-16 17:34:35,625 - ERROR: ValueError
+2024-02-16 17:34:35,626 - ERROR: : 
+2024-02-16 17:34:35,626 - ERROR: not enough values to unpack (expected 3, got 2)
+2024-02-16 17:36:51,951 - INFO: Logging is configured.
+2024-02-16 17:36:52,294 - ERROR: Traceback (most recent call last):
+
+2024-02-16 17:36:52,295 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 38, in <module>
+
+2024-02-16 17:36:52,297 - ERROR: capture(args)
+2024-02-16 17:36:52,298 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 31, in capture
+
+2024-02-16 17:36:52,298 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path, labels, args, latest_images, image_count, webhook_url)
+2024-02-16 17:36:52,299 - ERROR: NameError
+2024-02-16 17:36:52,299 - ERROR: : 
+2024-02-16 17:36:52,299 - ERROR: name 'frame' is not defined
+2024-02-16 18:27:38,941 - INFO: Logging is configured.
+2024-02-16 18:27:39,058 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:27:39,058 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 42, in <module>
+
+2024-02-16 18:27:39,058 - ERROR:     
+2024-02-16 18:27:39,058 - ERROR: capture(args)
+2024-02-16 18:27:39,058 - ERROR: 
+
+2024-02-16 18:27:39,059 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 32, in capture
+
+2024-02-16 18:27:39,059 - ERROR:     
+2024-02-16 18:27:39,059 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start)
+2024-02-16 18:27:39,059 - ERROR: 
+
+2024-02-16 18:27:39,059 - ERROR: TypeError
+2024-02-16 18:27:39,059 - ERROR: : 
+2024-02-16 18:27:39,059 - ERROR: run() missing 1 required positional argument: 'logger'
+2024-02-16 18:27:39,059 - ERROR: 
+
+2024-02-16 18:29:47,810 - INFO: Logging is configured.
+2024-02-16 18:29:47,866 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:29:47,867 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 42, in <module>
+
+2024-02-16 18:29:47,867 - ERROR:     
+2024-02-16 18:29:47,867 - ERROR: capture(args)
+2024-02-16 18:29:47,867 - ERROR: 
+
+2024-02-16 18:29:47,867 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 32, in capture
+
+2024-02-16 18:29:47,868 - ERROR:     
+2024-02-16 18:29:47,868 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start)
+2024-02-16 18:29:47,868 - ERROR: 
+
+2024-02-16 18:29:47,868 - ERROR: TypeError
+2024-02-16 18:29:47,868 - ERROR: : 
+2024-02-16 18:29:47,868 - ERROR: run() missing 1 required positional argument: 'logger'
+2024-02-16 18:29:47,868 - ERROR: 
+
+2024-02-16 18:33:26,191 - INFO: Logging is configured.
+2024-02-16 18:33:26,252 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:33:26,252 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 42, in <module>
+
+2024-02-16 18:33:26,253 - ERROR:     
+2024-02-16 18:33:26,253 - ERROR: capture(args)
+2024-02-16 18:33:26,253 - ERROR: 
+
+2024-02-16 18:33:26,253 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 32, in capture
+
+2024-02-16 18:33:26,253 - ERROR:     
+2024-02-16 18:33:26,253 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start)
+2024-02-16 18:33:26,253 - ERROR: 
+
+2024-02-16 18:33:26,254 - ERROR: TypeError
+2024-02-16 18:33:26,254 - ERROR: : 
+2024-02-16 18:33:26,254 - ERROR: run() missing 1 required positional argument: 'logger'
+2024-02-16 18:33:26,254 - ERROR: 
+
+2024-02-16 18:33:54,014 - INFO: Logging is configured.
+2024-02-16 18:33:54,075 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:33:54,076 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:33:54,077 - ERROR:     
+2024-02-16 18:33:54,077 - ERROR: capture(args)
+2024-02-16 18:33:54,078 - ERROR: 
+
+2024-02-16 18:33:54,079 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 33, in capture
+
+2024-02-16 18:33:54,080 - ERROR:     
+2024-02-16 18:33:54,080 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger)
+2024-02-16 18:33:54,081 - ERROR: 
+
+2024-02-16 18:33:54,082 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 14, in run
+
+2024-02-16 18:33:54,083 - ERROR:     
+2024-02-16 18:33:54,084 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-02-16 18:33:54,084 - ERROR: 
+
+2024-02-16 18:33:54,085 - ERROR: NameError
+2024-02-16 18:33:54,086 - ERROR: : 
+2024-02-16 18:33:54,086 - ERROR: name 'dai' is not defined
+2024-02-16 18:33:54,087 - ERROR: 
+
+2024-02-16 18:38:30,040 - INFO: Logging is configured.
+2024-02-16 18:38:30,096 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:38:30,097 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:38:30,097 - ERROR:     
+2024-02-16 18:38:30,097 - ERROR: capture(args)
+2024-02-16 18:38:30,097 - ERROR: 
+
+2024-02-16 18:38:30,098 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 33, in capture
+
+2024-02-16 18:38:30,098 - ERROR:     
+2024-02-16 18:38:30,098 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger)
+2024-02-16 18:38:30,098 - ERROR: 
+
+2024-02-16 18:38:30,098 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 14, in run
+
+2024-02-16 18:38:30,098 - ERROR:     
+2024-02-16 18:38:30,099 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-02-16 18:38:30,099 - ERROR: 
+
+2024-02-16 18:38:30,099 - ERROR: NameError
+2024-02-16 18:38:30,099 - ERROR: : 
+2024-02-16 18:38:30,099 - ERROR: name 'pipeline' is not defined
+2024-02-16 18:38:30,099 - ERROR: 
+
+2024-02-16 18:39:55,993 - INFO: Logging is configured.
+2024-02-16 18:39:56,041 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:39:56,041 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:39:56,042 - ERROR:     
+2024-02-16 18:39:56,042 - ERROR: capture(args)
+2024-02-16 18:39:56,043 - ERROR: 
+
+2024-02-16 18:39:56,043 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 28, in capture
+
+2024-02-16 18:39:56,043 - ERROR:     
+2024-02-16 18:39:56,044 - ERROR: labels, pipeline = create_pipeline(args.four_k_resolution)
+2024-02-16 18:39:56,044 - ERROR: 
+
+2024-02-16 18:39:56,044 - ERROR: ValueError
+2024-02-16 18:39:56,044 - ERROR: : 
+2024-02-16 18:39:56,044 - ERROR: too many values to unpack (expected 2)
+2024-02-16 18:39:56,044 - ERROR: 
+
+2024-02-16 18:41:07,623 - INFO: Logging is configured.
+2024-02-16 18:41:07,665 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:41:07,666 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:41:07,667 - ERROR:     
+2024-02-16 18:41:07,667 - ERROR: capture(args)
+2024-02-16 18:41:07,667 - ERROR: 
+
+2024-02-16 18:41:07,668 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 28, in capture
+
+2024-02-16 18:41:07,668 - ERROR:     
+2024-02-16 18:41:07,668 - ERROR: labels, pipeline = create_pipeline(args.four_k_resolution)
+2024-02-16 18:41:07,669 - ERROR: 
+
+2024-02-16 18:41:07,669 - ERROR: ValueError
+2024-02-16 18:41:07,669 - ERROR: : 
+2024-02-16 18:41:07,670 - ERROR: too many values to unpack (expected 2)
+2024-02-16 18:41:07,670 - ERROR: 
+
+2024-02-16 18:42:45,947 - INFO: Logging is configured.
+2024-02-16 18:42:45,994 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:42:45,995 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:42:45,995 - ERROR:     
+2024-02-16 18:42:45,996 - ERROR: capture(args)
+2024-02-16 18:42:45,996 - ERROR: 
+
+2024-02-16 18:42:45,996 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 31, in capture
+
+2024-02-16 18:42:45,996 - ERROR:     
+2024-02-16 18:42:45,997 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-16 18:42:45,997 - ERROR: 
+
+2024-02-16 18:42:45,997 - ERROR:   File "/home/pi/insect-detect/refactor/setup_directories.py", line 8, in setup_directories
+
+2024-02-16 18:42:45,997 - ERROR:     
+2024-02-16 18:42:45,998 - ERROR: for text in labels:
+2024-02-16 18:42:45,998 - ERROR: 
+
+2024-02-16 18:42:45,998 - ERROR: TypeError
+2024-02-16 18:42:45,998 - ERROR: : 
+2024-02-16 18:42:45,998 - ERROR: 'depthai.Pipeline' object is not iterable
+2024-02-16 18:42:45,998 - ERROR: 
+
+2024-02-16 18:51:10,598 - INFO: Logging is configured.
+2024-02-16 18:51:10,646 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:51:10,646 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:51:10,646 - ERROR:     
+2024-02-16 18:51:10,646 - ERROR: capture(args)
+2024-02-16 18:51:10,646 - ERROR: 
+
+2024-02-16 18:51:10,647 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 31, in capture
+
+2024-02-16 18:51:10,647 - ERROR:     
+2024-02-16 18:51:10,647 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-16 18:51:10,647 - ERROR: 
+
+2024-02-16 18:51:10,647 - ERROR:   File "/home/pi/insect-detect/refactor/setup_directories.py", line 8, in setup_directories
+
+2024-02-16 18:51:10,647 - ERROR:     
+2024-02-16 18:51:10,647 - ERROR: for text in labels:
+2024-02-16 18:51:10,648 - ERROR: 
+
+2024-02-16 18:51:10,648 - ERROR: TypeError
+2024-02-16 18:51:10,648 - ERROR: : 
+2024-02-16 18:51:10,648 - ERROR: 'depthai.Pipeline' object is not iterable
+2024-02-16 18:51:10,648 - ERROR: 
+
+2024-02-16 18:51:24,341 - INFO: Logging is configured.
+2024-02-16 18:51:24,389 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:51:24,390 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:51:24,391 - ERROR:     
+2024-02-16 18:51:24,392 - ERROR: capture(args)
+2024-02-16 18:51:24,392 - ERROR: 
+
+2024-02-16 18:51:24,393 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 31, in capture
+
+2024-02-16 18:51:24,394 - ERROR:     
+2024-02-16 18:51:24,394 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-16 18:51:24,395 - ERROR: 
+
+2024-02-16 18:51:24,395 - ERROR:   File "/home/pi/insect-detect/refactor/setup_directories.py", line 8, in setup_directories
+
+2024-02-16 18:51:24,396 - ERROR:     
+2024-02-16 18:51:24,396 - ERROR: for text in labels:
+2024-02-16 18:51:24,397 - ERROR: 
+
+2024-02-16 18:51:24,397 - ERROR: TypeError
+2024-02-16 18:51:24,397 - ERROR: : 
+2024-02-16 18:51:24,398 - ERROR: 'depthai.Pipeline' object is not iterable
+2024-02-16 18:51:24,398 - ERROR: 
+
+2024-02-16 18:53:45,874 - INFO: Logging is configured.
+2024-02-16 18:53:45,922 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:53:45,923 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 43, in <module>
+
+2024-02-16 18:53:45,924 - ERROR:     
+2024-02-16 18:53:45,925 - ERROR: capture(args)
+2024-02-16 18:53:45,925 - ERROR: 
+
+2024-02-16 18:53:45,926 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 31, in capture
+
+2024-02-16 18:53:45,927 - ERROR:     
+2024-02-16 18:53:45,927 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-16 18:53:45,928 - ERROR: 
+
+2024-02-16 18:53:45,928 - ERROR:   File "/home/pi/insect-detect/refactor/setup_directories.py", line 8, in setup_directories
+
+2024-02-16 18:53:45,930 - ERROR:     
+2024-02-16 18:53:45,930 - ERROR: for text in labels:
+2024-02-16 18:53:45,931 - ERROR: 
+
+2024-02-16 18:53:45,932 - ERROR: TypeError
+2024-02-16 18:53:45,932 - ERROR: : 
+2024-02-16 18:53:45,933 - ERROR: 'depthai.Pipeline' object is not iterable
+2024-02-16 18:53:45,934 - ERROR: 
+
+2024-02-16 18:56:15,261 - INFO: Logging is configured.
+2024-02-16 18:56:15,322 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:56:15,323 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 18:56:15,324 - ERROR:     
+2024-02-16 18:56:15,325 - ERROR: capture(args)
+2024-02-16 18:56:15,326 - ERROR: 
+
+2024-02-16 18:56:15,326 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 33, in capture
+
+2024-02-16 18:56:15,328 - ERROR:     
+2024-02-16 18:56:15,329 - ERROR: save_path, rec_id, rec_start = setup_directories(labels, args.save_raw_frames, args.save_overlay_frames)
+2024-02-16 18:56:15,329 - ERROR: 
+
+2024-02-16 18:56:15,330 - ERROR:   File "/home/pi/insect-detect/refactor/setup_directories.py", line 8, in setup_directories
+
+2024-02-16 18:56:15,330 - ERROR:     
+2024-02-16 18:56:15,331 - ERROR: for text in labels:
+2024-02-16 18:56:15,332 - ERROR: 
+
+2024-02-16 18:56:15,333 - ERROR: TypeError
+2024-02-16 18:56:15,334 - ERROR: : 
+2024-02-16 18:56:15,334 - ERROR: 'depthai.Pipeline' object is not iterable
+2024-02-16 18:56:15,335 - ERROR: 
+
+2024-02-16 18:57:42,057 - INFO: Logging is configured.
+2024-02-16 18:57:42,123 - ERROR: Traceback (most recent call last):
+
+2024-02-16 18:57:42,123 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 18:57:42,124 - ERROR:     
+2024-02-16 18:57:42,124 - ERROR: capture(args)
+2024-02-16 18:57:42,124 - ERROR: 
+
+2024-02-16 18:57:42,124 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 18:57:42,124 - ERROR:     
+2024-02-16 18:57:42,125 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline)
+2024-02-16 18:57:42,125 - ERROR: 
+
+2024-02-16 18:57:42,125 - ERROR: TypeError
+2024-02-16 18:57:42,125 - ERROR: : 
+2024-02-16 18:57:42,125 - ERROR: run() takes 4 positional arguments but 5 were given
+2024-02-16 18:57:42,125 - ERROR: 
+
+2024-02-16 19:01:28,872 - INFO: Logging is configured.
+2024-02-16 19:01:33,878 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:01:33,879 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:01:33,879 - ERROR:     
+2024-02-16 19:01:33,879 - ERROR: capture(args)
+2024-02-16 19:01:33,879 - ERROR: 
+
+2024-02-16 19:01:33,879 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:01:33,879 - ERROR:     
+2024-02-16 19:01:33,880 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline)
+2024-02-16 19:01:33,880 - ERROR: 
+
+2024-02-16 19:01:33,880 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 17, in run
+
+2024-02-16 19:01:33,880 - ERROR:     
+2024-02-16 19:01:33,880 - ERROR: if args.save_logs:
+2024-02-16 19:01:33,880 - ERROR: 
+
+2024-02-16 19:01:33,880 - ERROR: AttributeError
+2024-02-16 19:01:33,880 - ERROR: : 
+2024-02-16 19:01:33,880 - ERROR: 'bool' object has no attribute 'save_logs'
+2024-02-16 19:01:33,880 - ERROR: 
+
+2024-02-16 19:09:57,957 - INFO: Logging is configured.
+2024-02-16 19:10:01,809 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:10:01,809 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:10:01,810 - ERROR:     
+2024-02-16 19:10:01,810 - ERROR: capture(args)
+2024-02-16 19:10:01,810 - ERROR: 
+
+2024-02-16 19:10:01,810 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:10:01,810 - ERROR:     
+2024-02-16 19:10:01,810 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline)
+2024-02-16 19:10:01,811 - ERROR: 
+
+2024-02-16 19:10:01,811 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 17, in run
+
+2024-02-16 19:10:01,811 - ERROR:     
+2024-02-16 19:10:01,811 - ERROR: if args.save_logs:
+2024-02-16 19:10:01,811 - ERROR: 
+
+2024-02-16 19:10:01,811 - ERROR: AttributeError
+2024-02-16 19:10:01,811 - ERROR: : 
+2024-02-16 19:10:01,811 - ERROR: 'bool' object has no attribute 'save_logs'
+2024-02-16 19:10:01,812 - ERROR: 
+
+2024-02-16 19:18:15,445 - INFO: Logging is configured.
+2024-02-16 19:18:19,356 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:18:19,356 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:18:19,357 - ERROR:     
+2024-02-16 19:18:19,357 - ERROR: capture(args)
+2024-02-16 19:18:19,357 - ERROR: 
+
+2024-02-16 19:18:19,357 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:18:19,358 - ERROR:     
+2024-02-16 19:18:19,358 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline)
+2024-02-16 19:18:19,358 - ERROR: 
+
+2024-02-16 19:18:19,358 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 43, in run
+
+2024-02-16 19:18:19,358 - ERROR:     
+2024-02-16 19:18:19,358 - ERROR: logger.info(f"Rec ID: {rec_id} | Rec time: {int(rec_time / 60)} min | Charge level: {chargelevel}%")
+2024-02-16 19:18:19,358 - ERROR: 
+
+2024-02-16 19:18:19,359 - ERROR: NameError
+2024-02-16 19:18:19,359 - ERROR: : 
+2024-02-16 19:18:19,359 - ERROR: name 'rec_id' is not defined
+2024-02-16 19:18:19,359 - ERROR: 
+
+2024-02-16 19:19:10,158 - INFO: Logging is configured.
+2024-02-16 19:19:13,045 - INFO: Rec ID: 17 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:19:14,105 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks)
+TypeError: store_data() missing 3 required positional arguments: 'rec_id', 'rec_start', and 'save_path'
+
+2024-02-16 19:19:14,105 - ERROR: Error during recording 17 | Charge level: 92%
+
+2024-02-16 19:19:16,230 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:19:16,230 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+
+2024-02-16 19:19:16,231 - ERROR:     
+2024-02-16 19:19:16,231 - ERROR: store_data(frame, tracks)
+2024-02-16 19:19:16,231 - ERROR: 
+
+2024-02-16 19:19:16,231 - ERROR: TypeError
+2024-02-16 19:19:16,231 - ERROR: : 
+2024-02-16 19:19:16,231 - ERROR: store_data() missing 3 required positional arguments: 'rec_id', 'rec_start', and 'save_path'
+2024-02-16 19:19:16,231 - ERROR: 
+
+2024-02-16 19:19:16,232 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-16 19:19:16,232 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:19:16,232 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:19:16,232 - ERROR:     
+2024-02-16 19:19:16,232 - ERROR: capture(args)
+2024-02-16 19:19:16,232 - ERROR: 
+
+2024-02-16 19:19:16,232 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:19:16,232 - ERROR:     
+2024-02-16 19:19:16,233 - ERROR: frame, tracks, chargelevel = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline, rec_id)
+2024-02-16 19:19:16,233 - ERROR: 
+
+2024-02-16 19:19:16,233 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 89, in run
+
+2024-02-16 19:19:16,233 - ERROR:     
+2024-02-16 19:19:16,233 - ERROR: record_log()
+2024-02-16 19:19:16,233 - ERROR: 
+
+2024-02-16 19:19:16,233 - ERROR: TypeError
+2024-02-16 19:19:16,234 - ERROR: : 
+2024-02-16 19:19:16,234 - ERROR: record_log() missing 6 required positional arguments: 'rec_id', 'rec_start', 'save_path', 'chargelevel_start', 'chargelevel', and 'start_time'
+2024-02-16 19:19:16,234 - ERROR: 
+
+2024-02-16 19:21:03,679 - INFO: Logging is configured.
+2024-02-16 19:21:06,521 - INFO: Rec ID: 18 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:21:07,561 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path)
+  File "/home/pi/insect-detect/refactor/data_management.py", line 19, in store_data
+    if args.save_raw_frames:
+NameError: name 'args' is not defined
+
+2024-02-16 19:21:07,562 - ERROR: Error during recording 18 | Charge level: 92%
+
+2024-02-16 19:21:09,690 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:21:09,690 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+
+2024-02-16 19:21:09,691 - ERROR:     
+2024-02-16 19:21:09,691 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path)
+2024-02-16 19:21:09,691 - ERROR: 
+
+2024-02-16 19:21:09,691 - ERROR:   File "/home/pi/insect-detect/refactor/data_management.py", line 19, in store_data
+
+2024-02-16 19:21:09,692 - ERROR:     
+2024-02-16 19:21:09,692 - ERROR: if args.save_raw_frames:
+2024-02-16 19:21:09,692 - ERROR: 
+
+2024-02-16 19:21:09,692 - ERROR: NameError
+2024-02-16 19:21:09,692 - ERROR: : 
+2024-02-16 19:21:09,692 - ERROR: name 'args' is not defined
+2024-02-16 19:21:09,692 - ERROR: 
+
+2024-02-16 19:21:09,692 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-16 19:21:09,692 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:21:09,692 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:21:09,693 - ERROR:     
+2024-02-16 19:21:09,693 - ERROR: capture(args)
+2024-02-16 19:21:09,693 - ERROR: 
+
+2024-02-16 19:21:09,693 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:21:09,693 - ERROR:     
+2024-02-16 19:21:09,693 - ERROR: frame, tracks, chargelevel = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-16 19:21:09,694 - ERROR: 
+
+2024-02-16 19:21:09,694 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 89, in run
+
+2024-02-16 19:21:09,694 - ERROR:     
+2024-02-16 19:21:09,694 - ERROR: record_log()
+2024-02-16 19:21:09,694 - ERROR: 
+
+2024-02-16 19:21:09,694 - ERROR: TypeError
+2024-02-16 19:21:09,694 - ERROR: : 
+2024-02-16 19:21:09,694 - ERROR: record_log() missing 6 required positional arguments: 'rec_id', 'rec_start', 'save_path', 'chargelevel_start', 'chargelevel', and 'start_time'
+2024-02-16 19:21:09,694 - ERROR: 
+
+2024-02-16 19:22:20,232 - INFO: Logging is configured.
+2024-02-16 19:22:23,061 - INFO: Rec ID: 19 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:22:24,078 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path)
+  File "/home/pi/insect-detect/refactor/data_management.py", line 19, in store_data
+    if args.save_raw_frames:
+NameError: name 'args' is not defined
+
+2024-02-16 19:22:24,079 - ERROR: Error during recording 19 | Charge level: 92%
+
+2024-02-16 19:22:26,194 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:22:26,194 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+
+2024-02-16 19:22:26,195 - ERROR:     
+2024-02-16 19:22:26,195 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path)
+2024-02-16 19:22:26,195 - ERROR: 
+
+2024-02-16 19:22:26,195 - ERROR:   File "/home/pi/insect-detect/refactor/data_management.py", line 19, in store_data
+
+2024-02-16 19:22:26,195 - ERROR:     
+2024-02-16 19:22:26,196 - ERROR: if args.save_raw_frames:
+2024-02-16 19:22:26,196 - ERROR: 
+
+2024-02-16 19:22:26,196 - ERROR: NameError
+2024-02-16 19:22:26,196 - ERROR: : 
+2024-02-16 19:22:26,196 - ERROR: name 'args' is not defined
+2024-02-16 19:22:26,196 - ERROR: 
+
+2024-02-16 19:22:26,196 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-16 19:22:26,196 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:22:26,196 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:22:26,197 - ERROR:     
+2024-02-16 19:22:26,197 - ERROR: capture(args)
+2024-02-16 19:22:26,197 - ERROR: 
+
+2024-02-16 19:22:26,197 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:22:26,197 - ERROR:     
+2024-02-16 19:22:26,197 - ERROR: frame, tracks, chargelevel = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-16 19:22:26,197 - ERROR: 
+
+2024-02-16 19:22:26,197 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 89, in run
+
+2024-02-16 19:22:26,198 - ERROR:     
+2024-02-16 19:22:26,198 - ERROR: record_log()
+2024-02-16 19:22:26,198 - ERROR: 
+
+2024-02-16 19:22:26,198 - ERROR: TypeError
+2024-02-16 19:22:26,198 - ERROR: : 
+2024-02-16 19:22:26,198 - ERROR: record_log() missing 6 required positional arguments: 'rec_id', 'rec_start', 'save_path', 'chargelevel_start', 'chargelevel', and 'start_time'
+2024-02-16 19:22:26,198 - ERROR: 
+
+2024-02-16 19:23:33,553 - INFO: Logging is configured.
+2024-02-16 19:23:36,426 - INFO: Rec ID: 20 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:23:37,451 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path)
+  File "/home/pi/insect-detect/refactor/data_management.py", line 19, in store_data
+    if args.save_raw_frames:
+NameError: name 'args' is not defined
+
+2024-02-16 19:23:37,452 - ERROR: Error during recording 20 | Charge level: 92%
+
+2024-02-16 19:36:07,067 - INFO: Logging is configured.
+2024-02-16 19:36:09,975 - INFO: Rec ID: 21 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:36:11,016 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path)
+TypeError: store_data() missing 8 required positional arguments: 'labels', 'save_raw_frames', 'save_overlay_frames', 'crop_bbox', 'four_k_resolution', 'webhook_url', 'latest_images', and 'image_count'
+
+2024-02-16 19:36:11,016 - ERROR: Error during recording 21 | Charge level: 92%
+
+2024-02-16 19:36:13,146 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:36:13,146 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+
+2024-02-16 19:36:13,146 - ERROR:     
+2024-02-16 19:36:13,147 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path)
+2024-02-16 19:36:13,147 - ERROR: 
+
+2024-02-16 19:36:13,147 - ERROR: TypeError
+2024-02-16 19:36:13,147 - ERROR: : 
+2024-02-16 19:36:13,147 - ERROR: store_data() missing 8 required positional arguments: 'labels', 'save_raw_frames', 'save_overlay_frames', 'crop_bbox', 'four_k_resolution', 'webhook_url', 'latest_images', and 'image_count'
+2024-02-16 19:36:13,147 - ERROR: 
+
+2024-02-16 19:36:13,147 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-16 19:36:13,147 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:36:13,147 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:36:13,148 - ERROR:     
+2024-02-16 19:36:13,148 - ERROR: capture(args)
+2024-02-16 19:36:13,148 - ERROR: 
+
+2024-02-16 19:36:13,148 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:36:13,148 - ERROR:     
+2024-02-16 19:36:13,148 - ERROR: frame, tracks, chargelevel = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-16 19:36:13,148 - ERROR: 
+
+2024-02-16 19:36:13,148 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 89, in run
+
+2024-02-16 19:36:13,149 - ERROR:     
+2024-02-16 19:36:13,149 - ERROR: record_log(rec_id, rec_start, save_path, chargelevel_start, chargelevel, start_time)
+2024-02-16 19:36:13,149 - ERROR: 
+
+2024-02-16 19:36:13,149 - ERROR:   File "/home/pi/insect-detect/refactor/data_log.py", line 13, in record_log
+
+2024-02-16 19:36:13,149 - ERROR:     
+2024-02-16 19:36:13,149 - ERROR: df_meta = pd.read_csv(f"{save_path}/metadata_{rec_start}.csv", encoding="utf-8")
+2024-02-16 19:36:13,150 - ERROR: 
+
+2024-02-16 19:36:13,150 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 912, in read_csv
+
+2024-02-16 19:36:13,152 - ERROR:     
+2024-02-16 19:36:13,153 - ERROR: return _read(filepath_or_buffer, kwds)
+2024-02-16 19:36:13,153 - ERROR: 
+
+2024-02-16 19:36:13,153 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 577, in _read
+
+2024-02-16 19:36:13,154 - ERROR:     
+2024-02-16 19:36:13,154 - ERROR: parser = TextFileReader(filepath_or_buffer, **kwds)
+2024-02-16 19:36:13,154 - ERROR: 
+
+2024-02-16 19:36:13,154 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1407, in __init__
+
+2024-02-16 19:36:13,155 - ERROR:     
+2024-02-16 19:36:13,156 - ERROR: self._engine = self._make_engine(f, self.engine)
+2024-02-16 19:36:13,156 - ERROR: 
+
+2024-02-16 19:36:13,156 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1661, in _make_engine
+
+2024-02-16 19:36:13,157 - ERROR:     
+2024-02-16 19:36:13,157 - ERROR: self.handles = get_handle(
+2024-02-16 19:36:13,157 - ERROR: 
+
+2024-02-16 19:36:13,157 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/common.py", line 868, in get_handle
+
+2024-02-16 19:36:13,160 - ERROR:     
+2024-02-16 19:36:13,160 - ERROR: handle = open(handle, ioargs.mode)
+2024-02-16 19:36:13,160 - ERROR: 
+
+2024-02-16 19:36:13,160 - ERROR: FileNotFoundError
+2024-02-16 19:36:13,161 - ERROR: : 
+2024-02-16 19:36:13,161 - ERROR: [Errno 2] No such file or directory: 'insect-detect/data/20240216/20240216_19-36/metadata_20240216_19-36.csv'
+2024-02-16 19:36:13,161 - ERROR: 
+
+2024-02-16 19:43:20,566 - INFO: Logging is configured.
+2024-02-16 19:43:20,567 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:43:20,567 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:43:20,567 - ERROR:     
+2024-02-16 19:43:20,567 - ERROR: capture(args)
+2024-02-16 19:43:20,567 - ERROR: 
+
+2024-02-16 19:43:20,567 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 25, in capture
+
+2024-02-16 19:43:20,568 - ERROR:     
+2024-02-16 19:43:20,568 - ERROR: pijuice, chargelevel_start = check_system_resources(logger)
+2024-02-16 19:43:20,568 - ERROR: 
+
+2024-02-16 19:43:20,568 - ERROR: TypeError
+2024-02-16 19:43:20,568 - ERROR: : 
+2024-02-16 19:43:20,568 - ERROR: check_system_resources() takes 0 positional arguments but 1 was given
+2024-02-16 19:43:20,568 - ERROR: 
+
+2024-02-16 19:43:54,638 - INFO: Logging is configured.
+2024-02-16 19:43:57,515 - INFO: Rec ID: 22 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:43:58,537 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path)
+TypeError: store_data() missing 8 required positional arguments: 'labels', 'save_raw_frames', 'save_overlay_frames', 'crop_bbox', 'four_k_resolution', 'webhook_url', 'latest_images', and 'image_count'
+
+2024-02-16 19:43:58,538 - ERROR: Error during recording 22 | Charge level: 92%
+
+2024-02-16 19:44:00,663 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:44:00,663 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+
+2024-02-16 19:44:00,664 - ERROR:     
+2024-02-16 19:44:00,664 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path)
+2024-02-16 19:44:00,664 - ERROR: 
+
+2024-02-16 19:44:00,665 - ERROR: TypeError
+2024-02-16 19:44:00,665 - ERROR: : 
+2024-02-16 19:44:00,665 - ERROR: store_data() missing 8 required positional arguments: 'labels', 'save_raw_frames', 'save_overlay_frames', 'crop_bbox', 'four_k_resolution', 'webhook_url', 'latest_images', and 'image_count'
+2024-02-16 19:44:00,665 - ERROR: 
+
+2024-02-16 19:44:00,665 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-16 19:44:00,666 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:44:00,666 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:44:00,666 - ERROR:     
+2024-02-16 19:44:00,667 - ERROR: capture(args)
+2024-02-16 19:44:00,667 - ERROR: 
+
+2024-02-16 19:44:00,667 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:44:00,668 - ERROR:     
+2024-02-16 19:44:00,668 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-16 19:44:00,668 - ERROR: 
+
+2024-02-16 19:44:00,668 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 89, in run
+
+2024-02-16 19:44:00,669 - ERROR:     
+2024-02-16 19:44:00,669 - ERROR: record_log(rec_id, rec_start, save_path, chargelevel_start, chargelevel, start_time)
+2024-02-16 19:44:00,669 - ERROR: 
+
+2024-02-16 19:44:00,669 - ERROR:   File "/home/pi/insect-detect/refactor/data_log.py", line 13, in record_log
+
+2024-02-16 19:44:00,670 - ERROR:     
+2024-02-16 19:44:00,670 - ERROR: df_meta = pd.read_csv(f"{save_path}/metadata_{rec_start}.csv", encoding="utf-8")
+2024-02-16 19:44:00,670 - ERROR: 
+
+2024-02-16 19:44:00,671 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 912, in read_csv
+
+2024-02-16 19:44:00,672 - ERROR:     
+2024-02-16 19:44:00,672 - ERROR: return _read(filepath_or_buffer, kwds)
+2024-02-16 19:44:00,673 - ERROR: 
+
+2024-02-16 19:44:00,673 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 577, in _read
+
+2024-02-16 19:44:00,674 - ERROR:     
+2024-02-16 19:44:00,674 - ERROR: parser = TextFileReader(filepath_or_buffer, **kwds)
+2024-02-16 19:44:00,674 - ERROR: 
+
+2024-02-16 19:44:00,675 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1407, in __init__
+
+2024-02-16 19:44:00,677 - ERROR:     
+2024-02-16 19:44:00,677 - ERROR: self._engine = self._make_engine(f, self.engine)
+2024-02-16 19:44:00,677 - ERROR: 
+
+2024-02-16 19:44:00,678 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1661, in _make_engine
+
+2024-02-16 19:44:00,680 - ERROR:     
+2024-02-16 19:44:00,680 - ERROR: self.handles = get_handle(
+2024-02-16 19:44:00,680 - ERROR: 
+
+2024-02-16 19:44:00,680 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/common.py", line 868, in get_handle
+
+2024-02-16 19:44:00,682 - ERROR:     
+2024-02-16 19:44:00,682 - ERROR: handle = open(handle, ioargs.mode)
+2024-02-16 19:44:00,682 - ERROR: 
+
+2024-02-16 19:44:00,683 - ERROR: FileNotFoundError
+2024-02-16 19:44:00,683 - ERROR: : 
+2024-02-16 19:44:00,683 - ERROR: [Errno 2] No such file or directory: 'insect-detect/data/20240216/20240216_19-43/metadata_20240216_19-43.csv'
+2024-02-16 19:44:00,683 - ERROR: 
+
+2024-02-16 19:51:50,204 - INFO: Logging is configured.
+2024-02-16 19:51:53,103 - INFO: Rec ID: 23 | Rec time: 40 min | Charge level: 92%
+2024-02-16 19:51:54,117 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path)
+TypeError: store_data() missing 8 required positional arguments: 'labels', 'save_raw_frames', 'save_overlay_frames', 'crop_bbox', 'four_k_resolution', 'webhook_url', 'latest_images', and 'image_count'
+
+2024-02-16 19:51:54,118 - ERROR: Error during recording 23 | Charge level: 92%
+
+2024-02-16 19:51:56,246 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:51:56,246 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+
+2024-02-16 19:51:56,246 - ERROR:     
+2024-02-16 19:51:56,247 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path)
+2024-02-16 19:51:56,247 - ERROR: 
+
+2024-02-16 19:51:56,247 - ERROR: TypeError
+2024-02-16 19:51:56,247 - ERROR: : 
+2024-02-16 19:51:56,247 - ERROR: store_data() missing 8 required positional arguments: 'labels', 'save_raw_frames', 'save_overlay_frames', 'crop_bbox', 'four_k_resolution', 'webhook_url', 'latest_images', and 'image_count'
+2024-02-16 19:51:56,247 - ERROR: 
+
+2024-02-16 19:51:56,247 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-16 19:51:56,247 - ERROR: Traceback (most recent call last):
+
+2024-02-16 19:51:56,247 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 45, in <module>
+
+2024-02-16 19:51:56,248 - ERROR:     
+2024-02-16 19:51:56,248 - ERROR: capture(args)
+2024-02-16 19:51:56,248 - ERROR: 
+
+2024-02-16 19:51:56,248 - ERROR:   File "/home/pi/insect-detect/refactor/run_capture.py", line 35, in capture
+
+2024-02-16 19:51:56,248 - ERROR:     
+2024-02-16 19:51:56,248 - ERROR: frame, tracks = run(args.save_logs, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-16 19:51:56,248 - ERROR: 
+
+2024-02-16 19:51:56,248 - ERROR:   File "/home/pi/insect-detect/refactor/rest.py", line 89, in run
+
+2024-02-16 19:51:56,249 - ERROR:     
+2024-02-16 19:51:56,249 - ERROR: record_log(rec_id, rec_start, save_path, chargelevel_start, chargelevel, start_time)
+2024-02-16 19:51:56,249 - ERROR: 
+
+2024-02-16 19:51:56,249 - ERROR:   File "/home/pi/insect-detect/refactor/data_log.py", line 13, in record_log
+
+2024-02-16 19:51:56,249 - ERROR:     
+2024-02-16 19:51:56,249 - ERROR: df_meta = pd.read_csv(f"{save_path}/metadata_{rec_start}.csv", encoding="utf-8")
+2024-02-16 19:51:56,249 - ERROR: 
+
+2024-02-16 19:51:56,249 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 912, in read_csv
+
+2024-02-16 19:51:56,250 - ERROR:     
+2024-02-16 19:51:56,250 - ERROR: return _read(filepath_or_buffer, kwds)
+2024-02-16 19:51:56,250 - ERROR: 
+
+2024-02-16 19:51:56,250 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 577, in _read
+
+2024-02-16 19:51:56,251 - ERROR:     
+2024-02-16 19:51:56,251 - ERROR: parser = TextFileReader(filepath_or_buffer, **kwds)
+2024-02-16 19:51:56,251 - ERROR: 
+
+2024-02-16 19:51:56,251 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1407, in __init__
+
+2024-02-16 19:51:56,252 - ERROR:     
+2024-02-16 19:51:56,252 - ERROR: self._engine = self._make_engine(f, self.engine)
+2024-02-16 19:51:56,252 - ERROR: 
+
+2024-02-16 19:51:56,253 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/parsers/readers.py", line 1661, in _make_engine
+
+2024-02-16 19:51:56,254 - ERROR:     
+2024-02-16 19:51:56,254 - ERROR: self.handles = get_handle(
+2024-02-16 19:51:56,254 - ERROR: 
+
+2024-02-16 19:51:56,254 - ERROR:   File "/home/pi/.local/lib/python3.9/site-packages/pandas/io/common.py", line 868, in get_handle
+
+2024-02-16 19:51:56,255 - ERROR:     
+2024-02-16 19:51:56,255 - ERROR: handle = open(handle, ioargs.mode)
+2024-02-16 19:51:56,255 - ERROR: 
+
+2024-02-16 19:51:56,255 - ERROR: FileNotFoundError
+2024-02-16 19:51:56,255 - ERROR: : 
+2024-02-16 19:51:56,255 - ERROR: [Errno 2] No such file or directory: 'insect-detect/data/20240216/20240216_19-51/metadata_20240216_19-51.csv'
+2024-02-16 19:51:56,255 - ERROR: 
+
+2024-02-16 20:09:10,973 - INFO: Logging is configured.
+2024-02-16 20:09:13,809 - INFO: Rec ID: 7 | Rec time: 40 min | Charge level: 92%
+2024-02-16 20:09:15,850 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/refactor/rest.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/refactor/data_management.py", line 36, in store_data
+    det_crop = make_bbox_square(bbox)
+TypeError: make_bbox_square() missing 2 required positional arguments: 'bbox' and 'resolution'
+
+2024-02-16 20:09:15,851 - ERROR: Error during recording 7 | Charge level: 92%
+
+2024-02-16 20:23:14,755 - INFO: Logging is configured.
+2024-02-16 20:23:14,759 - INFO: Shut down without recording | Charge level: -1%
+
+2024-02-16 20:34:09,110 - INFO: Rec ID: 8 | Rec time: 40 min | Charge level: 92%
+2024-02-16 20:34:48,822 - ERROR: Traceback (most recent call last):
+
+2024-02-16 20:34:48,823 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 533, in <module>
+
+2024-02-16 20:34:48,827 - ERROR:     
+2024-02-16 20:34:48,828 - ERROR: capture()
+2024-02-16 20:34:48,828 - ERROR: 
+
+2024-02-16 20:34:48,828 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 503, in capture
+
+2024-02-16 20:34:48,830 - ERROR:     
+2024-02-16 20:34:48,830 - ERROR: store_data(frame, tracks)
+2024-02-16 20:34:48,830 - ERROR: 
+
+2024-02-16 20:34:48,831 - ERROR:   File "/home/pi/insect-detect/run_capture.py", line 332, in store_data
+
+2024-02-16 20:34:48,832 - ERROR:     
+2024-02-16 20:34:48,832 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2024-02-16 20:34:48,832 - ERROR: 
+
+2024-02-16 20:34:48,832 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2024-02-16 20:34:48,836 - ERROR:     
+2024-02-16 20:34:48,836 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2024-02-16 20:34:48,836 - ERROR: 
+
+2024-02-16 20:34:48,836 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2024-02-16 20:34:48,837 - ERROR:     
+2024-02-16 20:34:48,837 - ERROR: return session.request(method=method, url=url, **kwargs)
+2024-02-16 20:34:48,837 - ERROR: 
+
+2024-02-16 20:34:48,838 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2024-02-16 20:34:48,841 - ERROR:     
+2024-02-16 20:34:48,841 - ERROR: resp = self.send(prep, **send_kwargs)
+2024-02-16 20:34:48,841 - ERROR: 
+
+2024-02-16 20:34:48,842 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2024-02-16 20:34:48,843 - ERROR:     
+2024-02-16 20:34:48,843 - ERROR: r = adapter.send(request, **kwargs)
+2024-02-16 20:34:48,844 - ERROR: 
+
+2024-02-16 20:34:48,844 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2024-02-16 20:34:48,846 - ERROR:     
+2024-02-16 20:34:48,847 - ERROR: resp = conn.urlopen(
+2024-02-16 20:34:48,847 - ERROR: 
+
+2024-02-16 20:34:48,847 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2024-02-16 20:34:48,852 - ERROR:     
+2024-02-16 20:34:48,852 - ERROR: httplib_response = self._make_request(
+2024-02-16 20:34:48,852 - ERROR: 
+
+2024-02-16 20:34:48,852 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2024-02-16 20:34:48,854 - ERROR:     
+2024-02-16 20:34:48,854 - ERROR: six.raise_from(e, None)
+2024-02-16 20:34:48,854 - ERROR: 
+
+2024-02-16 20:34:48,854 - ERROR:   File "<string>", line 3, in raise_from
+
+2024-02-16 20:34:48,865 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2024-02-16 20:34:48,867 - ERROR:     
+2024-02-16 20:34:48,867 - ERROR: httplib_response = conn.getresponse()
+2024-02-16 20:34:48,867 - ERROR: 
+
+2024-02-16 20:34:48,868 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2024-02-16 20:34:48,874 - ERROR:     
+2024-02-16 20:34:48,874 - ERROR: response.begin()
+2024-02-16 20:34:48,874 - ERROR: 
+
+2024-02-16 20:34:48,875 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2024-02-16 20:34:48,876 - ERROR:     
+2024-02-16 20:34:48,876 - ERROR: version, status, reason = self._read_status()
+2024-02-16 20:34:48,876 - ERROR: 
+
+2024-02-16 20:34:48,876 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2024-02-16 20:34:48,877 - ERROR:     
+2024-02-16 20:34:48,878 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2024-02-16 20:34:48,878 - ERROR: 
+
+2024-02-16 20:34:48,878 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2024-02-16 20:34:48,882 - ERROR:     
+2024-02-16 20:34:48,882 - ERROR: return self._sock.recv_into(b)
+2024-02-16 20:34:48,883 - ERROR: 
+
+2024-02-16 20:34:48,883 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2024-02-16 20:34:48,888 - ERROR:     
+2024-02-16 20:34:48,888 - ERROR: return self.read(nbytes, buffer)
+2024-02-16 20:34:48,888 - ERROR: 
+
+2024-02-16 20:34:48,888 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2024-02-16 20:34:48,891 - ERROR:     
+2024-02-16 20:34:48,891 - ERROR: return self._sslobj.read(len, buffer)
+2024-02-16 20:34:48,891 - ERROR: 
+
+2024-02-16 20:34:48,892 - ERROR: KeyboardInterrupt
+2024-02-16 20:34:48,892 - ERROR: 
+2024-02-16 20:34:48,892 - ERROR: 
+

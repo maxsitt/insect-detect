@@ -5,18 +5,18 @@ import logging
 
 def run_led_script():
     try:
-        import LED
+        import LEDcopy
         logging.info("LED script running...")
-        LED.run_LEDS()
+        LEDcopy.run_LEDS()
         logging.info("LED script finished.")
     except Exception as e:
         logging.error(f"Error running LED script: {e}")
         raise
 
-def capture_script():
+def run_capture_script():
     try:
         logging.info("Capture script starting...")
-        subprocess.run(["python3", "insect-detect/capture.py"])
+        subprocess.run(["python3", "insect-detect/run_capture.py"])
         logging.info("Capture script finished.")
     except Exception as e:
         logging.error(f"Error running capture script: {e}")
@@ -35,7 +35,7 @@ def main():
 
     # Start capture script and wait for it to complete
     logging.info("Starting capture script")
-    capture_script()
+    run_capture_script()
 
     # Wait for the LED script to finish if it's still running
     led_thread.join()

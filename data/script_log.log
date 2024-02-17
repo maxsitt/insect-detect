@@ -5327,3 +5327,15 @@ TypeError: make_bbox_square() missing 2 required positional arguments: 'bbox' an
 2024-02-16 20:34:48,892 - ERROR: 
 2024-02-16 20:34:48,892 - ERROR: 
 
+2024-02-16 21:15:01,742 - INFO: Logging is configured.
+2024-02-16 21:16:10,212 - INFO: Logging is configured.
+2024-02-16 21:16:20,160 - INFO: Rec ID: 10 | Rec time: 40 min | Charge level: 92%
+2024-02-16 21:16:59,761 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/data_management.py", line 36, in store_data
+    det_crop = make_bbox_square(fram, bbox, four_k_resolution)
+NameError: name 'fram' is not defined
+
+2024-02-16 21:16:59,807 - ERROR: Error during recording 10 | Charge level: 92%
+

@@ -15,8 +15,8 @@ This Python script does the following:
 - use an object tracker to track detected objects and assign unique tracking IDs
   -> accuracy depends on object motion speed and inference speed of the detection model
 - synchronize tracker output (including detections) from inference on LQ frames with
-  HQ frames (default: 1920x1080 px) on-device using the respective sequence numbers
-  -> pipeline speed (= inference speed): ~13.2 fps (1080p sync) or ~3.4 fps (4K sync)
+  HQ frames (default: 1920x1080 px) on-device using the respective message timestamps
+  -> pipeline speed (= inference speed): ~13.4 fps (1080p sync) or ~3.3 fps (4K sync)
 - save detections (bounding box area) cropped from HQ frames to .jpg at the
   specified capture frequency (default: 1 s), optionally together with full frames
 - save corresponding metadata from tracker (+ model) output (time, label, confidence,
@@ -29,7 +29,7 @@ This Python script does the following:
   "-min"     set recording time in minutes (default: 2 min)
              -> e.g. "-min 5" for 5 min recording time
   "-4k"      crop detections from (+ save HQ frames in) 4K resolution (default: 1080p)
-             -> decreases pipeline speed to ~3.4 fps (1080p: ~13.2 fps)
+             -> decreases pipeline speed to ~3.3 fps (1080p: ~13.4 fps)
   "-af"      set auto focus range in cm (min distance, max distance)
              -> e.g. "-af 14 20" to restrict auto focus range to 14-20 cm
   "-ae"      use bounding box coordinates from detections to set auto exposure region
@@ -41,9 +41,9 @@ This Python script does the following:
                 -> can increase classification accuracy by avoiding stretching of the
                    cropped insect image during resizing for classification inference
   "-raw"     additionally save HQ frames to .jpg (e.g. for training data collection)
-             -> decreases pipeline speed to ~4.7 fps for 1080p sync (4K sync: ~1.1 fps)
+             -> decreases pipeline speed to ~4.7 fps for 1080p sync (4K sync: ~1.2 fps)
   "-overlay" additionally save HQ frames with overlays (bbox + info) to .jpg
-             -> decreases pipeline speed to ~4.2 fps for 1080p sync (4K sync: ~1.1 fps)
+             -> decreases pipeline speed to ~4.5 fps for 1080p sync (4K sync: ~1.2 fps)
   "-log"     write RPi CPU + OAK chip temperature and RPi available memory (MB) +
              CPU utilization (%) to "info_log_{timestamp}.csv"
   "-zip"     store all captured data in an uncompressed .zip
@@ -62,7 +62,7 @@ import subprocess
 import sys
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import cv2
@@ -209,43 +209,23 @@ nn.passthrough.link(tracker.inputTrackerFrame)
 nn.passthrough.link(tracker.inputDetectionFrame)
 nn.out.link(tracker.inputDetections)
 
-# Create script node and define inputs for synchronization
-script = pipeline.create(dai.node.Script)
-script.setProcessor(dai.ProcessorType.LEON_CSS)
-cam_rgb.video.link(script.inputs["frames"])  # HQ frames
-script.inputs["frames"].setBlocking(False)
-tracker.out.link(script.inputs["tracker"])   # tracker output
-script.inputs["tracker"].setBlocking(False)
+# Create and configure sync node and define inputs
+sync = pipeline.create(dai.node.Sync)
+sync.setSyncThreshold(timedelta(milliseconds=200))
+cam_rgb.video.link(sync.inputs["frames"])  # HQ frames
+tracker.out.link(sync.inputs["tracker"])   # tracker output
 
-# Set script that will be run on OAK device to synchronize tracker output with HQ frames
-script.setScript('''
-def get_synced_frame(frames_list, tracks_seq):
-    """Compare sequence numbers of tracklets and frame, return frame if equal."""
-    for i, frame in enumerate(frames_list):
-        if tracks_seq == frame.getSequenceNum():
-            return frames_list.pop(i)
+# Create message demux node and define input + outputs
+demux = pipeline.create(dai.node.MessageDemux)
+sync.out.link(demux.input)
 
-# Sync tracker output with HQ frame and send both to output queues
-frames_list = []
-while True:
-    frames_list.append(node.io["frames"].get())
-    tracks = node.io["tracker"].tryGet()
-    if tracks is not None:
-        tracks_seq = tracks.getSequenceNum()
-        frame_synced = get_synced_frame(frames_list, tracks_seq)
-        if frame_synced is not None:
-            node.io["frame_out"].send(frame_synced)
-            node.io["track_out"].send(tracks)
-''')
-
-# Define script node outputs
 xout_rgb = pipeline.create(dai.node.XLinkOut)
 xout_rgb.setStreamName("frame")
-script.outputs["frame_out"].link(xout_rgb.input)  # synced HQ frames
+demux.outputs["frames"].link(xout_rgb.input)  # synced HQ frames
 
 xout_tracker = pipeline.create(dai.node.XLinkOut)
 xout_tracker.setStreamName("track")
-script.outputs["track_out"].link(xout_tracker.input)  # synced tracker output
+demux.outputs["tracker"].link(xout_tracker.input)  # synced tracker output
 
 if args.af_range or args.bbox_ae_region:
     # Create XLinkIn node to send control commands to color camera node

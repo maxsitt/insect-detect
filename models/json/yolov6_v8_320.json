@@ -1,10 +1,7 @@
 {
-<<<<<<< HEAD
-=======
     "model": {
         "blob": "/home/pi/insect-detect/models/yolov6n_320_openvino_2022.1_4shave.blob"
     },
->>>>>>> upstream/main
     "nn_config": {
         "output_format": "detection",
         "NN_family": "YOLO",

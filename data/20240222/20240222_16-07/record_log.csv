@@ -1,0 +1,2 @@
+rec_ID,record_start_date,record_start_time,record_end_time,record_time_min,num_crops,num_IDs,disk_free_gb,chargelevel_start,chargelevel_end
+16,20240222,16-07,16-07,0.04,0,0,214.2,90,90

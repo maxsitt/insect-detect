@@ -5339,3 +5339,620 @@ NameError: name 'fram' is not defined
 
 2024-02-16 21:16:59,807 - ERROR: Error during recording 10 | Charge level: 92%
 
+2024-02-16 21:30:01,073 - INFO: Logging is configured.
+2024-02-16 21:30:07,040 - INFO: Rec ID: 11 | Rec time: 40 min | Charge level: 92%
+2024-02-16 21:31:00,678 - ERROR: Traceback (most recent call last):
+
+2024-02-16 21:31:00,698 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-16 21:31:00,771 - ERROR:     
+2024-02-16 21:31:00,771 - ERROR: capture(args)
+2024-02-16 21:31:00,772 - ERROR: 
+
+2024-02-16 21:31:00,772 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-16 21:31:00,772 - ERROR:     
+2024-02-16 21:31:00,773 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-16 21:31:00,773 - ERROR: 
+
+2024-02-16 21:31:00,773 - ERROR:   File "/home/pi/insect-detect/run.py", line 72, in run
+
+2024-02-16 21:31:00,786 - ERROR:     
+2024-02-16 21:31:00,787 - ERROR: time.sleep(1)
+2024-02-16 21:31:00,787 - ERROR: 
+
+2024-02-16 21:31:00,787 - ERROR: KeyboardInterrupt
+2024-02-16 21:31:00,788 - ERROR: 
+2024-02-16 21:31:00,788 - ERROR: 
+
+2024-02-16 21:32:40,254 - INFO: Logging is configured.
+2024-02-16 21:32:44,244 - INFO: Rec ID: 12 | Rec time: 40 min | Charge level: 92%
+2024-02-16 21:32:45,707 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/data_management.py", line 36, in store_data
+    det_crop = make_bbox_square(fram, bbox, four_k_resolution)
+NameError: name 'fram' is not defined
+
+2024-02-16 21:32:45,708 - ERROR: Error during recording 12 | Charge level: 92%
+
+2024-02-22 13:54:16,196 - INFO: Logging is configured.
+2024-02-22 13:54:27,260 - INFO: Rec ID: 13 | Rec time: 40 min | Charge level: 89%
+2024-02-22 13:54:33,626 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/data_management.py", line 36, in store_data
+    det_crop = make_bbox_square(fram, bbox, four_k_resolution)
+NameError: name 'fram' is not defined
+
+2024-02-22 13:54:33,707 - ERROR: Error during recording 13 | Charge level: 89%
+
+2024-02-22 14:02:42,400 - INFO: Logging is configured.
+2024-02-22 14:02:47,389 - INFO: Rec ID: 14 | Rec time: 40 min | Charge level: 89%
+2024-02-22 14:02:49,127 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/data_management.py", line 36, in store_data
+    det_crop = make_bbox_square(fram, bbox, four_k_resolution)
+NameError: name 'fram' is not defined
+
+2024-02-22 14:02:49,145 - ERROR: Error during recording 14 | Charge level: 89%
+
+2024-02-22 16:00:37,656 - INFO: Logging is configured.
+2024-02-22 16:00:42,635 - ERROR: Traceback (most recent call last):
+
+2024-02-22 16:00:42,636 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-22 16:00:42,639 - ERROR:     
+2024-02-22 16:00:42,639 - ERROR: capture(args)
+2024-02-22 16:00:42,640 - ERROR: 
+
+2024-02-22 16:00:42,640 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-22 16:00:42,641 - ERROR:     
+2024-02-22 16:00:42,641 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-22 16:00:42,641 - ERROR: 
+
+2024-02-22 16:00:42,642 - ERROR:   File "/home/pi/insect-detect/run.py", line 17, in run
+
+2024-02-22 16:00:42,646 - ERROR:     
+2024-02-22 16:00:42,646 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-02-22 16:00:42,646 - ERROR: 
+
+2024-02-22 16:00:42,647 - ERROR: RuntimeError
+2024-02-22 16:00:42,647 - ERROR: : 
+2024-02-22 16:00:42,647 - ERROR: No available devices
+2024-02-22 16:00:42,648 - ERROR: 
+
+2024-02-22 16:07:28,057 - INFO: Logging is configured.
+2024-02-22 16:07:31,784 - INFO: Rec ID: 16 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:07:34,217 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/data_management.py", line 36, in store_data
+    det_crop = make_bbox_square(fram, bbox, four_k_resolution)
+NameError: name 'fram' is not defined
+
+2024-02-22 16:07:34,219 - ERROR: Error during recording 16 | Charge level: 90%
+
+2024-02-22 16:13:15,997 - INFO: Logging is configured.
+2024-02-22 16:13:20,464 - INFO: Rec ID: 17 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:17:06,372 - INFO: Logging is configured.
+2024-02-22 16:17:49,584 - ERROR: Traceback (most recent call last):
+
+2024-02-22 16:17:49,632 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-22 16:17:49,670 - ERROR:     
+2024-02-22 16:17:49,671 - ERROR: capture(args)
+2024-02-22 16:17:49,671 - ERROR: 
+
+2024-02-22 16:17:49,671 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-22 16:17:49,672 - ERROR:     
+2024-02-22 16:17:49,673 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-22 16:17:49,673 - ERROR: 
+
+2024-02-22 16:17:49,674 - ERROR:   File "/home/pi/insect-detect/run.py", line 17, in run
+
+2024-02-22 16:17:49,685 - ERROR:     
+2024-02-22 16:17:49,686 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-02-22 16:17:49,686 - ERROR: 
+
+2024-02-22 16:17:49,687 - ERROR: RuntimeError
+2024-02-22 16:17:49,688 - ERROR: : 
+2024-02-22 16:17:49,689 - ERROR: Failed to find device after booting, error message: X_LINK_DEVICE_NOT_FOUND
+2024-02-22 16:17:49,689 - ERROR: 
+
+2024-02-22 16:18:56,330 - INFO: Logging is configured.
+2024-02-22 16:19:04,713 - INFO: Rec ID: 19 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:19:46,494 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 69, in run
+    store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+  File "/home/pi/insect-detect/data_management.py", line 40, in store_data
+    timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
+AttributeError: module 'datetime' has no attribute 'now'
+
+2024-02-22 16:19:48,662 - ERROR: Error during recording 19 | Charge level: 90%
+
+2024-02-22 16:26:29,249 - INFO: Logging is configured.
+2024-02-22 16:26:40,254 - INFO: Rec ID: 20 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:53:05,728 - INFO: Logging is configured.
+2024-02-22 16:53:09,825 - INFO: Rec ID: 21 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:53:30,987 - ERROR: Traceback (most recent call last):
+
+2024-02-22 16:53:30,988 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-22 16:53:30,988 - ERROR:     
+2024-02-22 16:53:30,989 - ERROR: capture(args)
+2024-02-22 16:53:30,989 - ERROR: 
+
+2024-02-22 16:53:30,989 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-22 16:53:30,990 - ERROR:     
+2024-02-22 16:53:30,991 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-22 16:53:30,991 - ERROR: 
+
+2024-02-22 16:53:30,991 - ERROR:   File "/home/pi/insect-detect/run.py", line 69, in run
+
+2024-02-22 16:53:30,993 - ERROR:     
+2024-02-22 16:53:30,994 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+2024-02-22 16:53:30,994 - ERROR: 
+
+2024-02-22 16:53:30,994 - ERROR:   File "/home/pi/insect-detect/data_management.py", line 63, in store_data
+
+2024-02-22 16:53:30,996 - ERROR:     
+2024-02-22 16:53:30,996 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2024-02-22 16:53:30,997 - ERROR: 
+
+2024-02-22 16:53:30,997 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2024-02-22 16:53:30,999 - ERROR:     
+2024-02-22 16:53:30,999 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2024-02-22 16:53:31,000 - ERROR: 
+
+2024-02-22 16:53:31,000 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2024-02-22 16:53:31,001 - ERROR:     
+2024-02-22 16:53:31,001 - ERROR: return session.request(method=method, url=url, **kwargs)
+2024-02-22 16:53:31,002 - ERROR: 
+
+2024-02-22 16:53:31,002 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2024-02-22 16:53:31,005 - ERROR:     
+2024-02-22 16:53:31,006 - ERROR: resp = self.send(prep, **send_kwargs)
+2024-02-22 16:53:31,006 - ERROR: 
+
+2024-02-22 16:53:31,007 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2024-02-22 16:53:31,008 - ERROR:     
+2024-02-22 16:53:31,009 - ERROR: r = adapter.send(request, **kwargs)
+2024-02-22 16:53:31,009 - ERROR: 
+
+2024-02-22 16:53:31,010 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2024-02-22 16:53:31,012 - ERROR:     
+2024-02-22 16:53:31,013 - ERROR: resp = conn.urlopen(
+2024-02-22 16:53:31,013 - ERROR: 
+
+2024-02-22 16:53:31,014 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2024-02-22 16:53:31,017 - ERROR:     
+2024-02-22 16:53:31,018 - ERROR: httplib_response = self._make_request(
+2024-02-22 16:53:31,018 - ERROR: 
+
+2024-02-22 16:53:31,019 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2024-02-22 16:53:31,020 - ERROR:     
+2024-02-22 16:53:31,020 - ERROR: six.raise_from(e, None)
+2024-02-22 16:53:31,021 - ERROR: 
+
+2024-02-22 16:53:31,021 - ERROR:   File "<string>", line 3, in raise_from
+
+2024-02-22 16:53:31,023 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2024-02-22 16:53:31,024 - ERROR:     
+2024-02-22 16:53:31,025 - ERROR: httplib_response = conn.getresponse()
+2024-02-22 16:53:31,025 - ERROR: 
+
+2024-02-22 16:53:31,026 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2024-02-22 16:53:31,032 - ERROR:     
+2024-02-22 16:53:31,032 - ERROR: response.begin()
+2024-02-22 16:53:31,032 - ERROR: 
+
+2024-02-22 16:53:31,033 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2024-02-22 16:53:31,034 - ERROR:     
+2024-02-22 16:53:31,034 - ERROR: version, status, reason = self._read_status()
+2024-02-22 16:53:31,035 - ERROR: 
+
+2024-02-22 16:53:31,035 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2024-02-22 16:53:31,037 - ERROR:     
+2024-02-22 16:53:31,037 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2024-02-22 16:53:31,037 - ERROR: 
+
+2024-02-22 16:53:31,038 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2024-02-22 16:53:31,042 - ERROR:     
+2024-02-22 16:53:31,042 - ERROR: return self._sock.recv_into(b)
+2024-02-22 16:53:31,043 - ERROR: 
+
+2024-02-22 16:53:31,043 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2024-02-22 16:53:31,049 - ERROR:     
+2024-02-22 16:53:31,050 - ERROR: return self.read(nbytes, buffer)
+2024-02-22 16:53:31,050 - ERROR: 
+
+2024-02-22 16:53:31,050 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2024-02-22 16:53:31,053 - ERROR:     
+2024-02-22 16:53:31,053 - ERROR: return self._sslobj.read(len, buffer)
+2024-02-22 16:53:31,053 - ERROR: 
+
+2024-02-22 16:53:31,053 - ERROR: KeyboardInterrupt
+2024-02-22 16:53:31,054 - ERROR: 
+2024-02-22 16:53:31,054 - ERROR: 
+
+2024-02-22 16:54:09,442 - INFO: Logging is configured.
+2024-02-22 16:54:14,259 - INFO: Rec ID: 22 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:56:35,737 - INFO: Logging is configured.
+2024-02-22 16:58:02,822 - INFO: Logging is configured.
+2024-02-22 16:58:09,897 - INFO: Rec ID: 24 | Rec time: 40 min | Charge level: 90%
+2024-02-22 16:58:58,202 - ERROR: Traceback (most recent call last):
+  File "/home/pi/insect-detect/run.py", line 62, in run
+    if q_frame.has():
+RuntimeError: Communication exception - possible device error/misconfiguration. Original message 'Couldn't read data from stream: 'frame' (X_LINK_ERROR)'
+
+2024-02-22 16:58:58,315 - ERROR: Error during recording 24 | Charge level: 90%
+
+2024-02-23 17:21:00,030 - INFO: Logging is configured.
+2024-02-23 17:21:00,034 - INFO: Shut down without recording | Charge level: 0%
+
+2024-02-23 17:23:39,205 - INFO: Logging is configured.
+2024-02-23 17:23:44,405 - INFO: Rec ID: 25 | Rec time: 40 min | Charge level: 85%
+2024-02-23 17:24:03,117 - ERROR: Traceback (most recent call last):
+
+2024-02-23 17:24:03,119 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-23 17:24:03,129 - ERROR:     
+2024-02-23 17:24:03,129 - ERROR: capture(args)
+2024-02-23 17:24:03,130 - ERROR: 
+
+2024-02-23 17:24:03,130 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-23 17:24:03,132 - ERROR:     
+2024-02-23 17:24:03,133 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-23 17:24:03,133 - ERROR: 
+
+2024-02-23 17:24:03,134 - ERROR:   File "/home/pi/insect-detect/run.py", line 69, in run
+
+2024-02-23 17:24:03,148 - ERROR:     
+2024-02-23 17:24:03,148 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+2024-02-23 17:24:03,149 - ERROR: 
+
+2024-02-23 17:24:03,149 - ERROR:   File "/home/pi/insect-detect/data_management.py", line 63, in store_data
+
+2024-02-23 17:24:03,154 - ERROR:     
+2024-02-23 17:24:03,155 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2024-02-23 17:24:03,155 - ERROR: 
+
+2024-02-23 17:24:03,156 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2024-02-23 17:24:03,179 - ERROR:     
+2024-02-23 17:24:03,179 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2024-02-23 17:24:03,180 - ERROR: 
+
+2024-02-23 17:24:03,180 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2024-02-23 17:24:03,181 - ERROR:     
+2024-02-23 17:24:03,182 - ERROR: return session.request(method=method, url=url, **kwargs)
+2024-02-23 17:24:03,182 - ERROR: 
+
+2024-02-23 17:24:03,182 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2024-02-23 17:24:03,196 - ERROR:     
+2024-02-23 17:24:03,196 - ERROR: resp = self.send(prep, **send_kwargs)
+2024-02-23 17:24:03,197 - ERROR: 
+
+2024-02-23 17:24:03,197 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2024-02-23 17:24:03,200 - ERROR:     
+2024-02-23 17:24:03,200 - ERROR: r = adapter.send(request, **kwargs)
+2024-02-23 17:24:03,201 - ERROR: 
+
+2024-02-23 17:24:03,201 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2024-02-23 17:24:03,213 - ERROR:     
+2024-02-23 17:24:03,214 - ERROR: resp = conn.urlopen(
+2024-02-23 17:24:03,214 - ERROR: 
+
+2024-02-23 17:24:03,215 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2024-02-23 17:24:03,224 - ERROR:     
+2024-02-23 17:24:03,224 - ERROR: httplib_response = self._make_request(
+2024-02-23 17:24:03,225 - ERROR: 
+
+2024-02-23 17:24:03,225 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2024-02-23 17:24:03,227 - ERROR:     
+2024-02-23 17:24:03,227 - ERROR: six.raise_from(e, None)
+2024-02-23 17:24:03,228 - ERROR: 
+
+2024-02-23 17:24:03,228 - ERROR:   File "<string>", line 3, in raise_from
+
+2024-02-23 17:24:03,234 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2024-02-23 17:24:03,236 - ERROR:     
+2024-02-23 17:24:03,236 - ERROR: httplib_response = conn.getresponse()
+2024-02-23 17:24:03,237 - ERROR: 
+
+2024-02-23 17:24:03,237 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2024-02-23 17:24:03,245 - ERROR:     
+2024-02-23 17:24:03,245 - ERROR: response.begin()
+2024-02-23 17:24:03,246 - ERROR: 
+
+2024-02-23 17:24:03,246 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2024-02-23 17:24:03,248 - ERROR:     
+2024-02-23 17:24:03,248 - ERROR: version, status, reason = self._read_status()
+2024-02-23 17:24:03,249 - ERROR: 
+
+2024-02-23 17:24:03,249 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2024-02-23 17:24:03,251 - ERROR:     
+2024-02-23 17:24:03,251 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2024-02-23 17:24:03,252 - ERROR: 
+
+2024-02-23 17:24:03,252 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2024-02-23 17:24:03,257 - ERROR:     
+2024-02-23 17:24:03,257 - ERROR: return self._sock.recv_into(b)
+2024-02-23 17:24:03,258 - ERROR: 
+
+2024-02-23 17:24:03,258 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2024-02-23 17:24:03,264 - ERROR:     
+2024-02-23 17:24:03,265 - ERROR: return self.read(nbytes, buffer)
+2024-02-23 17:24:03,265 - ERROR: 
+
+2024-02-23 17:24:03,266 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2024-02-23 17:24:03,268 - ERROR:     
+2024-02-23 17:24:03,269 - ERROR: return self._sslobj.read(len, buffer)
+2024-02-23 17:24:03,269 - ERROR: 
+
+2024-02-23 17:24:03,270 - ERROR: KeyboardInterrupt
+2024-02-23 17:24:03,270 - ERROR: 
+2024-02-23 17:24:03,271 - ERROR: 
+
+2024-02-23 17:24:37,037 - INFO: Logging is configured.
+2024-02-23 17:24:40,725 - INFO: Rec ID: 26 | Rec time: 40 min | Charge level: 85%
+2024-02-23 17:36:11,501 - INFO: Logging is configured.
+2024-02-23 17:38:35,721 - INFO: Logging is configured.
+2024-02-23 17:38:48,312 - INFO: Rec ID: 28 | Rec time: 40 min | Charge level: 86%
+2024-02-23 17:39:06,642 - ERROR: Traceback (most recent call last):
+
+2024-02-23 17:39:06,703 - ERROR:   File "/home/pi/insect-detect/run.py", line 69, in run
+
+2024-02-23 17:39:07,055 - ERROR:     
+2024-02-23 17:39:07,056 - ERROR: store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_frames, save_overlay_frames, crop_bbox, four_k_resolution, webhook_url, latest_images, image_count)
+2024-02-23 17:39:07,139 - ERROR: 
+
+2024-02-23 17:39:07,140 - ERROR:   File "/home/pi/insect-detect/data_management.py", line 63, in store_data
+
+2024-02-23 17:39:07,183 - ERROR:     
+2024-02-23 17:39:07,183 - ERROR: response = requests.post(webhook_url, files=files, data=data)
+2024-02-23 17:39:07,184 - ERROR: 
+
+2024-02-23 17:39:07,184 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 119, in post
+
+2024-02-23 17:39:07,459 - ERROR:     
+2024-02-23 17:39:07,460 - ERROR: return request('post', url, data=data, json=json, **kwargs)
+2024-02-23 17:39:07,460 - ERROR: 
+
+2024-02-23 17:39:07,460 - ERROR:   File "/usr/lib/python3/dist-packages/requests/api.py", line 61, in request
+
+2024-02-23 17:39:07,461 - ERROR:     
+2024-02-23 17:39:07,461 - ERROR: return session.request(method=method, url=url, **kwargs)
+2024-02-23 17:39:07,462 - ERROR: 
+
+2024-02-23 17:39:07,462 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 542, in request
+
+2024-02-23 17:39:07,532 - ERROR:     
+2024-02-23 17:39:07,532 - ERROR: resp = self.send(prep, **send_kwargs)
+2024-02-23 17:39:07,533 - ERROR: 
+
+2024-02-23 17:39:07,533 - ERROR:   File "/usr/lib/python3/dist-packages/requests/sessions.py", line 655, in send
+
+2024-02-23 17:39:07,535 - ERROR:     
+2024-02-23 17:39:07,535 - ERROR: r = adapter.send(request, **kwargs)
+2024-02-23 17:39:07,535 - ERROR: 
+
+2024-02-23 17:39:07,536 - ERROR:   File "/usr/lib/python3/dist-packages/requests/adapters.py", line 439, in send
+
+2024-02-23 17:39:07,600 - ERROR:     
+2024-02-23 17:39:07,600 - ERROR: resp = conn.urlopen(
+2024-02-23 17:39:07,600 - ERROR: 
+
+2024-02-23 17:39:07,601 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 699, in urlopen
+
+2024-02-23 17:39:07,817 - ERROR:     
+2024-02-23 17:39:07,830 - ERROR: httplib_response = self._make_request(
+2024-02-23 17:39:07,831 - ERROR: 
+
+2024-02-23 17:39:07,831 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 445, in _make_request
+
+2024-02-23 17:39:07,833 - ERROR:     
+2024-02-23 17:39:07,834 - ERROR: six.raise_from(e, None)
+2024-02-23 17:39:07,834 - ERROR: 
+
+2024-02-23 17:39:07,835 - ERROR:   File "<string>", line 3, in raise_from
+
+2024-02-23 17:39:08,425 - ERROR:   File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 440, in _make_request
+
+2024-02-23 17:39:08,450 - ERROR:     
+2024-02-23 17:39:08,451 - ERROR: httplib_response = conn.getresponse()
+2024-02-23 17:39:08,451 - ERROR: 
+
+2024-02-23 17:39:08,452 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 1347, in getresponse
+
+2024-02-23 17:39:08,518 - ERROR:     
+2024-02-23 17:39:08,519 - ERROR: response.begin()
+2024-02-23 17:39:08,519 - ERROR: 
+
+2024-02-23 17:39:08,520 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 307, in begin
+
+2024-02-23 17:39:08,521 - ERROR:     
+2024-02-23 17:39:08,522 - ERROR: version, status, reason = self._read_status()
+2024-02-23 17:39:08,522 - ERROR: 
+
+2024-02-23 17:39:08,523 - ERROR:   File "/usr/lib/python3.9/http/client.py", line 268, in _read_status
+
+2024-02-23 17:39:08,525 - ERROR:     
+2024-02-23 17:39:08,525 - ERROR: line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2024-02-23 17:39:08,525 - ERROR: 
+
+2024-02-23 17:39:08,526 - ERROR:   File "/usr/lib/python3.9/socket.py", line 704, in readinto
+
+2024-02-23 17:39:08,571 - ERROR:     
+2024-02-23 17:39:08,571 - ERROR: return self._sock.recv_into(b)
+2024-02-23 17:39:08,572 - ERROR: 
+
+2024-02-23 17:39:08,572 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1241, in recv_into
+
+2024-02-23 17:39:08,663 - ERROR:     
+2024-02-23 17:39:08,664 - ERROR: return self.read(nbytes, buffer)
+2024-02-23 17:39:08,665 - ERROR: 
+
+2024-02-23 17:39:08,665 - ERROR:   File "/usr/lib/python3.9/ssl.py", line 1099, in read
+
+2024-02-23 17:39:08,669 - ERROR:     
+2024-02-23 17:39:08,669 - ERROR: return self._sslobj.read(len, buffer)
+2024-02-23 17:39:08,670 - ERROR: 
+
+2024-02-23 17:39:08,670 - ERROR: KeyboardInterrupt
+2024-02-23 17:39:08,670 - ERROR: 
+2024-02-23 17:39:08,671 - ERROR: 
+
+2024-02-23 17:39:08,671 - ERROR: 
+During handling of the above exception, another exception occurred:
+
+
+2024-02-23 17:39:08,671 - ERROR: Traceback (most recent call last):
+
+2024-02-23 17:39:08,672 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-23 17:39:08,755 - ERROR:     
+2024-02-23 17:39:08,755 - ERROR: capture(args)
+2024-02-23 17:39:08,756 - ERROR: 
+
+2024-02-23 17:39:08,756 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-23 17:39:08,757 - ERROR:     
+2024-02-23 17:39:08,758 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-23 17:39:08,758 - ERROR: 
+
+2024-02-23 17:39:08,758 - ERROR:   File "/home/pi/insect-detect/run.py", line 96, in run
+
+2024-02-23 17:39:08,790 - ERROR:     
+2024-02-23 17:39:08,791 - ERROR: subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+2024-02-23 17:39:08,792 - ERROR: 
+
+2024-02-23 17:39:08,792 - ERROR: KeyboardInterrupt
+2024-02-23 17:39:08,793 - ERROR: 
+2024-02-23 17:39:08,793 - ERROR: 
+
+2024-02-23 17:42:01,636 - INFO: Logging is configured.
+2024-02-23 17:43:45,954 - INFO: Logging is configured.
+2024-02-23 17:44:57,820 - INFO: Logging is configured.
+2024-02-23 17:47:01,127 - INFO: Logging is configured.
+2024-02-23 17:47:31,090 - INFO: Logging is configured.
+2024-02-23 17:48:09,166 - INFO: Logging is configured.
+2024-02-23 17:49:07,313 - INFO: Logging is configured.
+2024-02-23 17:50:02,851 - INFO: Logging is configured.
+2024-02-23 17:55:28,925 - INFO: Logging is configured.
+2024-02-23 17:55:33,506 - INFO: Rec ID: 26 | Rec time: 40 min | Charge level: 84%
+2024-02-23 17:56:46,010 - INFO: Logging is configured.
+2024-02-23 17:56:49,914 - INFO: Rec ID: 27 | Rec time: 40 min | Charge level: 84%
+2024-02-23 17:59:00,648 - INFO: Logging is configured.
+2024-02-23 17:59:04,442 - INFO: Rec ID: 28 | Rec time: 40 min | Charge level: 85%
+2024-02-23 18:00:24,220 - ERROR: Traceback (most recent call last):
+
+2024-02-23 18:00:24,221 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-23 18:00:24,222 - ERROR:     
+2024-02-23 18:00:24,223 - ERROR: capture(args)
+2024-02-23 18:00:24,223 - ERROR: 
+
+2024-02-23 18:00:24,223 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-23 18:00:24,224 - ERROR:     
+2024-02-23 18:00:24,224 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-23 18:00:24,224 - ERROR: 
+
+2024-02-23 18:00:24,224 - ERROR:   File "/home/pi/insect-detect/run.py", line 72, in run
+
+2024-02-23 18:00:24,226 - ERROR:     
+2024-02-23 18:00:24,227 - ERROR: time.sleep(1)
+2024-02-23 18:00:24,227 - ERROR: 
+
+2024-02-23 18:00:24,227 - ERROR: KeyboardInterrupt
+2024-02-23 18:00:24,227 - ERROR: 
+2024-02-23 18:00:24,227 - ERROR: 
+
+2024-02-23 18:01:15,824 - INFO: Logging is configured.
+2024-02-23 18:01:19,719 - INFO: Rec ID: 29 | Rec time: 40 min | Charge level: 85%
+2024-02-23 18:01:45,347 - ERROR: Traceback (most recent call last):
+
+2024-02-23 18:01:45,355 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-23 18:01:45,358 - ERROR:     
+2024-02-23 18:01:45,359 - ERROR: capture(args)
+2024-02-23 18:01:45,359 - ERROR: 
+
+2024-02-23 18:01:45,359 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-23 18:01:45,360 - ERROR:     
+2024-02-23 18:01:45,360 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-23 18:01:45,360 - ERROR: 
+
+2024-02-23 18:01:45,361 - ERROR:   File "/home/pi/insect-detect/run.py", line 72, in run
+
+2024-02-23 18:01:45,362 - ERROR:     
+2024-02-23 18:01:45,363 - ERROR: time.sleep(1)
+2024-02-23 18:01:45,363 - ERROR: 
+
+2024-02-23 18:01:45,363 - ERROR: KeyboardInterrupt
+2024-02-23 18:01:45,364 - ERROR: 
+2024-02-23 18:01:45,364 - ERROR: 
+
+2024-02-23 18:02:42,317 - INFO: Logging is configured.
+2024-02-23 18:02:46,101 - INFO: Rec ID: 30 | Rec time: 40 min | Charge level: 85%
+2024-02-23 18:24:34,215 - INFO: Logging is configured.
+2024-02-23 18:25:44,166 - ERROR: Traceback (most recent call last):
+
+2024-02-23 18:25:44,270 - ERROR:   File "/home/pi/insect-detect/capture.py", line 39, in <module>
+
+2024-02-23 18:25:44,367 - ERROR:     
+2024-02-23 18:25:44,367 - ERROR: capture(args)
+2024-02-23 18:25:44,368 - ERROR: 
+
+2024-02-23 18:25:44,368 - ERROR:   File "/home/pi/insect-detect/capture.py", line 32, in capture
+
+2024-02-23 18:25:44,369 - ERROR:     
+2024-02-23 18:25:44,369 - ERROR: run(args.save_logs, args.save_raw_frames, args.save_overlay_frames, args.crop_bbox, args.four_k_resolution, webhook_url, latest_images, image_count, labels, pijuice, chargelevel_start, logger, pipeline, rec_id, rec_start, save_path)
+2024-02-23 18:25:44,370 - ERROR: 
+
+2024-02-23 18:25:44,370 - ERROR:   File "/home/pi/insect-detect/run.py", line 17, in run
+
+2024-02-23 18:25:44,398 - ERROR:     
+2024-02-23 18:25:44,399 - ERROR: with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
+2024-02-23 18:25:44,399 - ERROR: 
+
+2024-02-23 18:25:44,400 - ERROR: RuntimeError
+2024-02-23 18:25:44,400 - ERROR: : 
+2024-02-23 18:25:44,401 - ERROR: Failed to find device after booting, error message: X_LINK_DEVICE_NOT_FOUND
+2024-02-23 18:25:44,401 - ERROR: 
+

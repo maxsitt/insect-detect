@@ -1,8 +1,6 @@
 import csv 
-import datetime 
+from datetime import datetime 
 import cv2  
-import os 
-from pathlib import Path 
 import requests
 from image_processing import frame_norm, make_bbox_square
 
@@ -33,7 +31,7 @@ def store_data(frame, tracks, rec_id, rec_start, save_path, labels, save_raw_fra
                     bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
                                             track.srcImgDetection.xmax, track.srcImgDetection.ymax))
                     if crop_bbox == "square":
-                        det_crop = make_bbox_square(fram, bbox, four_k_resolution)
+                        det_crop = make_bbox_square(frame, bbox, four_k_resolution)
                     else:
                         det_crop = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
                     label = labels[track.srcImgDetection.label]

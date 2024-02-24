@@ -7,3 +7,6 @@ To ensure you have all necessary libraries and dependencies installed in the Ras
 ```bash
 pip install -r requirements.txt
 
+This project builds on "Insect Detect" by Max Sittinger et al., 2023, innovating on their open-source camera trap for automated insect monitoring.
+
+Sittinger, M., Uhler, J., Pink, M., & Herz, A. (2023). Insect Detect: An Open-Source DIY Camera Trap for Automated Insect Monitoring [Preprint]. bioRxiv. https://doi.org/10.1101/2023.12.05.570242

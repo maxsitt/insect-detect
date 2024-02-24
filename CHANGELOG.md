@@ -13,10 +13,6 @@ This document outlines the changes and improvements made on top of the original 
 ### Changed
 - **User Customization Features:** Enhanced user customization options, allowing for more flexible configuration of camera settings, data logging intervals, and LED behavior based on specific research needs or environmental conditions.
 
-### Documentation
-- Expanded the README.md to provide comprehensive setup instructions, usage guidelines, and troubleshooting tips, making the system more accessible to new users.
-- Added this detailed changelog to document the evolution of the project and modifications made for transparency and compliance with the GNU GPLv3 license.
-
 ### Compliance and Attribution
 - This project builds upon and extends the original work titled "Insect Detect: An open-source DIY camera trap for automated insect monitoring" by Sittinger et al., adhering to the GNU General Public License v3 (GPLv3).
 - Our modifications are intended to contribute to the open-source community, encouraging further development, collaboration, and sharing in the spirit of the original project.

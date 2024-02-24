@@ -7,25 +7,16 @@ License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 
 This Python script does the following:
 - run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
-<<<<<<< HEAD
-  -> inference on downscaled LQ frames (e.g. 320x320 px)
-- use an object tracker to track detected objects and assign unique tracking IDs (on-device)
-- show downscaled LQ frames + model/tracker output (bounding box, label, confidence,
-  tracking ID, tracking status) + fps in a new window (e.g. via X11 forwarding)
-- optional argument:
-=======
   -> inference on stretched + downscaled LQ frames (default: 320x320 px)
-- use an object tracker to track detected objects and assign unique tracking IDs
-  -> accuracy depends on object motion speed and inference speed of the detection model
-- show downscaled LQ frames + model/tracker output (bounding box, label, confidence,
-  tracking ID, tracking status) + fps in a new window (e.g. via X11 forwarding)
+- show downscaled LQ frames + model output (bounding box, label, confidence) + fps
+  in a new window (e.g. via X11 forwarding)
 - optional arguments:
   "-af"  set auto focus range in cm (min distance, max distance)
          -> e.g. "-af 14 20" to restrict auto focus range to 14-20 cm
   "-ae"  use bounding box coordinates from detections to set auto exposure region
->>>>>>> upstream/main
   "-log" print available Raspberry Pi memory, RPi CPU utilization + temperature,
          OAK memory + CPU usage and OAK chip temperature to console
+
 
 based on open source scripts available at https://github.com/luxonis
 '''
@@ -41,13 +32,10 @@ import numpy as np
 
 # Define optional argument
 parser = argparse.ArgumentParser()
-<<<<<<< HEAD
-=======
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
     help="set auto focus range in cm (min distance, max distance)", metavar=("cm_min", "cm_max"))
 parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
     help="use bounding box coordinates from detections to set auto exposure region")
->>>>>>> upstream/main
 parser.add_argument("-log", "--print_logs", action="store_true",
     help="print RPi available memory, RPi CPU utilization + temperature, \
           OAK memory + CPU usage and OAK chip temperature to console")
@@ -58,22 +46,13 @@ if args.print_logs:
     from apscheduler.schedulers.background import BackgroundScheduler
     from gpiozero import CPUTemperature
 
-<<<<<<< HEAD
-# Set file paths to the detection model and config JSON
-=======
 # Set file paths to the detection model and corresponding config JSON
->>>>>>> upstream/main
 MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
 CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
 
 # Get detection model metadata from config JSON
-<<<<<<< HEAD
-with CONFIG_PATH.open(encoding="utf-8") as f:
-    config = json.load(f)
-=======
 with CONFIG_PATH.open(encoding="utf-8") as config_json:
     config = json.load(config_json)
->>>>>>> upstream/main
 nn_config = config.get("nn_config", {})
 nn_metadata = nn_config.get("NN_specific_metadata", {})
 classes = nn_metadata.get("classes", {})
@@ -88,22 +67,6 @@ labels = nn_mappings.get("labels", {})
 # Create depthai pipeline
 pipeline = dai.Pipeline()
 
-<<<<<<< HEAD
-# Create and configure camera node
-cam_rgb = pipeline.create(dai.node.ColorCamera)
-cam_rgb.initialControl.setManualFocus(150)
-#cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)
-cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-cam_rgb.setPreviewSize(320, 320) # downscaled LQ frames for model input
-cam_rgb.setPreviewKeepAspectRatio(False) # "squeeze" frames (16:9) to square (1:1)
-cam_rgb.setInterleaved(False) # planar layout
-cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
-cam_rgb.setFps(47) # frames per second available for focus/exposure/model input
-
-# Create detection network node and define input
-nn = pipeline.create(dai.node.YoloDetectionNetwork)
-cam_rgb.preview.link(nn.input) # downscaled LQ frames as model input
-=======
 # Create and configure color camera node
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)  # rotate image 180°
@@ -117,11 +80,18 @@ cam_rgb.setFps(25)  # frames per second available for auto focus/exposure and mo
 # Get sensor resolution
 SENSOR_RES = cam_rgb.getResolutionSize()
 
-# Create detection network node and define input
+# Create detection network node and define input + outputs
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
 cam_rgb.preview.link(nn.input)  # downscaled LQ frames as model input
->>>>>>> upstream/main
 nn.input.setBlocking(False)
+
+xout_rgb = pipeline.create(dai.node.XLinkOut)
+xout_rgb.setStreamName("frame")
+nn.passthrough.link(xout_rgb.input)
+
+xout_nn = pipeline.create(dai.node.XLinkOut)
+xout_nn.setStreamName("nn")
+nn.out.link(xout_nn.input)
 
 # Set detection model specific settings
 nn.setBlobPath(MODEL_PATH)
@@ -133,30 +103,6 @@ nn.setIouThreshold(iou_threshold)
 nn.setConfidenceThreshold(confidence_threshold)
 nn.setNumInferenceThreads(2)
 
-# Create and configure object tracker node and define inputs + outputs
-tracker = pipeline.create(dai.node.ObjectTracker)
-tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
-<<<<<<< HEAD
-#tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS) # better for low fps
-=======
-#tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)  # better for low fps
->>>>>>> upstream/main
-tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
-nn.passthrough.link(tracker.inputTrackerFrame)
-nn.passthrough.link(tracker.inputDetectionFrame)
-nn.out.link(tracker.inputDetections)
-
-xout_rgb = pipeline.create(dai.node.XLinkOut)
-xout_rgb.setStreamName("frame")
-tracker.passthroughTrackerFrame.link(xout_rgb.input)
-
-xout_tracker = pipeline.create(dai.node.XLinkOut)
-xout_tracker.setStreamName("track")
-tracker.out.link(xout_tracker.input)
-
-<<<<<<< HEAD
-# Define functions
-=======
 if args.af_range or args.bbox_ae_region:
     # Create XLinkIn node to send control commands to color camera node
     xin_ctrl = pipeline.create(dai.node.XLinkIn)
@@ -164,15 +110,12 @@ if args.af_range or args.bbox_ae_region:
     xin_ctrl.out.link(cam_rgb.inputControl)
 
 
->>>>>>> upstream/main
 def frame_norm(frame, bbox):
     """Convert relative bounding box coordinates (0-1) to pixel coordinates."""
     norm_vals = np.full(len(bbox), frame.shape[0])
     norm_vals[::2] = frame.shape[1]
     return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
 
-<<<<<<< HEAD
-=======
 
 def set_focus_range():
     """Convert closest cm values to lens position values and set auto focus range."""
@@ -215,82 +158,27 @@ def bbox_set_exposure_region(xmin_roi, ymin_roi, xmax_roi, ymax_roi):
     q_ctrl.send(ae_ctrl)
 
 
->>>>>>> upstream/main
 def print_logs():
     """Print Raspberry Pi info to console."""
     print(f"\nAvailable RPi memory: {round(psutil.virtual_memory().available / 1048576)} MB")
     print(f"RPi CPU utilization:  {round(psutil.cpu_percent(interval=None))} %")
     print(f"RPi CPU temperature:  {round(CPUTemperature().temperature)} °C\n")
 
-<<<<<<< HEAD
-# Connect to OAK device and start pipeline in USB2 mode
-with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
-
-    # Print RPi + OAK info to console every second
-    if args.print_logs:
-=======
 
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     if args.print_logs:
         # Print RPi + OAK info to console every second
->>>>>>> upstream/main
         scheduler = BackgroundScheduler()
         scheduler.add_job(print_logs, "interval", seconds=1, id="log")
         scheduler.start()
         device.setLogLevel(dai.LogLevel.INFO)
         device.setLogOutputLevel(dai.LogLevel.INFO)
 
-<<<<<<< HEAD
-    # Create output queues to get the frames and tracklets + detections from the outputs defined above
+    # Create output queues to get the frames and detections from the outputs defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
-    q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
-
-    # Create start_time and counter variable to measure fps
-    start_time = time.monotonic()
-    counter = 0
-
-    # Get LQ frames + tracker output (passthrough detections) and show in new window
-    while True:
-        if q_frame.has():
-            frame = q_frame.get().getCvFrame()
-
-            if q_track.has():
-                tracks = q_track.get().tracklets
-                counter += 1
-                fps = round(counter / (time.monotonic() - start_time), 2)
-
-                for track in tracks:
-                    roi = track.roi.denormalize(frame.shape[1], frame.shape[0])
-                    x1 = int(roi.topLeft().x)
-                    y1 = int(roi.topLeft().y)
-                    x2 = int(roi.bottomRight().x)
-                    y2 = int(roi.bottomRight().y)
-
-                    bbox = frame_norm(frame, (track.srcImgDetection.xmin, track.srcImgDetection.ymin,
-                                              track.srcImgDetection.xmax, track.srcImgDetection.ymax))
-                    cv2.putText(frame, labels[track.srcImgDetection.label], (bbox[0], bbox[3] + 13),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                    cv2.putText(frame, f"{round(track.srcImgDetection.confidence, 2)}", (bbox[0], bbox[3] + 25),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                    cv2.putText(frame, f"ID:{track.id}", (bbox[0], bbox[3] + 40),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                    cv2.putText(frame, track.status.name, (bbox[0], bbox[3] + 50),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
-                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2) # model bbox
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 130), 1) # tracker bbox
-
-                cv2.putText(frame, f"fps: {fps}", (4, frame.shape[0] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-                cv2.imshow("tracker_preview", frame)
-                #print(f"fps: {fps}")
-                # streaming the frames via SSH (X11 forwarding) will slow down fps
-                # comment out "cv2.imshow()" and print fps to console for true fps
-=======
-    # Create output queues to get the frames and tracklets (+ detections) from the outputs defined above
-    q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
-    q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
+    q_nn = device.getOutputQueue(name="nn", maxSize=4, blocking=False)
 
     if args.af_range or args.bbox_ae_region:
         # Create input queue to send control commands to OAK camera
@@ -305,55 +193,44 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     counter = 0
 
     while True:
-        # Get LQ frames + tracker output (including detections) and show in new window together with fps
-        if q_frame.has() and q_track.has():
+        # Get LQ frames + model output (detections) and show in new window together with fps
+        if q_frame.has() and q_nn.has():
             frame_lq = q_frame.get().getCvFrame()
-            tracks = q_track.get().tracklets
+            dets = q_nn.get().detections
 
             counter += 1
             fps = round(counter / (time.monotonic() - start_time), 2)
 
-            for tracklet in tracks:
-                # Get bounding box from passthrough detections
-                xmin, ymin = tracklet.srcImgDetection.xmin, tracklet.srcImgDetection.ymin
-                xmax, ymax = tracklet.srcImgDetection.xmax, tracklet.srcImgDetection.ymax
+            for detection in dets:
+                # Get bounding box from detection model
+                xmin, ymin = detection.xmin, detection.ymin
+                xmax, ymax = detection.xmax, detection.ymax
                 bbox_det = frame_norm(frame_lq, (xmin, ymin, xmax, ymax))
 
-                # Get bounding box from object tracker
-                roi = tracklet.roi.denormalize(frame_lq.shape[1], frame_lq.shape[0])
-                x1, y1 = int(roi.topLeft().x), int(roi.topLeft().y)
-                x2, y2 = int(roi.bottomRight().x), int(roi.bottomRight().y)
+                # Get metadata from detection model
+                label = labels[detection.label]
+                det_conf = round(detection.confidence, 2)
 
-                # Get metadata from tracker output (including passthrough detections)
-                label = labels[tracklet.srcImgDetection.label]
-                det_conf = round(tracklet.srcImgDetection.confidence, 2)
-                track_id = tracklet.id
-                track_status = tracklet.status.name
-
-                if args.bbox_ae_region and tracklet == tracks[-1]:
-                    # Use model bbox from latest tracking ID to set auto exposure region
+                if args.bbox_ae_region and detection == dets[0]:
+                    # Use bbox from earliest detection to set auto exposure region
                     bbox_set_exposure_region(xmin, ymin, xmax, ymax)
+                    # using bbox from latest detection (dets[-1]) is also possible,
+                    # but can lead to "flickering effect" in some cases
 
                 cv2.putText(frame_lq, label, (bbox_det[0], bbox_det[3] + 13),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
                 cv2.putText(frame_lq, f"{det_conf}", (bbox_det[0], bbox_det[3] + 25),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                cv2.putText(frame_lq, f"ID:{track_id}", (bbox_det[0], bbox_det[3] + 40),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                cv2.putText(frame_lq, track_status, (bbox_det[0], bbox_det[3] + 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
                 cv2.rectangle(frame_lq, (bbox_det[0], bbox_det[1]), (bbox_det[2], bbox_det[3]),
-                              (0, 0, 255), 2)  # model bbox
-                cv2.rectangle(frame_lq, (x1, y1), (x2, y2), (0, 255, 130), 1)  # tracker bbox
+                              (0, 0, 255), 2)
 
             cv2.putText(frame_lq, f"fps: {fps}", (4, frame_lq.shape[0] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            cv2.imshow("tracker_preview", frame_lq)
+            cv2.imshow("yolo_preview", frame_lq)
 
             #print(f"fps: {fps}")
             # streaming the frames via SSH (X11 forwarding) will slow down fps
             # comment out "cv2.imshow()" and print fps to console for true fps
->>>>>>> upstream/main
 
         # Stop script and close window by pressing "Q"
         if cv2.waitKey(1) == ord("q"):

@@ -2,7 +2,7 @@
 
 <img src="https://github.com/darasafe/nightlife/assets/103866780/931084f5-e549-4565-adad-25c9ae236fcd" height="200">
 
-Install the required dependencies for Raspberry Pi + OAK by running:
+Install the required dependencies for Raspberry Pi + OAK 1 by running:
 
 ```bash
 sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash

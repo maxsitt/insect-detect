@@ -30,13 +30,13 @@ sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
 Install the package libopenblas-dev (required for latest numpy version):
 
 ```
-sudo apt-get install libopenblas-dev
+sudo apt install libopenblas-dev
 ```
 
 Install the python3-venv package:
 
 ```
-sudo apt-get install python3-venv
+sudo apt install python3-venv
 ```
 
 Create a virtual environment to avoid dependency and version conflicts of the installed packages:
@@ -68,6 +68,8 @@ After installing these packages, install the depthai-sdk with:
 ```
 python3 -m pip install --no-dependencies depthai-sdk==1.13.1
 ```
+
+&nbsp;
 
 You can now test the example SDK scripts, e.g. by running:
 

@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 
-'''
-Author:   Maximilian Sittinger (https://github.com/maxsitt)
-Website:  https://maxsitt.github.io/insect-detect-docs/
-License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+"""Save video from OAK camera.
 
-This Python script does the following:
+Source:   https://github.com/maxsitt/insect-detect
+License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+Author:   Maximilian Sittinger (https://github.com/maxsitt)
+Docs:     https://maxsitt.github.io/insect-detect-docs/
+
 - save encoded HQ frames (1080p or 4K resolution) with H.265 (HEVC) compression to .mp4 video file
 - optional arguments:
-  "-minutes [min]" (default = 2) set recording time in minutes
-                   -> e.g. "-minutes 5" for 5 min recording time
-  "-4k" (default = 1080p) record video in 4K resolution (3840x2160 px)
-  "-fps [fps]" (default = 25) set frame rate (frames per second) for video capture
-               -> e.g. "-fps 20" to decrease video file size
+  '-min' set recording time in minutes (default: 2 [min])
+         -> e.g. '-min 5' for 5 min recording time
+  '-4k'  record video in 4K resolution (3840x2160 px) (default: 1080p)
+  '-fps' set camera frame rate (default: 25 fps)
+         -> e.g. '-fps 20' for 20 fps (less fps = smaller video file size)
 
-based on open source scripts available at https://github.com/luxonis/depthai/tree/main/depthai_sdk
-'''
+based on open source scripts available at https://github.com/luxonis
+"""
 
 import argparse
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -27,48 +29,55 @@ from depthai_sdk import OakCamera, RecordType
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-minutes", "--min_rec_time", type=int, choices=range(1, 61), default=2,
-    help="set record time in minutes")
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 61), default=2,
+    help="Set recording time in minutes (default: 2 [min]).", metavar="1-60")
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
-    help="record video in 4K resolution (3840x2160 px); default = 1080p")
+    help="Set camera resolution to 4K (3840x2160 px) (default: 1080p).")
 parser.add_argument("-fps", "--frames_per_second", type=int, choices=range(1, 31), default=25,
-    help="set frame rate (frames per second) for video capture")
+    help="Set camera frame rate (default: 25 fps).", metavar="1-30")
 args = parser.parse_args()
 
-# Get recording time in min from optional argument (default: 2)
-rec_time = args.min_rec_time * 60
-print(f"\nRecording time: {args.min_rec_time} min\n")
+# Set threshold value required to start and continue a recording
+MIN_DISKSPACE = 100  # minimum free disk space (MB) (default: 100 MB)
 
-# Get frame rate (frames per second) from optional argument (default: 25)
-FPS = args.frames_per_second
+# Set recording time (default: 2 minutes)
+REC_TIME = args.min_rec_time * 60
 
 # Set video resolution
-if args.four_k_resolution:
-    RES = "4K"
-else:
-    RES = "1080p"
+RES = "1080p" if not args.four_k_resolution else "4K"
 
-# Create folder to save the videos
-rec_start = datetime.now().strftime("%Y%m%d_%H-%M-%S")
-save_path = f"insect-detect/sdk/videos/{rec_start}"
-Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
+# Set frame rate (default: 25 fps)
+FPS = args.frames_per_second
 
-# Get free disk space (MB)
-disk_free = round(psutil.disk_usage("/").free / 1048576)
+# Set logging level and format
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-# Create start_time variable to set recording time
-start_time = time.monotonic()
+# Create directory to save video
+rec_start = datetime.now()
+rec_start_format = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
+save_path = Path(f"insect-detect/sdk/videos/{rec_start.date()}/{rec_start_format}")
+save_path.mkdir(parents=True, exist_ok=True)
 
 with OakCamera(usb_speed="usb2") as oak:
-#with OakCamera(usb_speed="usb2", rotation=180) as oak:
+#with OakCamera(usb_speed="usb2", rotation=180) as oak:  # rotate image 180°
     cam_rgb = oak.camera("RGB", resolution=RES, fps=FPS, encode="H265")
 
     oak.record(cam_rgb.out.encoded, save_path, RecordType.VIDEO)
 
+    logging.info("\nRecording time: %s min\n", int(REC_TIME / 60))
+
+    # Get free disk space (MB)
+    disk_free = round(psutil.disk_usage("/").free / 1048576)
+
+    # Set start time of recording
+    start_time = time.monotonic()
+
     oak.start(blocking=False)
 
     while oak.running():
-        if time.monotonic() - start_time > rec_time or disk_free < 200:
+        # Record until recording time is finished
+        # Stop recording early if free disk space drops below threshold
+        if time.monotonic() - start_time > REC_TIME or disk_free < MIN_DISKSPACE:
             break
 
         # Update free disk space (MB)
@@ -76,6 +85,6 @@ with OakCamera(usb_speed="usb2") as oak:
 
         oak.poll()
 
-# Print duration, resolution, fps and path of saved video + free disk space to console
-print(f"\nSaved {args.min_rec_time} min {RES} video with {FPS} fps to {save_path}.")
-print(f"\nFree disk space left: {disk_free} MB")
+# Print duration, resolution, fps and directory of saved video + free disk space
+logging.info("\nSaved %s min %s video with %s fps to %s", int(REC_TIME / 60), RES, FPS, save_path)
+logging.info("\nFree disk space left: %s MB", disk_free)

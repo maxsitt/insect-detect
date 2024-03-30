@@ -99,7 +99,7 @@ script that can be used for automated insect monitoring:
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="800">
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync_1080p.gif" width="800">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_frame_sync_1080p.jpg" width="800">
 
 Check out the [classification](https://maxsitt.github.io/insect-detect-docs/deployment/classification/)
 instructions and the [`insect-detect-ml`](https://github.com/maxsitt/insect-detect-ml) GitHub repo for

@@ -1,10 +1,10 @@
 # Insect Detect - DIY camera trap for automated insect monitoring
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="500">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/assets/logo.png" width="540">
 
-[![DOI](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)
+[![DOI PLOS ONE](https://img.shields.io/badge/PLOS%20ONE-10.1371%2Fjournal.pone.0295474-BD3094)](https://doi.org/10.1371/journal.pone.0295474)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://choosealicense.com/licenses/gpl-3.0/)
-[![DOI bioRxiv](https://img.shields.io/badge/bioRxiv-10.1101%2F2023.12.05.570242-B31B1B)](https://doi.org/10.1101/2023.12.05.570242)
+[![DOI Zenodo](https://zenodo.org/badge/580886977.svg)](https://zenodo.org/badge/latestdoi/580886977)
 
 This repository contains Python scripts and [YOLOv5](https://github.com/ultralytics/yolov5),
 [YOLOv6](https://github.com/meituan/YOLOv6), [YOLOv7](https://github.com/WongKinYiu/yolov7)
@@ -112,21 +112,13 @@ instructions for information on how to post-process the metadata with classifica
 
 ## License
 
-All Python scripts are licensed under the GNU General Public License v3.0
+This repository is licensed under the terms of the GNU General Public License v3.0
 ([GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)).
 
 ## Citation
 
-You can cite this project as:
+If you use resources from this repository, please cite our paper:
 
 ```
-Sittinger, M., Uhler, J., Pink, M. & Herz, A. (2023). Insect Detect: An open-source DIY camera trap
-for automated insect monitoring [Preprint]. bioRxiv. https://doi.org/10.1101/2023.12.05.570242
-```
-
-You can cite this repository as:
-
-```
-Sittinger, M. (2023). Insect Detect - Software for automated insect monitoring
-with a DIY camera trap system (v1.6). Zenodo. https://doi.org/10.5281/zenodo.7472238
+Sittinger M, Uhler J, Pink M, Herz A (2024) Insect detect: An open-source DIY camera trap for automated insect monitoring. PLoS ONE 19(4): e0295474. https://doi.org/10.1371/journal.pone.0295474
 ```

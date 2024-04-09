@@ -130,15 +130,15 @@ if chargelevel_start < MIN_CHARGELEVEL or disk_free < MIN_DISKSPACE:
 
 # Set recording time conditional on PiJuice battery charge level
 if chargelevel_start >= 70:
-    REC_TIME = 60 * 40             # charge level > 70:  40 min
+    REC_TIME = 60 * 40             # PiJuice battery charge level > 70:  40 min
 elif 50 <= chargelevel_start < 70:
-    REC_TIME = 60 * 30             # charge level 50-70: 30 min
+    REC_TIME = 60 * 30             # PiJuice battery charge level 50-70: 30 min
 elif 30 <= chargelevel_start < 50:
-    REC_TIME = 60 * 20             # charge level 30-50: 20 min
+    REC_TIME = 60 * 20             # PiJuice battery charge level 30-50: 20 min
 elif 15 <= chargelevel_start < 30:
-    REC_TIME = 60 * 10             # charge level 15-30: 10 min
+    REC_TIME = 60 * 10             # PiJuice battery charge level 15-30: 10 min
 else:
-    REC_TIME = 60 * 5              # charge level < 15:   5 min
+    REC_TIME = 60 * 5              # PiJuice battery charge level < 15:   5 min
 
 # Optional: Disable charging of PiJuice battery if charge level is higher than threshold
 #           -> can prevent overcharging and extend battery life
@@ -247,15 +247,12 @@ if args.af_range or args.bbox_ae_region:
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
-    # Set charge level to initial value
-    chargelevel = chargelevel_start
-
     if args.save_logs:
         # Write RPi + OAK + battery info to .csv file at specified interval
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         scheduler = BackgroundScheduler()
         scheduler.add_job(save_logs, "interval", seconds=LOG_FREQ, id="log",
-                          args=[device, rec_id, rec_start, save_path, pijuice, chargelevel])
+                          args=[device, rec_id, rec_start, save_path, pijuice])
         scheduler.start()
 
     # Write info on start of recording to log file

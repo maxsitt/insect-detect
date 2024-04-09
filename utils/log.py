@@ -28,13 +28,13 @@ def print_logs():
     logging.info("RPi CPU temperature:  %s °C\n", round(CPUTemperature().temperature))
 
 
-def save_logs(device, rec_id, rec_start, save_path,
-              pijuice=None, chargelevel=None):
+def save_logs(device, rec_id, rec_start, save_path, powermanager=None):
     """Write information to .csv file during recording.
 
     Write recording ID, current time, RPi CPU + OAK chip temperature
     and RPi available memory (MB) + CPU utilization (%) to .csv.
-    If pijuice is provided, also write PiJuice battery info + temp to .csv.
+    If powermanager (pijuice or wittypi) is provided, also
+    write PiJuice or Witty Pi battery info + temp to .csv.
     """
     try:
         temp_oak = round(device.getChipTemperature().average)
@@ -50,22 +50,34 @@ def save_logs(device, rec_id, rec_start, save_path,
             "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
             "pi_cpu_used": psutil.cpu_percent(interval=None)
         }
-        if pijuice and chargelevel:
+        if powermanager.__class__.__name__ == "PiJuice":
+            pijuice = powermanager
             logs.update({
                 "power_input": pijuice.status.GetStatus().get("data", {}).get("powerInput", "NA"),
                 "charge_status": pijuice.status.GetStatus().get("data", {}).get("battery", "NA"),
-                "charge_level": chargelevel,
+                "charge_level": pijuice.status.GetChargeLevel().get("data", 99),
                 "voltage_batt_mV": pijuice.status.GetBatteryVoltage().get("data", "NA"),
                 "temp_batt": pijuice.status.GetBatteryTemperature().get("data", "NA") 
+            })
+        elif powermanager.__class__.__name__ == "WittyPiStatus":
+            wittypi = powermanager
+            logs.update({
+                "power_input": wittypi.get_power_mode(),
+                "charge_level": wittypi.estimate_chargelevel(),
+                "voltage_in_V": wittypi.get_input_voltage(),
+                "voltage_out_V": wittypi.get_output_voltage(),
+                "current_out_A": wittypi.get_output_current(),
+                "temp_wittypi": wittypi.get_temperature()
             })
     except IndexError:
         logs = {}
 
-    with open(save_path.parent / f"{rec_start.date()}_info_log.csv", "a", encoding="utf-8") as log_file:
-        log_writer = csv.DictWriter(log_file, fieldnames=logs.keys())
-        if log_file.tell() == 0:
-            log_writer.writeheader()
-        log_writer.writerow(logs)
+    if logs:
+        with open(save_path.parent / f"{rec_start.date()}_info_log.csv", "a", encoding="utf-8") as log_file:
+            log_writer = csv.DictWriter(log_file, fieldnames=logs.keys())
+            if log_file.tell() == 0:
+                log_writer.writeheader()
+            log_writer.writerow(logs)
 
 
 def record_log(rec_id, rec_start, rec_start_format, rec_end, save_path,

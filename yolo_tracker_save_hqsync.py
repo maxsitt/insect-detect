@@ -17,7 +17,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
   -> accuracy depends on object motion speed and inference speed of the detection model
 - synchronize tracker output (including detections) from inference on LQ frames with
   HQ frames (default: 1920x1080 px) on-device using the respective message timestamps
-  -> pipeline speed (= inference speed): ~13.4 fps (1080p sync) or ~3.3 fps (4K sync)
+  -> pipeline speed (= inference speed): ~13.4 fps (1080p sync) or ~3.4 fps (4K sync)
 - save detections (bounding box area) cropped from HQ frames to .jpg at the
   specified capture frequency (default: 1 s), optionally together with full frames
 - save corresponding metadata from tracker (+ model) output (time, label, confidence,
@@ -30,7 +30,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
   '-min'     set recording time in minutes (default: 2 [min])
              -> e.g. '-min 5' for 5 min recording time
   '-4k'      crop detections from (+ save HQ frames in) 4K resolution (default: 1080p)
-             -> decreases pipeline speed to ~3.3 fps (1080p: ~13.4 fps)
+             -> decreases pipeline speed to ~3.4 fps (1080p: ~13.4 fps)
   '-af'      set auto focus range in cm (min distance, max distance)
              -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-ae'      use bounding box coordinates from detections to set auto exposure region
@@ -41,12 +41,14 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
                                or only on one side if object is localized at frame margin
                 -> can increase classification accuracy by avoiding stretching of the
                    cropped insect image during resizing for classification inference
-  '-raw'     additionally save full HQ frames to .jpg (e.g. for training data collection)
-             -> decreases pipeline speed to ~4.7 fps for 1080p sync (4K sync: ~1.2 fps)
+  '-full'    additionally save full HQ frames to .jpg (e.g. for training data collection)
+             -> '-full det'  save full frame together with cropped detections
+                             -> slightly decreases pipeline speed
+             -> '-full freq' save full frame at specified frequency (default: 60 s)
   '-overlay' additionally save full HQ frames with overlays (bbox + info) to .jpg
-             -> decreases pipeline speed to ~4.5 fps for 1080p sync (4K sync: ~1.2 fps)
+             -> slightly decreases pipeline speed
   '-log'     write RPi CPU + OAK chip temperature and RPi available memory (MB) +
-             CPU utilization (%) to .csv file at specified interval
+             CPU utilization (%) to .csv file at specified frequency
   '-zip'     store all captured data in an uncompressed .zip file for each day
              and delete original directory
              -> increases file transfer speed from microSD to computer
@@ -59,6 +61,7 @@ import argparse
 import json
 import logging
 import subprocess
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -70,7 +73,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from utils.general import frame_norm, zip_data
 from utils.log import record_log, save_logs
 from utils.oak_cam import bbox_set_exposure_region, set_focus_range
-from utils.save_data import save_crop_metadata, save_overlay_frame, save_raw_frame
+from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_frame
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
@@ -85,8 +88,9 @@ parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
 parser.add_argument("-crop", "--crop_bbox", choices=["square", "tight"], default="square", type=str,
     help=("Save cropped detections with aspect ratio 1:1 ('square') or "
           "keep original bbox size with variable aspect ratio ('tight')."))
-parser.add_argument("-raw", "--save_raw_frames", action="store_true",
-    help="Additionally save full HQ frames to .jpg.")
+parser.add_argument("-full", "--save_full_frames", choices=["det", "freq"], default=None, type=str,
+    help="Additionally save full HQ frames to .jpg together with cropped detections ('det') "
+         "or at specified frequency, independent of detections ('freq').")
 parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
     help="Additionally save full HQ frames with overlays (bbox + info) to .jpg.")
 parser.add_argument("-log", "--save_logs", action="store_true",
@@ -105,10 +109,12 @@ MIN_DISKSPACE = 100  # minimum free disk space (MB) (default: 100 MB)
 
 # Set capture frequency (default: 1 second)
 # -> wait for specified amount of seconds between saving cropped detections + metadata
-# -> frequency decreases if full frames are saved additionally ("-raw" or "-overlay")
 CAPTURE_FREQ = 1
 
-# Set frequency for saving logs to .csv file (default: 30 seconds)
+# Set frequency for saving full frames if "-full freq" is used (default: 60 seconds)
+FULL_FREQ = 60
+
+# Set frequency for saving logs to .csv file if "-log" is used (default: 30 seconds)
 LOG_FREQ = 30
 
 # Set recording time (default: 2 minutes)
@@ -137,8 +143,8 @@ rec_start = datetime.now()
 rec_start_format = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
 save_path = Path(f"insect-detect/data/{rec_start.date()}/{rec_start_format}")
 save_path.mkdir(parents=True, exist_ok=True)
-if args.save_raw_frames:
-    (save_path / "raw").mkdir(parents=True, exist_ok=True)
+if args.save_full_frames is not None:
+    (save_path / "full").mkdir(parents=True, exist_ok=True)
 if args.save_overlay_frames:
     (save_path / "overlay").mkdir(parents=True, exist_ok=True)
 
@@ -229,13 +235,22 @@ if args.af_range or args.bbox_ae_region:
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
-    if args.save_logs:
-        # Write RPi + OAK info to .csv file at specified interval
+    if args.save_logs or (args.save_full_frames == "freq"):
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         scheduler = BackgroundScheduler()
+
+    if args.save_logs:
+        # Write RPi + OAK info to .csv file at specified frequency
         scheduler.add_job(save_logs, "interval", seconds=LOG_FREQ, id="log",
                           args=[device, rec_id, rec_start, save_path])
         scheduler.start()
+
+    if args.save_full_frames == "freq":
+        # Save full HQ frame at specified frequency
+        scheduler.add_job(save_full_frame, "interval", seconds=FULL_FREQ, id="full",
+                          args=[None, save_path])
+        if not scheduler.running:
+            scheduler.start()
 
     # Write info on start of recording to log file
     logger.info("Rec ID: %s | Rec time: %s min", rec_id, int(REC_TIME / 60))
@@ -253,21 +268,23 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
         q_ctrl.send(af_ctrl)
 
-    # Set start time of recording
+    # Set start time of recording and create empty list to save threads
     start_time = time.monotonic()
+    threads = []
 
     try:
         # Record until recording time is finished
         # Stop recording early if free disk space drops below threshold
         while time.monotonic() < start_time + REC_TIME and disk_free > MIN_DISKSPACE:
 
-            # Update free disk space (MB)
-            disk_free = round(psutil.disk_usage("/").free / 1048576)
-
             # Get synchronized HQ frame + tracker output (including passthrough detections)
             if q_frame.has() and q_track.has():
                 frame_hq = q_frame.get().getCvFrame()
                 tracks = q_track.get().tracklets
+
+                if args.save_full_frames == "freq":
+                    # Save full HQ frame at specified frequency
+                    scheduler.modify_job("full", args=[frame_hq, save_path])
 
                 if args.save_overlay_frames:
                     # Copy frame for drawing overlays
@@ -295,14 +312,27 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
                         save_crop_metadata(frame_hq, bbox_norm, rec_id, label, det_conf, track_id,
                                            bbox_orig, rec_start_format, save_path, args.crop_bbox)
 
-                        if args.save_raw_frames:
+                        if args.save_full_frames == "det" and tracklet == tracks[-1]:
                             # Save full HQ frame
-                            save_raw_frame(frame_hq, tracklet, tracks, save_path)
+                            thread_full = threading.Thread(target=save_full_frame,
+                                                           args=(frame_hq, save_path))
+                            thread_full.start()
+                            threads.append(thread_full)
 
                         if args.save_overlay_frames:
                             # Save full HQ frame with overlays
-                            save_overlay_frame(frame_hq_copy, bbox_norm, label, det_conf, track_id,
-                                               tracklet, tracks, save_path, args.four_k_resolution)
+                            thread_overlay = threading.Thread(target=save_overlay_frame,
+                                                              args=(frame_hq_copy, bbox_norm, label,
+                                                                    det_conf, track_id, tracklet, tracks,
+                                                                    save_path, args.four_k_resolution))
+                            thread_overlay.start()
+                            threads.append(thread_overlay)
+
+            # Update free disk space (MB)
+            disk_free = round(psutil.disk_usage("/").free / 1048576)
+
+            # Keep only active threads in list
+            threads = [thread for thread in threads if thread.is_alive()]
 
             # Wait for specified amount of seconds (default: 1)
             time.sleep(CAPTURE_FREQ)
@@ -315,6 +345,10 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         logger.exception("Error during recording %s", rec_id)
 
     finally:
+        # Wait for active threads to finish
+        for thread in threads:
+            thread.join()
+
         # Write record logs to .csv file
         rec_end = datetime.now()
         record_log(rec_id, rec_start, rec_start_format, rec_end, save_path)

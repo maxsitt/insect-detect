@@ -7,7 +7,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
     save_crop_metadata(): Save cropped detection to .jpg and corresponding metadata to .csv.
-    save_raw_frame(): Save full frame to .jpg.
+    save_full_frame(): Save full frame to .jpg.
     save_overlay_frame(): Save full frame with overlays to .jpg.
 
 partly based on open source scripts available at https://github.com/luxonis
@@ -52,12 +52,12 @@ def save_crop_metadata(frame, bbox, rec_id, label, det_conf, track_id, bbox_orig
         metadata_writer.writerow(metadata)
 
 
-def save_raw_frame(frame, tracklet, tracks, save_path):
+def save_full_frame(frame, save_path):
     """Save full frame to .jpg."""
-    if tracklet == tracks[0]:
-        timestamp_raw = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
-        path_raw = f"{save_path}/raw/{timestamp_raw}_raw.jpg"
-        cv2.imwrite(path_raw, frame)
+    if frame is not None:
+        timestamp_full = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+        path_full = f"{save_path}/full/{timestamp_full}_full.jpg"
+        cv2.imwrite(path_full, frame)
 
 
 def save_overlay_frame(frame, bbox, label, det_conf, track_id,

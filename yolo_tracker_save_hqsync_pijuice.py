@@ -366,8 +366,12 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         # Write info on end of recording to log file
         logger.info("Recording %s finished | Charge level: %s%%\n", rec_id, chargelevel)
 
+    except KeyboardInterrupt:
+        # Write info on KeyboardInterrupt (Ctrl+C) to log file
+        logger.info("Recording %s stopped by Ctrl+C | Charge level: %s%%\n", rec_id, chargelevel)
+
     except Exception:
-        # Write error message + traceback during recording to log file
+        # Write info on error + traceback during recording to log file
         logger.exception("Error during recording %s | Charge level: %s%%", rec_id, chargelevel)
 
     finally:

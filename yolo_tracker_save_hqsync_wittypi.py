@@ -60,6 +60,7 @@ based on open source scripts available at https://github.com/luxonis
 import argparse
 import json
 import logging
+import signal
 import subprocess
 import threading
 import time
@@ -70,7 +71,7 @@ import depthai as dai
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from utils.general import frame_norm, zip_data
+from utils.general import create_signal_handler, frame_norm, zip_data
 from utils.log import record_log, save_logs
 from utils.oak_cam import bbox_set_exposure_region, set_focus_range
 from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_frame
@@ -123,6 +124,10 @@ script_name = Path(__file__).stem
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s",
                     filename=f"insect-detect/data/{script_name}_log.log", encoding="utf-8")
 logger = logging.getLogger()
+
+# Handle SIGTERM signal (e.g. from external shutdown trigger)
+external_shutdown = threading.Event()
+signal.signal(signal.SIGTERM, create_signal_handler(external_shutdown))
 
 # Instantiate Witty Pi 4 L3V7
 wittypi = WittyPiStatus()
@@ -361,6 +366,10 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         # Write info on end of recording to log file
         logger.info("Recording %s finished | Charge level: %s%%\n", rec_id, chargelevel)
 
+    except SystemExit:
+        # Write info on external shutdown trigger (e.g. button) to log file
+        logger.info("Recording %s stopped by external trigger | Charge level: %s%%\n", rec_id, chargelevel)
+
     except KeyboardInterrupt:
         # Write info on KeyboardInterrupt (Ctrl+C) to log file
         logger.info("Recording %s stopped by Ctrl+C | Charge level: %s%%\n", rec_id, chargelevel)
@@ -383,5 +392,6 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
             # Store data in uncompressed .zip file and delete original folder
             zip_data(save_path)
 
-        # Shut down Raspberry Pi
-        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+        if not external_shutdown.is_set():
+            # Shut down Raspberry Pi
+            subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

@@ -6,6 +6,7 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
+    create_signal_handler(): Create signal handler for a received signal.
     frame_norm(): Convert relative bounding box coordinates (0-1) to pixel coordinates.
     make_bbox_square(): Adjust bounding box dimensions to make it square.
     zip_data(): Store data in an uncompressed .zip file for each day and delete original directory.
@@ -17,6 +18,16 @@ import shutil
 from zipfile import ZipFile
 
 import numpy as np
+
+
+def create_signal_handler(external_shutdown):
+    """Create signal handler for a received signal."""
+    def signal_handler(sig, frame):
+        """Handle a received signal by raising a SystemExit exception."""
+        external_shutdown.set()
+        raise SystemExit
+
+    return signal_handler
 
 
 def frame_norm(frame, bbox):

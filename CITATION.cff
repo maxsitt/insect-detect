@@ -9,8 +9,8 @@ license: GPL-3.0
 doi: 10.5281/zenodo.7472238
 repository-code: "https://github.com/maxsitt/insect-detect"
 url: "https://maxsitt.github.io/insect-detect-docs/"
-version: 1.6
-date-released: "2023-04-02"
+version: 1.7
+date-released: "2024-04-19"
 preferred-citation:
   type: article
   authors:

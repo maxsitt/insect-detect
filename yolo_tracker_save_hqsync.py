@@ -238,6 +238,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     if args.save_logs or (args.save_full_frames == "freq"):
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         scheduler = BackgroundScheduler()
+    else:
+        scheduler = None
 
     if args.save_logs:
         # Write RPi + OAK info to .csv file at specified frequency
@@ -349,6 +351,10 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         logger.exception("Error during recording %s", rec_id)
 
     finally:
+        # Shut down scheduler (wait until currently executing jobs are finished)
+        if scheduler:
+            scheduler.shutdown()
+
         # Wait for active threads to finish
         for thread in threads:
             thread.join()

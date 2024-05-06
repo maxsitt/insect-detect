@@ -67,7 +67,7 @@ def save_logs(device, rec_id, rec_start, save_path, powermanager=None):
                 "voltage_in_V": wittypi.get_input_voltage(),
                 "voltage_out_V": wittypi.get_output_voltage(),
                 "current_out_A": wittypi.get_output_current(),
-                "temp_wittypi": wittypi.get_temperature()
+                "temp_wittypi": round(wittypi.get_temperature())
             })
     except IndexError:
         logs = {}

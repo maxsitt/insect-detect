@@ -28,10 +28,10 @@ def print_logs():
     logging.info("RPi CPU temperature:  %s °C\n", round(CPUTemperature().temperature))
 
 
-def save_logs(device, rec_id, rec_start, save_path, powermanager=None):
+def save_logs(cam_id, rec_id, device, rec_start, save_path, powermanager=None):
     """Write information to .csv file during recording.
 
-    Write recording ID, current time, RPi CPU + OAK chip temperature
+    Write cam ID, recording ID, current time, RPi CPU + OAK chip temperature
     and RPi available memory (MB) + CPU utilization (%) to .csv.
     If powermanager (pijuice or wittypi) is provided, also
     write PiJuice or Witty Pi battery info + temp to .csv.
@@ -43,6 +43,7 @@ def save_logs(device, rec_id, rec_start, save_path, powermanager=None):
 
     try:
         logs = {
+            "cam_ID": cam_id,
             "rec_ID": rec_id,
             "timestamp": datetime.now().isoformat(),
             "temp_pi": round(CPUTemperature().temperature),
@@ -80,13 +81,13 @@ def save_logs(device, rec_id, rec_start, save_path, powermanager=None):
             log_writer.writerow(logs)
 
 
-def record_log(rec_id, rec_start, rec_start_format, rec_end, save_path,
-               chargelevel_start=None, chargelevel=None):
+def record_log(cam_id, rec_id, rec_start, rec_start_format, rec_end,
+               save_path, chargelevel_start=None, chargelevel=None):
     """Write information to .csv file at the end of the recording interval.
 
-    Write recording ID, recording start and end time, recording duration (min),
-    number of cropped detections, number of unique tracking IDs and
-    available disk space (GB) to .csv.
+    Write cam ID, recording ID, recording start and end time,
+    recording duration (min), number of cropped detections,
+    number of unique tracking IDs and available disk space (GB) to .csv.
     If chargelevel_start and chargelevel are provided, also write both to .csv.
     """
     try:
@@ -96,6 +97,7 @@ def record_log(rec_id, rec_start, rec_start_format, rec_end, save_path,
         unique_ids = 0
 
     logs_rec = {
+        "cam_ID": cam_id,
         "rec_ID": rec_id,
         "rec_start": rec_start.isoformat(),
         "rec_end": rec_end.isoformat(),

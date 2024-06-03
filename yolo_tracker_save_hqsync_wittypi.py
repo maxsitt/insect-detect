@@ -61,6 +61,7 @@ import argparse
 import json
 import logging
 import signal
+import socket
 import subprocess
 import threading
 import time
@@ -117,6 +118,9 @@ FULL_FREQ = 60
 
 # Set frequency for saving logs to .csv file if "-log" is used (default: 30 seconds)
 LOG_FREQ = 30
+
+# Set camera ID (default: hostname)
+CAM_ID = socket.gethostname()
 
 # Set logging level and format, write logs to file
 Path("insect-detect/data").mkdir(parents=True, exist_ok=True)
@@ -262,7 +266,7 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     if args.save_logs:
         # Write RPi + OAK + battery info to .csv file at specified frequency
         scheduler.add_job(save_logs, "interval", seconds=LOG_FREQ, id="log",
-                          args=[device, rec_id, rec_start, save_path, wittypi])
+                          args=[CAM_ID, rec_id, device, rec_start, save_path, wittypi])
         scheduler.start()
 
     if args.save_full_frames == "freq":
@@ -273,8 +277,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
             scheduler.start()
 
     # Write info on start of recording to log file
-    logger.info("Rec ID: %s | Rec time: %s min | Charge level: %s%%",
-                rec_id, int(REC_TIME / 60), chargelevel_start)
+    logger.info("Cam ID: %s | Rec ID: %s | Rec time: %s min | Charge level: %s%%",
+                CAM_ID, rec_id, int(REC_TIME / 60), chargelevel_start)
 
     # Create output queues to get the frames and tracklets (+ detections) from the outputs defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
@@ -332,7 +336,7 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
                             q_ctrl.send(ae_ctrl)
 
                         # Save detections cropped from HQ frame together with metadata
-                        save_crop_metadata(frame_hq, bbox_norm, rec_id, label, det_conf, track_id,
+                        save_crop_metadata(CAM_ID, rec_id, frame_hq, bbox_norm, label, det_conf, track_id,
                                            bbox_orig, rec_start_format, save_path, args.crop_bbox)
 
                         if args.save_full_frames == "det" and tracklet == tracks[-1]:
@@ -391,7 +395,7 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
         # Write record logs to .csv file
         rec_end = datetime.now()
-        record_log(rec_id, rec_start, rec_start_format, rec_end, save_path,
+        record_log(CAM_ID, rec_id, rec_start, rec_start_format, rec_end, save_path,
                    chargelevel_start, chargelevel)
 
         if args.zip_data:

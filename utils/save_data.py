@@ -21,8 +21,8 @@ import cv2
 from utils.general import make_bbox_square
 
 
-def save_crop_metadata(frame, bbox, rec_id, label, det_conf, track_id, bbox_orig,
-                       rec_start_format, save_path, crop="square"):
+def save_crop_metadata(cam_id, rec_id, frame, bbox, label, det_conf, track_id,
+                       bbox_orig, rec_start_format, save_path, crop="square"):
     """Save cropped detection to .jpg and corresponding metadata to .csv."""
     timestamp = datetime.now()
     if crop == "square":
@@ -33,6 +33,7 @@ def save_crop_metadata(frame, bbox, rec_id, label, det_conf, track_id, bbox_orig
     cv2.imwrite(path_crop, bbox_crop)
 
     metadata = {
+        "cam_ID": cam_id,
         "rec_ID": rec_id,
         "timestamp": timestamp.isoformat(),
         "label": label,

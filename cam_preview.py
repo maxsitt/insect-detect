@@ -9,6 +9,10 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 - show downscaled LQ frames + fps in a new window (e.g. via X11 forwarding)
 - optional arguments:
+  '-fov' default:  stretch frames to square for visualization ('-fov stretch')
+                   -> full FOV is preserved, only aspect ratio is changed (adds distortion)
+         optional: crop frames to square for visualization ('-fov crop')
+                   -> FOV is reduced due to cropping of left and right side (no distortion)
   '-af'  set auto focus range in cm (min distance, max distance)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-big' show a bigger preview window with 640x640 px size (default: 320x320 px)
@@ -27,6 +31,9 @@ from utils.oak_cam import set_focus_range
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
+parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
+    help="Stretch frames to square ('stretch') and preserve full FOV or "
+         "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
     help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-big", "--big_preview", action="store_true",
@@ -44,7 +51,8 @@ if not args.big_preview:
     cam_rgb.setPreviewSize(320, 320)  # downscale frames -> LQ frames
 else:
     cam_rgb.setPreviewSize(640, 640)
-cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1)
+if args.adjust_fov == "stretch":
+    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1)
 cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure

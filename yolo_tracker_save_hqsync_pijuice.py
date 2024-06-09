@@ -14,12 +14,13 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
   -> increases efficiency of battery usage and can prevent gaps in recordings
 - create directory for each day, recording interval and object class to save images + metadata
 - run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
-  -> inference on downscaled + stretched LQ frames (default: 320x320 px)
+  -> inference on downscaled + stretched/cropped LQ frames (default: 320x320 px)
 - use an object tracker to track detected objects and assign unique tracking IDs
   -> accuracy depends on object motion speed and inference speed of the detection model
 - synchronize tracker output (including detections) from inference on LQ frames with
   HQ frames (default: 1920x1080 px) on-device using the respective message timestamps
-  -> pipeline speed (= inference speed): ~13.4 fps (1080p sync) or ~3.4 fps (4K sync)
+  -> pipeline speed (= inference speed): ~13.4 fps (1080p sync) or ~3.4 fps (4K sync) for full FOV
+                                         ~23 fps (1080x1080) or ~5.8 fps (2160x2160) for reduced FOV
 - save detections (bounding box area) cropped from HQ frames to .jpg at the
   specified capture frequency (default: 1 s), optionally together with full frames
 - save corresponding metadata from tracker (+ model) output (time, label, confidence,
@@ -31,6 +32,13 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 - optional arguments:
   '-4k'      crop detections from (+ save HQ frames in) 4K resolution (default: 1080p)
              -> decreases pipeline speed to ~3.4 fps (1080p: ~13.4 fps)
+  '-fov'     default:  stretch frames to square for model input ('-fov stretch')
+                       -> full FOV is preserved, only aspect ratio is changed (adds distortion)
+                       -> HQ frame resolution: 1920x1080 px (default) or 3840x2160 px ('-4k')
+             optional: crop frames to square for model input ('-fov crop')
+                       -> FOV is reduced due to cropping of left and right side (no distortion)
+                       -> HQ frame resolution: 1080x1080 px (default) or 2160x2160 px ('-4k')
+                       -> increases pipeline speed to ~23 fps (4K: ~5.8 fps)
   '-af'      set auto focus range in cm (min distance, max distance)
              -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-ae'      use bounding box coordinates from detections to set auto exposure region
@@ -81,6 +89,9 @@ from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_fr
 parser = argparse.ArgumentParser()
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
     help="Set camera resolution to 4K (3840x2160 px) (default: 1080p).")
+parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
+    help="Stretch frames to square ('stretch') and preserve full FOV or "
+         "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
     help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
@@ -198,7 +209,12 @@ cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
 if not args.four_k_resolution:
     cam_rgb.setIspScale(1, 2)     # downscale 4K to 1080p resolution -> HQ frames
 cam_rgb.setPreviewSize(320, 320)  # downscale frames for model input -> LQ frames
-cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1) for model input
+if args.adjust_fov == "stretch":
+    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1) for model input
+elif args.adjust_fov == "crop" and not args.four_k_resolution:
+    cam_rgb.setVideoSize(1080, 1080)  # crop HQ frames to square
+elif args.adjust_fov == "crop" and args.four_k_resolution:
+    cam_rgb.setVideoSize(2160, 2160)
 cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure and model input

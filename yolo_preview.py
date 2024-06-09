@@ -8,10 +8,14 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 - run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
-  -> inference on downscaled + stretched LQ frames (default: 320x320 px)
+  -> inference on downscaled + stretched/cropped LQ frames (default: 320x320 px)
 - show downscaled LQ frames + model output (bounding box, label, confidence) + fps
   in a new window (e.g. via X11 forwarding)
 - optional arguments:
+  '-fov' default:  stretch frames to square for model input and visualization ('-fov stretch')
+                   -> full FOV is preserved, only aspect ratio is changed (adds distortion)
+         optional: crop frames to square for model input and visualization ('-fov crop')
+                   -> FOV is reduced due to cropping of left and right side (no distortion)
   '-af'  set auto focus range in cm (min distance, max distance)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-ae'  use bounding box coordinates from detections to set auto exposure region
@@ -37,6 +41,9 @@ from utils.oak_cam import bbox_set_exposure_region, set_focus_range
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
+parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
+    help="Stretch frames to square ('stretch') and preserve full FOV or "
+         "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
     help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
@@ -72,7 +79,8 @@ cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)  # rotate image 180°
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
 cam_rgb.setPreviewSize(320, 320)  # downscale frames for model input -> LQ frames
-cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1) for model input
+if args.adjust_fov == "stretch":
+    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1) for model input
 cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure and model input

@@ -8,8 +8,10 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 - write info and error (+ traceback) messages to log file
-- shut down Raspberry Pi without recording if free disk space
-  is lower than the specified threshold (default: 100 MB)
+- shut down Raspberry Pi without recording if free disk space or current Witty Pi
+  battery charge level are lower than the specified thresholds (default: 100 MB and 20%)
+- duration of each recording interval conditional on current Witty Pi battery charge level
+  -> increases efficiency of battery usage and can prevent gaps in recordings
 - create directory for each day, recording interval and object class to save images + metadata
 - run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
   -> inference on downscaled + stretched/cropped LQ frames (default: 320x320 px)
@@ -24,12 +26,10 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 - save corresponding metadata from tracker (+ model) output (time, label, confidence,
   tracking ID, relative bbox coordinates, .jpg file path) to .csv
 - write info about recording interval (rec ID, start/end time, duration, number of cropped
-  detections, unique tracking IDs, free disk space) to 'record_log.csv'
-- shut down Raspberry Pi after recording interval is finished or if free
-  disk space drops below the specified threshold or if an error occurs
+  detections, unique tracking IDs, free disk space, battery charge level) to 'record_log.csv'
+- shut down Raspberry Pi after recording interval is finished or if charge level or
+  free disk space drop below the specified thresholds or if an error occurs
 - optional arguments:
-  '-min'     set recording time in minutes (default: 2 [min])
-             -> e.g. '-min 5' for 5 min recording time
   '-4k'      crop detections from (+ save HQ frames in) 4K resolution (default: 1080p)
              -> decreases pipeline speed to ~3.4 fps (1080p: ~13.4 fps)
   '-fov'     default:  stretch frames to square for model input ('-fov stretch')
@@ -55,8 +55,8 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
              -> '-full freq' save full frame at specified frequency (default: 60 s)
   '-overlay' additionally save full HQ frames with overlays (bbox + info) to .jpg
              -> slightly decreases pipeline speed
-  '-log'     write RPi CPU + OAK chip temperature and RPi available memory (MB) +
-             CPU utilization (%) to .csv file at specified frequency
+  '-log'     write RPi CPU + OAK chip temperature, RPi available memory (MB) +
+             CPU utilization (%) and battery info to .csv file at specified frequency
   '-zip'     store all captured data in an uncompressed .zip file for each day
              and delete original directory
              -> increases file transfer speed from microSD to computer
@@ -68,6 +68,7 @@ based on open source scripts available at https://github.com/luxonis
 import argparse
 import json
 import logging
+import signal
 import socket
 import subprocess
 import threading
@@ -79,15 +80,14 @@ import depthai as dai
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from utils.general import frame_norm, zip_data
+from utils.general import create_signal_handler, frame_norm, zip_data
 from utils.log import record_log, save_logs
 from utils.oak_cam import bbox_set_exposure_region, set_focus_range
 from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_frame
+from utils.wittypi import WittyPiStatus
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
-    help="Set recording time in minutes (default: 2 [min]).", metavar="1-720")
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
     help="Set camera resolution to 4K (3840x2160 px) (default: 1080p).")
 parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
@@ -106,8 +106,8 @@ parser.add_argument("-full", "--save_full_frames", choices=["det", "freq"], defa
 parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
     help="Additionally save full HQ frames with overlays (bbox + info) to .jpg.")
 parser.add_argument("-log", "--save_logs", action="store_true",
-    help=("Write RPi CPU + OAK chip temperature and RPi available memory (MB) + "
-          "CPU utilization (%%) to .csv file."))
+    help=("Write RPi CPU + OAK chip temperature, RPi available memory (MB) + "
+          "CPU utilization (%%) and battery info to .csv file."))
 parser.add_argument("-zip", "--zip_data", action="store_true",
     help="Store data in an uncompressed .zip file for each day and delete original directory.")
 args = parser.parse_args()
@@ -116,8 +116,9 @@ args = parser.parse_args()
 MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
 CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
 
-# Set threshold value required to start and continue a recording
-MIN_DISKSPACE = 100  # minimum free disk space (MB) (default: 100 MB)
+# Set threshold values required to start and continue a recording
+MIN_DISKSPACE = 100   # minimum free disk space (MB) (default: 100 MB)
+MIN_CHARGELEVEL = 20  # minimum Witty Pi battery charge level (default: 20%)
 
 # Set capture frequency (default: 1 second)
 # -> wait for specified amount of seconds between saving cropped detections + metadata
@@ -129,9 +130,6 @@ FULL_FREQ = 60
 # Set frequency for saving logs to .csv file if "-log" is used (default: 30 seconds)
 LOG_FREQ = 30
 
-# Set recording time (default: 2 minutes)
-REC_TIME = args.min_rec_time * 60
-
 # Set camera ID (default: hostname)
 CAM_ID = socket.gethostname()
 
@@ -142,11 +140,31 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(m
                     filename=f"insect-detect/data/{script_name}_log.log", encoding="utf-8")
 logger = logging.getLogger()
 
-# Shut down Raspberry Pi if free disk space (MB) is lower than threshold
+# Handle SIGTERM signal (e.g. from external shutdown trigger)
+external_shutdown = threading.Event()
+signal.signal(signal.SIGTERM, create_signal_handler(external_shutdown))
+
+# Instantiate Witty Pi 4 L3V7
+wittypi = WittyPiStatus()
+
+# Shut down Raspberry Pi if battery charge level or free disk space (MB) are lower than thresholds
+chargelevel_start = wittypi.estimate_chargelevel()
 disk_free = round(psutil.disk_usage("/").free / 1048576)
-if disk_free < MIN_DISKSPACE:
-    logger.info("Shut down without recording | Free disk space left: %s MB\n", disk_free)
+if (chargelevel_start != "USB_C_IN" and chargelevel_start < MIN_CHARGELEVEL) or disk_free < MIN_DISKSPACE:
+    logger.info("Shut down without recording | Charge level: %s%%\n", chargelevel_start)
     subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+
+# Set recording time conditional on Witty Pi battery charge level
+if chargelevel_start == "USB_C_IN":
+    REC_TIME = 60 * 40             # Power from main battery (USB C):     40 min
+elif chargelevel_start >= 70:
+    REC_TIME = 60 * 30             # Witty Pi battery charge level > 70:  30 min
+elif 50 <= chargelevel_start < 70:
+    REC_TIME = 60 * 20             # Witty Pi battery charge level 50-70: 20 min
+elif 30 <= chargelevel_start < 50:
+    REC_TIME = 60 * 10             # Witty Pi battery charge level 30-50: 10 min
+else:
+    REC_TIME = 60 * 5              # Witty Pi battery charge level < 30:   5 min
 
 # Get last recording ID from text file and increment by 1 (create text file for first recording)
 rec_id_file = Path("insect-detect/data/last_rec_id.txt")
@@ -262,9 +280,9 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         scheduler = None
 
     if args.save_logs:
-        # Write RPi + OAK info to .csv file at specified frequency
+        # Write RPi + OAK + battery info to .csv file at specified frequency
         scheduler.add_job(save_logs, "interval", seconds=LOG_FREQ, id="log",
-                          args=[CAM_ID, rec_id, device, rec_start, save_path])
+                          args=[CAM_ID, rec_id, device, rec_start, save_path, wittypi])
         scheduler.start()
 
     if args.save_full_frames == "freq":
@@ -275,7 +293,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
             scheduler.start()
 
     # Write info on start of recording to log file
-    logger.info("Cam ID: %s | Rec ID: %s | Rec time: %s min", CAM_ID, rec_id, int(REC_TIME / 60))
+    logger.info("Cam ID: %s | Rec ID: %s | Rec time: %s min | Charge level: %s%%",
+                CAM_ID, rec_id, int(REC_TIME / 60), chargelevel_start)
 
     # Create output queues to get the frames and tracklets (+ detections) from the outputs defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
@@ -290,14 +309,16 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
         q_ctrl.send(af_ctrl)
 
-    # Set start time of recording and create empty list to save threads
+    # Set start time of recording and create empty lists to save charge level and threads
     start_time = time.monotonic()
+    chargelevel_list = []
     threads = []
 
     try:
         # Record until recording time is finished
-        # Stop recording early if free disk space drops below threshold
-        while time.monotonic() < start_time + REC_TIME and disk_free > MIN_DISKSPACE:
+        # Stop recording early if free disk space drops below threshold OR
+        # if charge level dropped below threshold for 10 times
+        while time.monotonic() < start_time + REC_TIME and disk_free > MIN_DISKSPACE and len(chargelevel_list) < 10:
 
             # Get synchronized HQ frame + tracker output (including passthrough detections)
             if q_frame.has() and q_track.has():
@@ -353,6 +374,11 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
             # Update free disk space (MB)
             disk_free = round(psutil.disk_usage("/").free / 1048576)
 
+            # Update charge level (add to list if lower than threshold)
+            chargelevel = wittypi.estimate_chargelevel()
+            if chargelevel != "USB_C_IN" and chargelevel < MIN_CHARGELEVEL:
+                chargelevel_list.append(chargelevel)
+
             # Keep only active threads in list
             threads = [thread for thread in threads if thread.is_alive()]
 
@@ -360,15 +386,19 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
             time.sleep(CAPTURE_FREQ)
 
         # Write info on end of recording to log file
-        logger.info("Recording %s finished\n", rec_id)
+        logger.info("Recording %s finished | Charge level: %s%%\n", rec_id, chargelevel)
+
+    except SystemExit:
+        # Write info on external shutdown trigger (e.g. button) to log file
+        logger.info("Recording %s stopped by external trigger | Charge level: %s%%\n", rec_id, chargelevel)
 
     except KeyboardInterrupt:
         # Write info on KeyboardInterrupt (Ctrl+C) to log file
-        logger.info("Recording %s stopped by Ctrl+C\n", rec_id)
+        logger.info("Recording %s stopped by Ctrl+C | Charge level: %s%%\n", rec_id, chargelevel)
 
     except Exception:
         # Write info on error + traceback during recording to log file
-        logger.exception("Error during recording %s", rec_id)
+        logger.exception("Error during recording %s | Charge level: %s%%", rec_id, chargelevel)
 
     finally:
         # Shut down scheduler (wait until currently executing jobs are finished)
@@ -381,11 +411,13 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
         # Write record logs to .csv file
         rec_end = datetime.now()
-        record_log(CAM_ID, rec_id, rec_start, rec_start_format, rec_end, save_path)
+        record_log(CAM_ID, rec_id, rec_start, rec_start_format, rec_end, save_path,
+                   chargelevel_start, chargelevel)
 
         if args.zip_data:
             # Store data in uncompressed .zip file and delete original folder
             zip_data(save_path)
 
-        # Shut down Raspberry Pi
-        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+        if not external_shutdown.is_set():
+            # Shut down Raspberry Pi
+            subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

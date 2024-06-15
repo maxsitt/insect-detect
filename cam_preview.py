@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 
-'''
-Author:   Maximilian Sittinger (https://github.com/maxsitt)
-Website:  https://maxsitt.github.io/insect-detect-docs/
-License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+"""Show OAK camera livestream.
 
-This Python script does the following:
+Source:   https://github.com/maxsitt/insect-detect
+License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+Author:   Maximilian Sittinger (https://github.com/maxsitt)
+Docs:     https://maxsitt.github.io/insect-detect-docs/
+
 - show downscaled LQ frames + fps in a new window (e.g. via X11 forwarding)
 - optional arguments:
-  "-af"  set auto focus range in cm (min distance, max distance)
-         -> e.g. "-af 14 20" to restrict auto focus range to 14-20 cm
-  "-big" show a bigger preview window (640x640 px) (default: 320x320 px)
+  '-fov' default:  stretch frames to square for visualization ('-fov stretch')
+                   -> full FOV is preserved, only aspect ratio is changed (adds distortion)
+         optional: crop frames to square for visualization ('-fov crop')
+                   -> FOV is reduced due to cropping of left and right side (no distortion)
+  '-af'  set auto focus range in cm (min distance, max distance)
+         -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
+  '-big' show a bigger preview window with 640x640 px size (default: 320x320 px)
          -> decreases frame rate to ~3 fps (default: ~11 fps)
 
 based on open source scripts available at https://github.com/luxonis
-'''
+"""
 
 import argparse
 import time
@@ -22,12 +27,17 @@ import time
 import cv2
 import depthai as dai
 
-# Define optional argument
+from utils.oak_cam import set_focus_range
+
+# Define optional arguments
 parser = argparse.ArgumentParser()
+parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
+    help="Stretch frames to square ('stretch') and preserve full FOV or "
+         "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="set auto focus range in cm (min distance, max distance)", metavar=("cm_min", "cm_max"))
+    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-big", "--big_preview", action="store_true",
-    help="show a bigger preview window (640x640 px); default = 320x320 px")
+    help="Show a bigger preview window with 640x640 px size (default: 320x320 px).")
 args = parser.parse_args()
 
 # Create depthai pipeline
@@ -41,7 +51,8 @@ if not args.big_preview:
     cam_rgb.setPreviewSize(320, 320)  # downscale frames -> LQ frames
 else:
     cam_rgb.setPreviewSize(640, 640)
-cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1)
+if args.adjust_fov == "stretch":
+    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1)
 cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure
@@ -56,32 +67,6 @@ if args.af_range:
     xin_ctrl.setStreamName("control")
     xin_ctrl.out.link(cam_rgb.inputControl)
 
-
-def set_focus_range():
-    """Convert closest cm values to lens position values and set auto focus range."""
-    cm_lenspos_dict = {
-        6: 250,
-        8: 220,
-        10: 190,
-        12: 170,
-        14: 160,
-        16: 150,
-        20: 140,
-        25: 135,
-        30: 130,
-        40: 125,
-        60: 120
-    }
-
-    closest_cm_min = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[0]))
-    closest_cm_max = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[1]))
-    lenspos_min = cm_lenspos_dict[closest_cm_max]
-    lenspos_max = cm_lenspos_dict[closest_cm_min]
-
-    af_ctrl = dai.CameraControl().setAutoFocusLensRange(lenspos_min, lenspos_max)
-    q_ctrl.send(af_ctrl)
-
-
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
@@ -93,7 +78,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
 
         # Set auto focus range to specified cm values
-        set_focus_range()
+        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
+        q_ctrl.send(af_ctrl)
 
     # Set start time of recording and create counter to measure fps
     start_time = time.monotonic()

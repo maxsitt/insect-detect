@@ -1,24 +1,34 @@
 cff-version: 1.2.0
-type: software
-message: If you use this software, please cite it as below.
-title: >-
-  Insect Detect - Software for automated insect
-  monitoring with a DIY camera trap system
+message: "If you use resources from this repository, please cite it using this metadata."
+title: "Insect Detect - Software for automated insect monitoring with a DIY camera trap system"
 authors:
   - family-names: Sittinger
     given-names: Maximilian
     orcid: "https://orcid.org/0000-0002-4096-8556"
-version: 1.6
-date-released: 2023-04-02
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.7472238
-    description: >-
-      This DOI represents all versions, and
-      will always resolve to the latest one.
-  - type: url
-    value: "https://github.com/maxsitt/insect-detect/releases/tag/v1.6"
-    description: GitHub release URL of current version.
 license: GPL-3.0
+doi: 10.5281/zenodo.7472238
 repository-code: "https://github.com/maxsitt/insect-detect"
 url: "https://maxsitt.github.io/insect-detect-docs/"
+version: 1.7
+date-released: "2024-04-19"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Sittinger
+      given-names: Maximilian
+    - family-names: Uhler
+      given-names: Johannes
+    - family-names: Pink
+      given-names: Maximilian
+    - family-names: Herz
+      given-names: Annette
+  title: "Insect detect: An open-source DIY camera trap for automated insect monitoring"
+  journal: "PLOS ONE"
+  year: 2024
+  month: 4
+  volume: 19
+  issue: 4
+  start: 1
+  end: 28
+  doi: 10.1371/journal.pone.0295474
+  url: "https://doi.org/10.1371/journal.pone.0295474"

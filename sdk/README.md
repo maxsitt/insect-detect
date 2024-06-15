@@ -30,13 +30,13 @@ sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
 Install the package libopenblas-dev (required for latest numpy version):
 
 ```
-sudo apt-get install libopenblas-dev
+sudo apt install libopenblas-dev
 ```
 
 Install the python3-venv package:
 
 ```
-sudo apt-get install python3-venv
+sudo apt install python3-venv
 ```
 
 Create a virtual environment to avoid dependency and version conflicts of the installed packages:
@@ -69,6 +69,8 @@ After installing these packages, install the depthai-sdk with:
 python3 -m pip install --no-dependencies depthai-sdk==1.13.1
 ```
 
+&nbsp;
+
 You can now test the example SDK scripts, e.g. by running:
 
 ```
@@ -85,14 +87,13 @@ deactivate
 
 ## License
 
-All Python scripts are licensed under the GNU General Public License v3.0
+This repository is licensed under the terms of the GNU General Public License v3.0
 ([GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)).
 
 ## Citation
 
-You can cite this repository as:
+If you use resources from this repository, please cite our paper:
 
 ```
-Sittinger, M. (2023). Insect Detect - Software for automated insect monitoring
-with a DIY camera trap system (v1.6). Zenodo. https://doi.org/10.5281/zenodo.7472238
+Sittinger M, Uhler J, Pink M, Herz A (2024) Insect detect: An open-source DIY camera trap for automated insect monitoring. PLOS ONE 19(4): e0295474. https://doi.org/10.1371/journal.pone.0295474
 ```

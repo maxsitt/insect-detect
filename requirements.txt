@@ -1,22 +1,22 @@
 # Required Python packages for the Insect Detect DIY camera trap (Raspberry Pi + OAK-1)
 # to use the DepthAI Python API (https://docs.luxonis.com/projects/api/en/latest/)
-# Website: https://maxsitt.github.io/insect-detect-docs/
+# Docs: https://maxsitt.github.io/insect-detect-docs/
 
 # First, install the dependencies for Raspberry Pi + OAK with:
 # sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
 
 # Install the package libopenblas-dev (required for latest numpy version):
-# sudo apt-get install libopenblas-dev
+# sudo apt install libopenblas-dev
 
 # If you are using Raspberry Pi Zero W (v1.1), install libusb-1.0 with:
-# sudo apt-get install libusb-1.0-0-dev
+# sudo apt install libusb-1.0-0-dev
 
 # Install the required packages with:
 # python3 -m pip install -r insect-detect/requirements.txt
 
-depthai==2.24.0.0
+depthai==2.26.0.0
 opencv-python==4.6.0.66
-numpy==1.26.3
+numpy==1.26.4
 pandas==2.1.4
 psutil==5.9.8
 APScheduler==3.10.4

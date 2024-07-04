@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
 
-'''
-Author:   Maximilian Sittinger (https://github.com/maxsitt)
-Website:  https://maxsitt.github.io/insect-detect-docs/
-License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+"""Save encoded still frames from OAK camera.
 
-This Python script does the following:
+Source:   https://github.com/maxsitt/insect-detect
+License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+Author:   Maximilian Sittinger (https://github.com/maxsitt)
+Docs:     https://maxsitt.github.io/insect-detect-docs/
+
 - save encoded still frames in highest possible resolution (default: 4032x3040 px)
   to .jpg at specified capture frequency (default: ~every second)
   -> stop recording early if free disk space drops below threshold
 - optional arguments:
-  "-min" set recording time in minutes (default: 2 min)
-         -> e.g. "-min 5" for 5 min recording time
-  "-af"  set auto focus range in cm (min distance, max distance)
-         -> e.g. "-af 14 20" to restrict auto focus range to 14-20 cm
-  "-zip" store all captured data in an uncompressed .zip
-         file for each day and delete original folder
+  '-min' set recording time in minutes (default: 2 [min])
+         -> e.g. '-min 5' for 5 min recording time
+  '-af'  set auto focus range in cm (min distance, max distance)
+         -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
+  '-zip' store all captured data in an uncompressed .zip file for each day
+         and delete original directory
          -> increases file transfer speed from microSD to computer
             but also on-device processing time and power consumption
 
 based on open source scripts available at https://github.com/luxonis
-'''
+"""
 
 import argparse
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -30,25 +32,18 @@ from pathlib import Path
 import depthai as dai
 import psutil
 
+from utils.general import zip_data
+from utils.oak_cam import set_focus_range
+
 # Define optional arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
-    help="set record time in minutes (default: 2 min)")
+    help="Set recording time in minutes (default: 2 [min]).", metavar="1-720")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="set auto focus range in cm (min distance, max distance)", metavar=("cm_min", "cm_max"))
-parser.add_argument("-zip", "--save_zip", action="store_true",
-    help="store all captured data in an uncompressed .zip \
-          file for each day and delete original folder")
+    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
+parser.add_argument("-zip", "--zip_data", action="store_true",
+    help="Store data in an uncompressed .zip file for each day and delete original directory.")
 args = parser.parse_args()
-
-if args.save_zip:
-    import shutil
-    from zipfile import ZipFile
-
-# Create folders for each day and recording interval to save still frames
-rec_start = datetime.now().strftime("%Y%m%d_%H-%M")
-save_path = Path(f"insect-detect/stills/{rec_start[:8]}/{rec_start}")
-save_path.mkdir(parents=True, exist_ok=True)
 
 # Set threshold value required to start and continue a recording
 MIN_DISKSPACE = 100  # minimum free disk space (MB) (default: 100 MB)
@@ -60,6 +55,15 @@ CAPTURE_FREQ = 1
 
 # Set recording time (default: 2 minutes)
 REC_TIME = args.min_rec_time * 60
+
+# Set logging level and format
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+# Create directory per day and recording interval to save still frames
+rec_start = datetime.now()
+rec_start_format = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
+save_path = Path(f"insect-detect/stills/{rec_start.date()}/{rec_start_format}")
+save_path.mkdir(parents=True, exist_ok=True)
 
 # Create depthai pipeline
 pipeline = dai.Pipeline()
@@ -105,46 +109,10 @@ if args.af_range:
     xin_ctrl.setStreamName("control")
     xin_ctrl.out.link(cam_rgb.inputControl)
 
-
-def set_focus_range():
-    """Convert closest cm values to lens position values and set auto focus range."""
-    cm_lenspos_dict = {
-        6: 250,
-        8: 220,
-        10: 190,
-        12: 170,
-        14: 160,
-        16: 150,
-        20: 140,
-        25: 135,
-        30: 130,
-        40: 125,
-        60: 120
-    }
-
-    closest_cm_min = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[0]))
-    closest_cm_max = min(cm_lenspos_dict.keys(), key=lambda k: abs(k - args.af_range[1]))
-    lenspos_min = cm_lenspos_dict[closest_cm_max]
-    lenspos_max = cm_lenspos_dict[closest_cm_min]
-
-    af_ctrl = dai.CameraControl().setAutoFocusLensRange(lenspos_min, lenspos_max)
-    q_ctrl.send(af_ctrl)
-
-
-def save_zip():
-    """Store all captured data in an uncompressed .zip
-    file for each day and delete original folder."""
-    with ZipFile(f"{save_path.parent}.zip", "a") as zip_file:
-        for file in save_path.rglob("*"):
-            zip_file.write(file, file.relative_to(save_path.parent))
-    shutil.rmtree(save_path.parent, ignore_errors=True)
-
-
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
-    # Print recording time to console (default: 2 minutes)
-    print(f"\nRecording time: {int(REC_TIME / 60)} min\n")
+    logging.info("Recording time: %s min\n", int(REC_TIME / 60))
 
     # Get free disk space (MB)
     disk_free = round(psutil.disk_usage("/").free / 1048576)
@@ -157,7 +125,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
 
         # Set auto focus range to specified cm values
-        set_focus_range()
+        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
+        q_ctrl.send(af_ctrl)
 
     # Set start time of recording
     start_time = time.monotonic()
@@ -172,18 +141,18 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         # Get encoded still frames and save to .jpg
         if q_still.has():
             frame_still = q_still.get().getData()
-            timestamp = datetime.now().strftime("%Y%m%d_%H-%M-%S.%f")
-            with open(save_path / f"{timestamp}.jpg", "wb") as still_jpg:
+            timestamp_still = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+            with open(save_path / f"{timestamp_still}.jpg", "wb") as still_jpg:
                 still_jpg.write(frame_still)
 
         # Wait for specified amount of seconds (default: 1)
         time.sleep(CAPTURE_FREQ)
 
-# Print number and path of saved still frames to console
+# Print number and directory of saved still frames
 num_frames_still = len(list(save_path.glob("*.jpg")))
-print(f"Saved {num_frames_still} still frames to {save_path}.")
+logging.info("Saved %s still frames to %s\n", num_frames_still, save_path)
 
-if args.save_zip:
+if args.zip_data:
     # Store frames in uncompressed .zip file and delete original folder
-    save_zip()
-    print(f"\nStored all captured images in {save_path.parent}.zip\n")
+    zip_data(save_path)
+    logging.info("Stored all captured images in %s.zip\n", save_path.parent)

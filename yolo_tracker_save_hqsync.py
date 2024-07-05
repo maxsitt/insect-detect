@@ -74,6 +74,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+import requests
 
 import depthai as dai
 import psutil
@@ -86,7 +87,7 @@ from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_fr
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
+parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=15,
     help="Set recording time in minutes (default: 2 [min]).", metavar="1-720")
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
     help="Set camera resolution to 4K (3840x2160 px) (default: 1080p).")
@@ -293,6 +294,11 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     # Set start time of recording and create empty list to save threads
     start_time = time.monotonic()
     threads = []
+     #Nightlife
+    latest_images = {}
+    image_count = {}  # Dictionary to keep track of image count for each track_id
+    webhook_url = "https://nytelyfe-402203.uc.r.appspot.com/upload" # Webhook URL
+    #Nightlife
 
     try:
         # Record until recording time is finished
@@ -331,8 +337,39 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
                             q_ctrl.send(ae_ctrl)
 
                         # Save detections cropped from HQ frame together with metadata
-                        save_crop_metadata(CAM_ID, rec_id, frame_hq, bbox_norm, label, det_conf, track_id,
+                        path_crop = save_crop_metadata(CAM_ID, rec_id, frame_hq, bbox_norm, label, det_conf, track_id,
                                            bbox_orig, rec_start_format, save_path, args.crop_bbox)
+                        
+                        #Nightlife
+                        # Update the latest image for this track_id
+                        latest_images[track_id] = path_crop
+                        
+                        # Update image count for this track.id
+                        image_count[track_id] = image_count.get(track_id, 0) + 1
+                        print(f"Image count for track_id {track_id}: {image_count[track_id]}")
+                        
+                        
+                        if image_count[track_id] == 5:
+                            try:
+                                with open(path_crop, 'rb') as f:
+                                    #Open metadata CSV
+                                    #with open(f"{save_path}/metadata_{rec_start}.csv", 'rb') as metadata_file:
+                                        # Prepare the files to be sent
+                                    files = {'file': f}
+                                            #'metadata': ('metadata.csv', metadata_file)
+                                    
+                                    data = {
+                                    'accountID': 'Y7I3Jmp7dCXoank4WXKeTCSoPDp1'  # Replace with your actual account ID
+                                    }
+                                    response = requests.post(webhook_url, files=files, data=data)
+                                
+                                    if response.status_code == 200:
+                                        print(f"Successfully sent {path_crop} to webhook.")
+                                    else:
+                                        print(f"Failed to send image to webhook. Status code: {response.status_code}")
+                            except Exception as e:
+                                print(f"An error occurred: {e}")
+                        #Nightlife
 
                         if args.save_full_frames == "det" and tracklet == tracks[-1]:
                             # Save full HQ frame

@@ -66,10 +66,9 @@ REC_TIME = args.min_rec_time * 60
 # Set logging level and format
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-# Create directory per day and recording interval to save HQ frames (+ LQ frames)
-rec_start = datetime.now()
-rec_start_format = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
-save_path = Path(f"insect-detect/frames/{rec_start.date()}/{rec_start_format}")
+# Create directory per day (date) and recording interval (date_time) to save HQ frames (+ LQ frames)
+rec_start_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+save_path = Path.home() / "insect-detect" / "frames" / rec_start_str[:10] / rec_start_str
 save_path.mkdir(parents=True, exist_ok=True)
 if args.save_lq_frames:
     (save_path / "LQ_frames").mkdir(parents=True, exist_ok=True)

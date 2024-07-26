@@ -28,7 +28,7 @@ def print_logs():
     logging.info("RPi CPU temperature:  %s °C\n", round(CPUTemperature().temperature))
 
 
-def save_logs(cam_id, rec_id, device, rec_start, save_path, powermanager=None):
+def save_logs(cam_id, rec_id, device, rec_start_str, save_path, powermanager=None):
     """Write information to .csv file during recording.
 
     Write cam ID, recording ID, current time, RPi CPU + OAK chip temperature
@@ -74,14 +74,14 @@ def save_logs(cam_id, rec_id, device, rec_start, save_path, powermanager=None):
         logs = {}
 
     if logs:
-        with open(save_path.parent / f"{rec_start.date()}_info_log.csv", "a", encoding="utf-8") as log_file:
+        with open(save_path.parent / f"{rec_start_str[:10]}_info_log.csv", "a", encoding="utf-8") as log_file:
             log_writer = csv.DictWriter(log_file, fieldnames=logs.keys())
             if log_file.tell() == 0:
                 log_writer.writeheader()
             log_writer.writerow(logs)
 
 
-def record_log(cam_id, rec_id, rec_start, rec_start_format, rec_end,
+def record_log(cam_id, rec_id, rec_start, rec_start_str, rec_end,
                save_path, chargelevel_start=None, chargelevel=None):
     """Write information to .csv file at the end of the recording interval.
 
@@ -91,7 +91,7 @@ def record_log(cam_id, rec_id, rec_start, rec_start_format, rec_end,
     If chargelevel_start and chargelevel are provided, also write both to .csv.
     """
     try:
-        df_meta = pd.read_csv(save_path / f"{rec_start_format}_metadata.csv", encoding="utf-8")
+        df_meta = pd.read_csv(save_path / f"{rec_start_str}_metadata.csv", encoding="utf-8")
         unique_ids = df_meta["track_ID"].nunique()
     except (pd.errors.EmptyDataError, FileNotFoundError):
         unique_ids = 0

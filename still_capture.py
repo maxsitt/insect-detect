@@ -8,7 +8,7 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 - save encoded still frames in highest possible resolution (default: 4032x3040 px)
-  to .jpg at specified capture frequency (default: ~every second)
+  to .jpg at the specified capture frequency (default: 1 s)
   -> stop recording early if free disk space drops below threshold
 - optional arguments:
   '-min' set recording time in minutes (default: 2 [min])
@@ -48,9 +48,9 @@ args = parser.parse_args()
 # Set threshold value required to start and continue a recording
 MIN_DISKSPACE = 100  # minimum free disk space (MB) (default: 100 MB)
 
-# Set capture frequency (default: ~every second)
+# Set capture frequency (default: 1 second)
 # -> wait for specified amount of seconds between saving still frames
-# 'CAPTURE_FREQ = 1' saves ~54 still frames per minute to .jpg (12 MP)
+# 'CAPTURE_FREQ = 1' saves ~58 still frames per minute to .jpg (12 MP)
 CAPTURE_FREQ = 1
 
 # Set recording time (default: 2 minutes)
@@ -59,10 +59,9 @@ REC_TIME = args.min_rec_time * 60
 # Set logging level and format
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-# Create directory per day and recording interval to save still frames
-rec_start = datetime.now()
-rec_start_format = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
-save_path = Path(f"insect-detect/stills/{rec_start.date()}/{rec_start_format}")
+# Create directory per day (date) and recording interval (date_time) to save still frames
+rec_start_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+save_path = Path.home() / "insect-detect" / "stills" / rec_start_str[:10] / rec_start_str
 save_path.mkdir(parents=True, exist_ok=True)
 
 # Create depthai pipeline

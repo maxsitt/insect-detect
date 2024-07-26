@@ -111,9 +111,13 @@ parser.add_argument("-zip", "--zip_data", action="store_true",
     help="Store data in an uncompressed .zip file for each day and delete original directory.")
 args = parser.parse_args()
 
+# Set path to directory where all captured data will be stored (images + metadata + logs)
+DATA_PATH = Path.home() / "insect-detect" / "data"
+DATA_PATH.mkdir(parents=True, exist_ok=True)
+
 # Set file paths to the detection model and corresponding config JSON
-MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
+MODEL_PATH = Path.home() / "insect-detect" / "models" / "yolov5n_320_openvino_2022.1_4shave.blob"
+CONFIG_PATH = Path.home() / "insect-detect" / "models" / "json" / "yolov5_v7_320.json"
 
 # Set threshold values required to start and continue a recording
 MIN_DISKSPACE = 100   # minimum free disk space (MB) (default: 100 MB)
@@ -129,14 +133,13 @@ FULL_FREQ = 60
 # Set frequency for saving logs to .csv file if "-log" is used (default: 30 seconds)
 LOG_FREQ = 30
 
-# Set camera ID (default: hostname)
+# Set camera trap ID (default: hostname)
 CAM_ID = socket.gethostname()
 
 # Set logging level and format, write logs to file
-Path("insect-detect/data").mkdir(parents=True, exist_ok=True)
 script_name = Path(__file__).stem
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s",
-                    filename=f"insect-detect/data/{script_name}_log.log", encoding="utf-8")
+                    filename=f"{DATA_PATH}/{script_name}_log.log", encoding="utf-8")
 logger = logging.getLogger()
 
 # Instantiate PiJuice
@@ -167,14 +170,14 @@ else:
 #    pijuice.config.SetChargingConfig({"charging_enabled": False})
 
 # Get last recording ID from text file and increment by 1 (create text file for first recording)
-rec_id_file = Path("insect-detect/data/last_rec_id.txt")
+rec_id_file = DATA_PATH / "last_rec_id.txt"
 rec_id = int(rec_id_file.read_text(encoding="utf-8")) + 1 if rec_id_file.exists() else 1
 rec_id_file.write_text(str(rec_id), encoding="utf-8")
 
-# Create directory per day and recording interval to save images + metadata + logs
+# Create directory per day (date) and recording interval (date_time) to save images + metadata + logs
 rec_start = datetime.now()
-rec_start_format = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
-save_path = Path(f"insect-detect/data/{rec_start.date()}/{rec_start_format}")
+rec_start_str = rec_start.strftime("%Y-%m-%d_%H-%M-%S")
+save_path = DATA_PATH / rec_start_str[:10] / rec_start_str
 save_path.mkdir(parents=True, exist_ok=True)
 if args.save_full_frames is not None:
     (save_path / "full").mkdir(parents=True, exist_ok=True)
@@ -197,7 +200,7 @@ labels = nn_mappings.get("labels", {})
 
 # Create folders for each object class to save cropped detections
 for det_class in labels:
-    (save_path / f"crop/{det_class}").mkdir(parents=True, exist_ok=True)
+    (save_path / "crop" / f"{det_class}").mkdir(parents=True, exist_ok=True)
 
 # Create depthai pipeline
 pipeline = dai.Pipeline()
@@ -224,7 +227,7 @@ SENSOR_RES = cam_rgb.getResolutionSize()
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
-cam_rgb.preview.link(nn.input)  # downscaled + stretched LQ frames as model input
+cam_rgb.preview.link(nn.input)  # downscaled + stretched/cropped LQ frames as model input
 nn.input.setBlocking(False)
 
 # Set detection model specific settings
@@ -282,7 +285,7 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     if args.save_logs:
         # Write RPi + OAK + battery info to .csv file at specified frequency
         scheduler.add_job(save_logs, "interval", seconds=LOG_FREQ, id="log",
-                          args=[CAM_ID, rec_id, device, rec_start, save_path, pijuice])
+                          args=[CAM_ID, rec_id, device, rec_start_str, save_path, pijuice])
         scheduler.start()
 
     if args.save_full_frames == "freq":
@@ -353,7 +356,7 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
                         # Save detections cropped from HQ frame together with metadata
                         save_crop_metadata(CAM_ID, rec_id, frame_hq, bbox_norm, label, det_conf, track_id,
-                                           bbox_orig, rec_start_format, save_path, args.crop_bbox)
+                                           bbox_orig, rec_start_str, save_path, args.crop_bbox)
 
                         if args.save_full_frames == "det" and tracklet == tracks[-1]:
                             # Save full HQ frame
@@ -407,7 +410,7 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
         # Write record logs to .csv file
         rec_end = datetime.now()
-        record_log(CAM_ID, rec_id, rec_start, rec_start_format, rec_end, save_path,
+        record_log(CAM_ID, rec_id, rec_start, rec_start_str, rec_end, save_path,
                    chargelevel_start, chargelevel)
 
         if args.zip_data:

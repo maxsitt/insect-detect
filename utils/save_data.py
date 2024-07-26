@@ -22,7 +22,7 @@ from utils.general import make_bbox_square
 
 
 def save_crop_metadata(cam_id, rec_id, frame, bbox, label, det_conf, track_id,
-                       bbox_orig, rec_start_format, save_path, crop="square"):
+                       bbox_orig, rec_start_str, save_path, crop="square"):
     """Save cropped detection to .jpg and corresponding metadata to .csv."""
     timestamp = datetime.now()
     if crop == "square":
@@ -46,7 +46,7 @@ def save_crop_metadata(cam_id, rec_id, frame, bbox, label, det_conf, track_id,
         "file_path": path_crop
     }
 
-    with open(save_path / f"{rec_start_format}_metadata.csv", "a", encoding="utf-8") as metadata_file:
+    with open(save_path / f"{rec_start_str}_metadata.csv", "a", encoding="utf-8") as metadata_file:
         metadata_writer = csv.DictWriter(metadata_file, fieldnames=metadata.keys())
         if metadata_file.tell() == 0:
             metadata_writer.writeheader()

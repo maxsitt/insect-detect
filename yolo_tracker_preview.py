@@ -56,8 +56,8 @@ parser.add_argument("-log", "--print_logs", action="store_true",
 args = parser.parse_args()
 
 # Set file paths to the detection model and corresponding config JSON
-MODEL_PATH = Path("insect-detect/models/yolov5n_320_openvino_2022.1_4shave.blob")
-CONFIG_PATH = Path("insect-detect/models/json/yolov5_v7_320.json")
+MODEL_PATH = Path.home() / "insect-detect" / "models" / "yolov5n_320_openvino_2022.1_4shave.blob"
+CONFIG_PATH = Path.home() / "insect-detect" / "models" / "json" / "yolov5_v7_320.json"
 
 # Get detection model metadata from config JSON
 with CONFIG_PATH.open(encoding="utf-8") as config_json:
@@ -92,7 +92,7 @@ SENSOR_RES = cam_rgb.getResolutionSize()
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
-cam_rgb.preview.link(nn.input)  # downscaled + stretched LQ frames as model input
+cam_rgb.preview.link(nn.input)  # downscaled + stretched/cropped LQ frames as model input
 nn.input.setBlocking(False)
 
 # Set detection model specific settings

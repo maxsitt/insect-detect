@@ -60,9 +60,9 @@ FPS = args.frames_per_second
 # Set logging level and format
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-# Create directory per day to save video
-rec_start = datetime.now()
-save_path = Path(f"insect-detect/videos/{rec_start.date()}")
+# Create directory per day (date) to save video
+rec_start_str = datetime.now().strftime("%Y-%m-%d")
+save_path = Path.home() / "insect-detect" / "videos" / rec_start_str
 save_path.mkdir(parents=True, exist_ok=True)
 
 # Create depthai pipeline

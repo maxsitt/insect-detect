@@ -14,10 +14,10 @@
 # Install the required packages with:
 # python3 -m pip install -r insect-detect/requirements.txt
 
-depthai==2.26.0.0
+depthai==2.27.0.0
 opencv-python==4.6.0.66
 numpy==1.26.4
-pandas==2.1.4
-psutil==5.9.8
+pandas==2.2.2
+psutil==6.0.0
 APScheduler==3.10.4
 av==10.0.0

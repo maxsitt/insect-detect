@@ -10,6 +10,7 @@ Functions:
     frame_norm(): Convert relative bounding box coordinates (0-1) to pixel coordinates.
     make_bbox_square(): Adjust bounding box dimensions to make it square.
     archive_data(): Archive all captured data + logs and manage disk space.
+    upload_data(): Upload archived data to cloud storage provider.
 
 frame_norm() is based on open source scripts available at https://github.com/luxonis
 """
@@ -107,3 +108,16 @@ def archive_data(data_path, cam_id, low_diskspace=1000):
         disk_free = round(psutil.disk_usage("/").free / 1048576)
 
     return archive_path
+
+
+def upload_data(data_path, archive_path):
+    """Upload archived data to cloud storage provider."""
+    # this example uses MinIO as storage provider
+    # for more providers and config setup see https://rclone.org/#providers
+    # for more options see https://rclone.org/commands/rclone_copy/#options
+    subprocess.run(["rclone", "copy",
+                    "--update",
+                    f"--log-file={data_path / 'rclone.log'}",
+                    "--log-level=INFO",
+                    archive_path.parent, "minio:bucket"],
+                    check=False)

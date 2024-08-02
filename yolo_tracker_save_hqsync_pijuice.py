@@ -60,6 +60,8 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
   '-archive' archive all captured data + logs and manage disk space
              -> increases file transfer speed (microSD to computer or upload to cloud)
                 but also increases on-device processing time and power consumption
+  '-upload'  upload archived data to cloud storage provider using Rclone
+             -> increases on-device processing time and power consumption
 
 based on open source scripts available at https://github.com/luxonis
 """
@@ -79,7 +81,7 @@ import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 from pijuice import PiJuice
 
-from utils.general import archive_data, frame_norm
+from utils.general import archive_data, frame_norm, upload_data
 from utils.log import record_log, save_logs
 from utils.oak_cam import bbox_set_exposure_region, set_focus_range
 from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_frame
@@ -108,6 +110,8 @@ parser.add_argument("-log", "--save_logs", action="store_true",
           "CPU utilization (%%) and battery info to .csv file."))
 parser.add_argument("-archive", "--archive_data", action="store_true",
     help="Archive all captured data + logs and manage disk space.")
+parser.add_argument("-upload", "--upload_data", action="store_true",
+    help="Upload archived data to cloud storage provider.")
 args = parser.parse_args()
 
 # Set path to directory where all captured data will be stored (images + metadata + logs)
@@ -418,6 +422,12 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         if args.archive_data:
             # Archive all captured data + logs and manage disk space
             archive_path = archive_data(DATA_PATH, CAM_ID, LOW_DISKSPACE)
+
+        if args.upload_data:
+            # Upload archived data to cloud storage provider
+            if not args.archive_data:
+                archive_path = archive_data(DATA_PATH, CAM_ID, LOW_DISKSPACE)
+            upload_data(DATA_PATH, archive_path)
 
         # (Re-)activate charging of PiJuice battery if charge level is lower than threshold
         if chargelevel < 80:

@@ -57,10 +57,9 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
              -> slightly decreases pipeline speed
   '-log'     write RPi CPU + OAK chip temperature and RPi available memory (MB) +
              CPU utilization (%) to .csv file at specified frequency
-  '-zip'     store all captured data in an uncompressed .zip file for each day
-             and delete original directory
-             -> increases file transfer speed from microSD to computer
-                but also on-device processing time and power consumption
+  '-archive' archive all captured data + logs and manage disk space
+             -> increases file transfer speed (microSD to computer or upload to cloud)
+                but also increases on-device processing time and power consumption
 
 based on open source scripts available at https://github.com/luxonis
 """
@@ -79,7 +78,7 @@ import depthai as dai
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from utils.general import frame_norm, zip_data
+from utils.general import archive_data, frame_norm
 from utils.log import record_log, save_logs
 from utils.oak_cam import bbox_set_exposure_region, set_focus_range
 from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_frame
@@ -108,8 +107,8 @@ parser.add_argument("-overlay", "--save_overlay_frames", action="store_true",
 parser.add_argument("-log", "--save_logs", action="store_true",
     help=("Write RPi CPU + OAK chip temperature and RPi available memory (MB) + "
           "CPU utilization (%%) to .csv file."))
-parser.add_argument("-zip", "--zip_data", action="store_true",
-    help="Store data in an uncompressed .zip file for each day and delete original directory.")
+parser.add_argument("-archive", "--archive_data", action="store_true",
+    help="Archive all captured data + logs and manage disk space.")
 args = parser.parse_args()
 
 # Set path to directory where all captured data will be stored (images + metadata + logs)
@@ -122,6 +121,9 @@ CONFIG_PATH = Path.home() / "insect-detect" / "models" / "json" / "yolov5_v7_320
 
 # Set threshold value required to start and continue a recording
 MIN_DISKSPACE = 100  # minimum free disk space (MB) (default: 100 MB)
+
+# Set threshold value up to which no original data will be removed if "-archive" is used
+LOW_DISKSPACE = 1000  # low free disk space (MB) (default: 1000 MB)
 
 # Set capture frequency (default: 1 second)
 # -> wait for specified amount of seconds between saving cropped detections + metadata
@@ -386,9 +388,9 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         rec_end = datetime.now()
         record_log(CAM_ID, rec_id, rec_start, rec_start_str, rec_end, save_path)
 
-        if args.zip_data:
-            # Store data in uncompressed .zip file and delete original folder
-            zip_data(save_path)
+        if args.archive_data:
+            # Archive all captured data + logs and manage disk space
+            archive_path = archive_data(DATA_PATH, CAM_ID, LOW_DISKSPACE)
 
         # Shut down Raspberry Pi
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

@@ -9,15 +9,17 @@ Functions:
     create_signal_handler(): Create signal handler for a received signal.
     frame_norm(): Convert relative bounding box coordinates (0-1) to pixel coordinates.
     make_bbox_square(): Adjust bounding box dimensions to make it square.
-    zip_data(): Store data in an uncompressed .zip file for each day and delete original directory.
+    archive_data(): Archive all captured data + logs and manage disk space.
 
 frame_norm() is based on open source scripts available at https://github.com/luxonis
 """
 
 import shutil
-from zipfile import ZipFile
+import subprocess
+from pathlib import Path
 
 import numpy as np
+import psutil
 
 
 def create_signal_handler(external_shutdown):
@@ -72,10 +74,36 @@ def make_bbox_square(frame, bbox):
     return bbox
 
 
-def zip_data(save_path):
-    """Store data in an uncompressed .zip file for each day and delete original directory."""
-    with ZipFile(f"{save_path.parent}.zip", "a") as zip_file:
-        for file in save_path.rglob("*"):
-            zip_file.write(file, file.relative_to(save_path.parent))
+def archive_data(data_path, cam_id, low_diskspace=1000):
+    """Archive all captured data + logs and manage disk space.
 
-    shutil.rmtree(save_path.parent, ignore_errors=True)
+    Directories (images + metadata) are saved to uncompressed .zip files,
+    log files are copied to archive directory. Original data is deleted
+    starting from the oldest directory if the remaining free disk space
+    drops below the specified threshold.
+    """
+    archive_path = data_path.parent / "data_archived" / cam_id
+    archive_path.mkdir(parents=True, exist_ok=True)
+
+    dirs_orig = []
+    for file_or_dir in data_path.iterdir():
+        if file_or_dir.is_dir():
+            dirs_orig.append(file_or_dir)
+            zip_path = archive_path / (file_or_dir.name + ".zip")
+            subprocess.run(["zip", "-q", "-r", "-u", "-0", zip_path, "."],
+                           cwd=file_or_dir, check=False)
+        elif file_or_dir.is_file():
+            subprocess.run(["rsync", "-a", "-u", file_or_dir, archive_path], check=True)
+    dirs_orig.sort()
+
+    cronjob_log_file = Path.home() / "insect-detect" / "cronjob_log.log"
+    if cronjob_log_file.exists():
+        subprocess.run(["rsync", "-a", "-u", cronjob_log_file, archive_path], check=True)
+
+    disk_free = round(psutil.disk_usage("/").free / 1048576)
+    while dirs_orig and disk_free < low_diskspace:
+        shutil.rmtree(dirs_orig[0], ignore_errors=True)
+        dirs_orig.pop(0)
+        disk_free = round(psutil.disk_usage("/").free / 1048576)
+
+    return archive_path

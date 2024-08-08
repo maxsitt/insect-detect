@@ -116,7 +116,11 @@ def upload_data(data_path, archive_path):
     # for more providers and config setup see https://rclone.org/#providers
     # for more options see https://rclone.org/commands/rclone_copy/#options
     subprocess.run(["rclone", "copy",
-                    "--update",
+                    #"--progress",           # show transfer progress in terminal (optional)
+                    "--update",             # skip files that are newer on the destination
+                    "--transfers", "1",     # number of parallel file transfers
+                    "--buffer-size", "4M",  # memory buffer size when reading file(s)
+                    "--bwlimit", "4M",      # bandwidth limit in MB/s
                     f"--log-file={data_path / 'rclone.log'}",
                     "--log-level=INFO",
                     archive_path.parent, "minio:bucket"],

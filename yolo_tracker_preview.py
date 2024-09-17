@@ -18,7 +18,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
                    -> full FOV is preserved, only aspect ratio is changed (adds distortion)
          optional: crop frames to square for model input and visualization ('-fov crop')
                    -> FOV is reduced due to cropping of left and right side (no distortion)
-  '-af'  set auto focus range in cm (min distance, max distance)
+  '-af'  set auto focus range in cm (min - max distance to camera)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-ae'  use bounding box coordinates from detections to set auto exposure region
   '-log' print available Raspberry Pi memory, RPi CPU utilization + temperature,
@@ -39,7 +39,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from utils.general import frame_norm
 from utils.log import print_logs
-from utils.oak_cam import bbox_set_exposure_region, set_focus_range
+from utils.oak_cam import convert_bbox_roi, convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
@@ -47,7 +47,7 @@ parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default
     help="Stretch frames to square ('stretch') and preserve full FOV or "
          "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
+    help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
     help="Use bounding box coordinates from detections to set auto exposure region.")
 parser.add_argument("-log", "--print_logs", action="store_true",
@@ -80,6 +80,7 @@ pipeline = dai.Pipeline()
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)  # rotate image 180°
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+SENSOR_RES = cam_rgb.getResolutionSize()
 cam_rgb.setPreviewSize(320, 320)  # downscale frames for model input -> LQ frames
 if args.adjust_fov == "stretch":
     cam_rgb.setPreviewKeepAspectRatio(False)  # stretch frames (16:9) to square (1:1) for model input
@@ -87,8 +88,10 @@ cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure and model input
 
-# Get sensor resolution
-SENSOR_RES = cam_rgb.getResolutionSize()
+if args.af_range:
+    # Convert cm to lens position values and set auto focus range
+    lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
+    cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -122,7 +125,7 @@ xout_tracker = pipeline.create(dai.node.XLinkOut)
 xout_tracker.setStreamName("track")
 tracker.out.link(xout_tracker.input)
 
-if args.af_range or args.bbox_ae_region:
+if args.bbox_ae_region:
     # Create XLinkIn node to send control commands to color camera node
     xin_ctrl = pipeline.create(dai.node.XLinkIn)
     xin_ctrl.setStreamName("control")
@@ -137,7 +140,6 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
         scheduler = BackgroundScheduler()
         scheduler.add_job(print_logs, "interval", seconds=1, id="log")
         scheduler.start()
-
         device.setLogLevel(dai.LogLevel.INFO)
         device.setLogOutputLevel(dai.LogLevel.INFO)
 
@@ -145,14 +147,9 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    if args.af_range or args.bbox_ae_region:
+    if args.bbox_ae_region:
         # Create input queue to send control commands to OAK camera
         q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
-
-    if args.af_range:
-        # Set auto focus range to specified cm values
-        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
-        q_ctrl.send(af_ctrl)
 
     # Set start time of recording and create counter to measure fps
     start_time = time.monotonic()
@@ -186,8 +183,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
                 if args.bbox_ae_region and tracklet == tracks[-1]:
                     # Use model bbox from latest tracking ID to set auto exposure region
-                    ae_ctrl = bbox_set_exposure_region(bbox_orig, SENSOR_RES)
-                    q_ctrl.send(ae_ctrl)
+                    roi_x, roi_y, roi_w, roi_h = convert_bbox_roi(bbox_orig, SENSOR_RES)
+                    q_ctrl.send(dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h))
 
                 cv2.putText(frame_lq, label, (bbox_norm[0], bbox_norm[3] + 13),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)

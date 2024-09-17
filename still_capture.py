@@ -13,12 +13,8 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 - optional arguments:
   '-min' set recording time in minutes (default: 2 [min])
          -> e.g. '-min 5' for 5 min recording time
-  '-af'  set auto focus range in cm (min distance, max distance)
+  '-af'  set auto focus range in cm (min - max distance to camera)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
-  '-zip' store all captured data in an uncompressed .zip file for each day
-         and delete original directory
-         -> increases file transfer speed from microSD to computer
-            but also on-device processing time and power consumption
 
 based on open source scripts available at https://github.com/luxonis
 """
@@ -32,17 +28,14 @@ from pathlib import Path
 import depthai as dai
 import psutil
 
-from utils.general import zip_data
-from utils.oak_cam import set_focus_range
+from utils.oak_cam import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
     help="Set recording time in minutes (default: 2 [min]).", metavar="1-720")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
-parser.add_argument("-zip", "--zip_data", action="store_true",
-    help="Store data in an uncompressed .zip file for each day and delete original directory.")
+    help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
 args = parser.parse_args()
 
 # Set threshold value required to start and continue a recording
@@ -77,6 +70,11 @@ cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setNumFramesPool(2,2,2,2,2)  # decrease frame pool size to avoid memory issues
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure
 
+if args.af_range:
+    # Convert cm to lens position values and set auto focus range
+    lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
+    cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+
 # Create and configure video encoder node and define input + output
 still_enc = pipeline.create(dai.node.VideoEncoder)
 still_enc.setDefaultProfilePreset(1, dai.VideoEncoderProperties.Profile.MJPEG)
@@ -102,12 +100,6 @@ while True:
 # Define script node output to send capture still command to color camera node
 script.outputs["capture_still"].link(cam_rgb.inputControl)
 
-if args.af_range:
-    # Create XLinkIn node to send control commands to color camera node
-    xin_ctrl = pipeline.create(dai.node.XLinkIn)
-    xin_ctrl.setStreamName("control")
-    xin_ctrl.out.link(cam_rgb.inputControl)
-
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
@@ -118,14 +110,6 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue to get the encoded still frames from the output defined above
     q_still = device.getOutputQueue(name="still", maxSize=1, blocking=False)
-
-    if args.af_range:
-        # Create input queue to send control commands to OAK camera
-        q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
-
-        # Set auto focus range to specified cm values
-        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
-        q_ctrl.send(af_ctrl)
 
     # Set start time of recording
     start_time = time.monotonic()
@@ -150,8 +134,3 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 # Print number and directory of saved still frames
 num_frames_still = len(list(save_path.glob("*.jpg")))
 logging.info("Saved %s still frames to %s\n", num_frames_still, save_path)
-
-if args.zip_data:
-    # Store frames in uncompressed .zip file and delete original folder
-    zip_data(save_path)
-    logging.info("Stored all captured images in %s.zip\n", save_path.parent)

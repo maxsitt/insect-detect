@@ -13,7 +13,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
                    -> full FOV is preserved, only aspect ratio is changed (adds distortion)
          optional: crop frames to square for visualization ('-fov crop')
                    -> FOV is reduced due to cropping of left and right side (no distortion)
-  '-af'  set auto focus range in cm (min distance, max distance)
+  '-af'  set auto focus range in cm (min - max distance to camera)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-big' show a bigger preview window with 640x640 px size (default: 320x320 px)
          -> decreases frame rate to ~3 fps (default: ~11 fps)
@@ -27,7 +27,7 @@ import time
 import cv2
 import depthai as dai
 
-from utils.oak_cam import set_focus_range
+from utils.oak_cam import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
@@ -35,7 +35,7 @@ parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default
     help="Stretch frames to square ('stretch') and preserve full FOV or "
          "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
+    help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-big", "--big_preview", action="store_true",
     help="Show a bigger preview window with 640x640 px size (default: 320x320 px).")
 args = parser.parse_args()
@@ -62,24 +62,15 @@ xout_rgb.setStreamName("frame")
 cam_rgb.preview.link(xout_rgb.input)
 
 if args.af_range:
-    # Create XLinkIn node to send control commands to color camera node
-    xin_ctrl = pipeline.create(dai.node.XLinkIn)
-    xin_ctrl.setStreamName("control")
-    xin_ctrl.out.link(cam_rgb.inputControl)
+    # Convert cm to lens position values and set auto focus range
+    lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
+    cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
 
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue to get the frames from the output defined above
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
-
-    if args.af_range:
-        # Create input queue to send control commands to OAK camera
-        q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
-
-        # Set auto focus range to specified cm values
-        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
-        q_ctrl.send(af_ctrl)
 
     # Set start time of recording and create counter to measure fps
     start_time = time.monotonic()

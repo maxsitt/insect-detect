@@ -1,4 +1,4 @@
-"""Utility functions to control the OAK camera.
+"""Utility functions for Luxonis OAK camera control.
 
 Source:   https://github.com/maxsitt/insect-detect
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
@@ -6,53 +6,44 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
-    set_focus_range(): Convert closest cm values to lens position values and set auto focus range.
-    bbox_set_exposure_region(): Use bounding box coordinates to set auto exposure region.
+    convert_bbox_roi(): Convert bounding box coordinates to ROI (region of interest).
+    convert_cm_lens_position(): Convert centimeter value to OAK lens position value.
 
 partly based on open source scripts available at https://github.com/luxonis
 """
 
-import depthai as dai
+
+def convert_bbox_roi(bbox, sensor_res):
+    """Convert bounding box coordinates to ROI (region of interest)."""
+    def clamp(val, min_val, max_val):
+        """Clamp a value between a minimum and a maximum value."""
+        return max(min_val, min(val, max_val))
+
+    xmin, ymin, xmax, ymax = [clamp(coord, 0.001, 0.999) for coord in bbox]
+    roi_x, roi_y = int(xmin * sensor_res[0]), int(ymin * sensor_res[1])
+    roi_w, roi_h = int((xmax - xmin) * sensor_res[0]), int((ymax - ymin) * sensor_res[1])
+
+    return roi_x, roi_y, roi_w, roi_h
 
 
-def set_focus_range(cm_min, cm_max):
-    """Convert closest cm values to lens position values and set auto focus range."""
-    cm_lenspos = {
-        6: 250,
-        8: 220,
-        10: 190,
-        12: 170,
-        14: 160,
-        16: 150,
-        20: 140,
-        25: 135,
-        30: 130,
-        40: 125,
-        60: 120
+def convert_cm_lens_position(distance_cm):
+    """Convert centimeter value to OAK lens position value."""
+    cm_lens_positions = {
+        8: 255, 9: 210, 10: 200, 11: 190, 12: 180, 13: 175, 14: 170, 15: 165, 16: 162, 17: 160,
+        18: 158, 19: 156, 20: 154, 21: 152, 22: 150, 23: 148, 24: 146, 25: 144, 26: 142, 27: 141,
+        28: 140, 29: 139, 30: 138, 31: 137, 32: 136, 34: 135, 36: 134, 38: 133, 40: 132, 42: 131,
+        45: 130, 48: 129, 52: 128, 56: 127, 60: 126, 64: 125, 68: 124, 72: 123, 76: 122, 80: 121
     }
+    keys_cm = cm_lens_positions.keys()
 
-    closest_cm_min = min(cm_lenspos.keys(), key=lambda k: abs(k - cm_min))
-    closest_cm_max = min(cm_lenspos.keys(), key=lambda k: abs(k - cm_max))
-    lenspos_min = cm_lenspos[closest_cm_max]
-    lenspos_max = cm_lenspos[closest_cm_min]
+    def get_lens_position(cm_value):
+        """Get closest lens position for a given cm value."""
+        if cm_value in keys_cm:
+            return cm_lens_positions[cm_value]
+        closest_cm = min(keys_cm, key=lambda k: abs(k - cm_value))
+        return cm_lens_positions[closest_cm]
 
-    af_ctrl = dai.CameraControl().setAutoFocusLensRange(lenspos_min, lenspos_max)
+    if isinstance(distance_cm, (tuple, list)):
+        return type(distance_cm)(get_lens_position(cm) for cm in distance_cm)
 
-    return af_ctrl
-
-
-def bbox_set_exposure_region(bbox, sensor_res):
-    """Use bounding box coordinates to set auto exposure region."""
-    xmin_roi = max(0.001, bbox[0])
-    ymin_roi = max(0.001, bbox[1])
-    xmax_roi = min(0.999, bbox[2])
-    ymax_roi = min(0.999, bbox[3])
-
-    roi_x = int(xmin_roi * sensor_res[0])
-    roi_y = int(ymin_roi * sensor_res[1])
-    roi_width = int((xmax_roi - xmin_roi) * sensor_res[0])
-    roi_height = int((ymax_roi - ymin_roi) * sensor_res[1])
-
-    ae_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_width, roi_height)
-
-    return ae_ctrl
+    return get_lens_position(distance_cm)

@@ -39,7 +39,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
                        -> FOV is reduced due to cropping of left and right side (no distortion)
                        -> HQ frame resolution: 1080x1080 px (default) or 2160x2160 px ('-4k')
                        -> increases pipeline speed to ~23 fps (4K: ~5.8 fps)
-  '-af'      set auto focus range in cm (min distance, max distance)
+  '-af'      set auto focus range in cm (min - max distance to camera)
              -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
   '-ae'      use bounding box coordinates from detections to set auto exposure region
              -> can improve image quality of crops and thereby classification accuracy
@@ -83,7 +83,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from utils.general import archive_data, create_signal_handler, frame_norm, upload_data
 from utils.log import record_log, save_logs
-from utils.oak_cam import bbox_set_exposure_region, set_focus_range
+from utils.oak_cam import convert_bbox_roi, convert_cm_lens_position
 from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_frame
 from utils.wittypi import WittyPiStatus
 
@@ -95,7 +95,7 @@ parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default
     help="Stretch frames to square ('stretch') and preserve full FOV or "
          "crop frames to square ('crop') and reduce FOV.")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
+    help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
 parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
     help="Use bounding box coordinates from detections to set auto exposure region.")
 parser.add_argument("-crop", "--crop_bbox", choices=["square", "tight"], default="square", type=str,
@@ -215,6 +215,7 @@ pipeline = dai.Pipeline()
 cam_rgb = pipeline.create(dai.node.ColorCamera)
 #cam_rgb.setImageOrientation(dai.CameraImageOrientation.ROTATE_180_DEG)  # rotate image 180°
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
+SENSOR_RES = cam_rgb.getResolutionSize()
 if not args.four_k_resolution:
     cam_rgb.setIspScale(1, 2)     # downscale 4K to 1080p resolution -> HQ frames
 cam_rgb.setPreviewSize(320, 320)  # downscale frames for model input -> LQ frames
@@ -228,8 +229,10 @@ cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 cam_rgb.setFps(25)  # frames per second available for auto focus/exposure and model input
 
-# Get sensor resolution
-SENSOR_RES = cam_rgb.getResolutionSize()
+if args.af_range:
+    # Convert cm to lens position values and set auto focus range
+    lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
+    cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -273,7 +276,7 @@ xout_tracker = pipeline.create(dai.node.XLinkOut)
 xout_tracker.setStreamName("track")
 demux.outputs["tracker"].link(xout_tracker.input)  # synced tracker output
 
-if args.af_range or args.bbox_ae_region:
+if args.bbox_ae_region:
     # Create XLinkIn node to send control commands to color camera node
     xin_ctrl = pipeline.create(dai.node.XLinkIn)
     xin_ctrl.setStreamName("control")
@@ -283,6 +286,7 @@ if args.af_range or args.bbox_ae_region:
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     if args.save_logs or (args.save_full_frames == "freq"):
+        # Initialize background scheduler
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         scheduler = BackgroundScheduler()
     else:
@@ -309,14 +313,9 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
     q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-    if args.af_range or args.bbox_ae_region:
+    if args.bbox_ae_region:
         # Create input queue to send control commands to OAK camera
         q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
-
-    if args.af_range:
-        # Set auto focus range to specified cm values
-        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
-        q_ctrl.send(af_ctrl)
 
     # Set start time of recording and create empty lists to save charge level and threads
     start_time = time.monotonic()
@@ -357,8 +356,8 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
                         if args.bbox_ae_region and tracklet == tracks[-1]:
                             # Use model bbox from latest tracking ID to set auto exposure region
-                            ae_ctrl = bbox_set_exposure_region(bbox_orig, SENSOR_RES)
-                            q_ctrl.send(ae_ctrl)
+                            roi_x, roi_y, roi_w, roi_h = convert_bbox_roi(bbox_orig, SENSOR_RES)
+                            q_ctrl.send(dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h))
 
                         # Save detections cropped from HQ frame together with metadata
                         save_crop_metadata(CAM_ID, rec_id, frame_hq, bbox_norm, label, det_conf, track_id,

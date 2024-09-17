@@ -14,7 +14,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
   '-4k'  record video in 4K resolution (3840x2160 px) (default: 1080p)
   '-fps' set camera frame rate (default: 25 fps)
          -> e.g. '-fps 20' for 20 fps (less fps = smaller video file size)
-  '-af'  set auto focus range in cm (min distance, max distance)
+  '-af'  set auto focus range in cm (min - max distance to camera)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
 
 based on open source scripts available at https://github.com/luxonis
@@ -31,7 +31,7 @@ import av
 import depthai as dai
 import psutil
 
-from utils.oak_cam import set_focus_range
+from utils.oak_cam import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
@@ -42,7 +42,7 @@ parser.add_argument("-4k", "--four_k_resolution", action="store_true",
 parser.add_argument("-fps", "--frames_per_second", type=int, choices=range(1, 31), default=25,
     help="Set camera frame rate (default: 25 fps).", metavar="1-30")
 parser.add_argument("-af", "--af_range", nargs=2, type=int,
-    help="Set auto focus range in cm (min distance, max distance).", metavar=("CM_MIN", "CM_MAX"))
+    help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
 args = parser.parse_args()
 
 # Set threshold value required to start and continue a recording
@@ -77,6 +77,11 @@ if not args.four_k_resolution:
 cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setFps(FPS)  # frames per second available for auto focus/exposure
 
+if args.af_range:
+    # Convert cm to lens position values and set auto focus range
+    lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
+    cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+
 # Create and configure video encoder node and define input + output
 video_enc = pipeline.create(dai.node.VideoEncoder)
 video_enc.setDefaultProfilePreset(FPS, dai.VideoEncoderProperties.Profile.H265_MAIN)
@@ -85,12 +90,6 @@ cam_rgb.video.link(video_enc.input)
 xout_vid = pipeline.create(dai.node.XLinkOut)
 xout_vid.setStreamName("video")
 video_enc.bitstream.link(xout_vid.input)  # encoded HQ frames
-
-if args.af_range:
-    # Create XLinkIn node to send control commands to color camera node
-    xin_ctrl = pipeline.create(dai.node.XLinkIn)
-    xin_ctrl.setStreamName("control")
-    xin_ctrl.out.link(cam_rgb.inputControl)
 
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
@@ -102,14 +101,6 @@ with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:
 
     # Create output queue to get the encoded frames from the output defined above
     q_video = device.getOutputQueue(name="video", maxSize=30, blocking=True)
-
-    if args.af_range:
-        # Create input queue to send control commands to OAK camera
-        q_ctrl = device.getInputQueue(name="control", maxSize=16, blocking=False)
-
-        # Set auto focus range to specified cm values
-        af_ctrl = set_focus_range(args.af_range[0], args.af_range[1])
-        q_ctrl.send(af_ctrl)
 
     # Create .mp4 container with H.265 (HEVC) compression
     timestamp_video = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")

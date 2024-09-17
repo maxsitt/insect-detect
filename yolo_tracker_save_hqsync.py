@@ -41,6 +41,8 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
                        -> increases pipeline speed to ~23 fps (4K: ~5.8 fps)
   '-af'      set auto focus range in cm (min - max distance to camera)
              -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
+  '-mf'      set manual focus position in cm (distance to camera)
+             -> e.g. '-mf 14' to set manual focus position to 14 cm
   '-ae'      use bounding box coordinates from detections to set auto exposure region
              -> can improve image quality of crops and thereby classification accuracy
   '-crop'    default:  save cropped detections with aspect ratio 1:1 ('-crop square') OR
@@ -87,6 +89,7 @@ from utils.save_data import save_crop_metadata, save_full_frame, save_overlay_fr
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
+group = parser.add_mutually_exclusive_group()
 parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
     help="Set recording time in minutes (default: 2 [min]).", metavar="1-720")
 parser.add_argument("-4k", "--four_k_resolution", action="store_true",
@@ -94,8 +97,10 @@ parser.add_argument("-4k", "--four_k_resolution", action="store_true",
 parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
     help="Stretch frames to square ('stretch') and preserve full FOV or "
          "crop frames to square ('crop') and reduce FOV.")
-parser.add_argument("-af", "--af_range", nargs=2, type=int,
+group.add_argument("-af", "--af_range", nargs=2, type=int,
     help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
+group.add_argument("-mf", "--manual_focus", type=int,
+    help="Set manual focus position in cm (distance to camera).", metavar="CM")
 parser.add_argument("-ae", "--bbox_ae_region", action="store_true",
     help="Use bounding box coordinates from detections to set auto exposure region.")
 parser.add_argument("-crop", "--crop_bbox", choices=["square", "tight"], default="square", type=str,
@@ -215,6 +220,11 @@ if args.af_range:
     # Convert cm to lens position values and set auto focus range
     lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
     cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+
+if args.manual_focus:
+    # Convert cm to lens position value and set manual focus position
+    lens_pos = convert_cm_lens_position(args.manual_focus)
+    cam_rgb.initialControl.setManualFocus(lens_pos)
 
 # Create detection network node and define input
 nn = pipeline.create(dai.node.YoloDetectionNetwork)

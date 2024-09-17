@@ -15,6 +15,8 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
          -> e.g. '-min 5' for 5 min recording time
   '-af'  set auto focus range in cm (min - max distance to camera)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
+  '-mf'  set manual focus position in cm (distance to camera)
+         -> e.g. '-mf 14' to set manual focus position to 14 cm
 
 based on open source scripts available at https://github.com/luxonis
 """
@@ -32,10 +34,13 @@ from utils.oak_cam import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
+group = parser.add_mutually_exclusive_group()
 parser.add_argument("-min", "--min_rec_time", type=int, choices=range(1, 721), default=2,
     help="Set recording time in minutes (default: 2 [min]).", metavar="1-720")
-parser.add_argument("-af", "--af_range", nargs=2, type=int,
+group.add_argument("-af", "--af_range", nargs=2, type=int,
     help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
+group.add_argument("-mf", "--manual_focus", type=int,
+    help="Set manual focus position in cm (distance to camera).", metavar="CM")
 args = parser.parse_args()
 
 # Set threshold value required to start and continue a recording
@@ -74,6 +79,11 @@ if args.af_range:
     # Convert cm to lens position values and set auto focus range
     lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
     cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+
+if args.manual_focus:
+    # Convert cm to lens position value and set manual focus position
+    lens_pos = convert_cm_lens_position(args.manual_focus)
+    cam_rgb.initialControl.setManualFocus(lens_pos)
 
 # Create and configure video encoder node and define input + output
 still_enc = pipeline.create(dai.node.VideoEncoder)

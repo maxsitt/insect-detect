@@ -15,6 +15,8 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
                    -> FOV is reduced due to cropping of left and right side (no distortion)
   '-af'  set auto focus range in cm (min - max distance to camera)
          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
+  '-mf'  set manual focus position in cm (distance to camera)
+         -> e.g. '-mf 14' to set manual focus position to 14 cm
   '-big' show a bigger preview window with 640x640 px size (default: 320x320 px)
          -> decreases frame rate to ~3 fps (default: ~11 fps)
 
@@ -31,11 +33,14 @@ from utils.oak_cam import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
+group = parser.add_mutually_exclusive_group()
 parser.add_argument("-fov", "--adjust_fov", choices=["stretch", "crop"], default="stretch", type=str,
     help="Stretch frames to square ('stretch') and preserve full FOV or "
          "crop frames to square ('crop') and reduce FOV.")
-parser.add_argument("-af", "--af_range", nargs=2, type=int,
+group.add_argument("-af", "--af_range", nargs=2, type=int,
     help="Set auto focus range in cm (min - max distance to camera).", metavar=("CM_MIN", "CM_MAX"))
+group.add_argument("-mf", "--manual_focus", type=int,
+    help="Set manual focus position in cm (distance to camera).", metavar="CM")
 parser.add_argument("-big", "--big_preview", action="store_true",
     help="Show a bigger preview window with 640x640 px size (default: 320x320 px).")
 args = parser.parse_args()
@@ -65,6 +70,11 @@ if args.af_range:
     # Convert cm to lens position values and set auto focus range
     lens_pos_min, lens_pos_max = convert_cm_lens_position((args.af_range[1], args.af_range[0]))
     cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+
+if args.manual_focus:
+    # Convert cm to lens position value and set manual focus position
+    lens_pos = convert_cm_lens_position(args.manual_focus)
+    cam_rgb.initialControl.setManualFocus(lens_pos)
 
 # Connect to OAK device and start pipeline in USB2 mode
 with dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device:

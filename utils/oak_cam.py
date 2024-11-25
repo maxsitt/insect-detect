@@ -8,9 +8,16 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 Functions:
     convert_bbox_roi(): Convert bounding box coordinates to ROI (region of interest).
     convert_cm_lens_position(): Convert centimeter value to OAK lens position value.
-
-partly based on open source scripts available at https://github.com/luxonis
 """
+
+# Create dictionary containing centimeter values and corresponding OAK lens positions
+CM_LENS_POSITIONS = {
+    8: 255, 9: 210, 10: 200, 11: 190, 12: 180, 13: 175, 14: 170, 15: 165, 16: 162, 17: 160,
+    18: 158, 19: 156, 20: 154, 21: 152, 22: 150, 23: 148, 24: 146, 25: 144, 26: 142, 27: 141,
+    28: 140, 29: 139, 30: 138, 31: 137, 32: 136, 34: 135, 36: 134, 38: 133, 40: 132, 42: 131,
+    45: 130, 48: 129, 52: 128, 56: 127, 60: 126, 64: 125, 68: 124, 72: 123, 76: 122, 80: 121
+}
+CM_KEYS = tuple(CM_LENS_POSITIONS.keys())
 
 
 def convert_bbox_roi(bbox, sensor_res):
@@ -28,22 +35,9 @@ def convert_bbox_roi(bbox, sensor_res):
 
 def convert_cm_lens_position(distance_cm):
     """Convert centimeter value to OAK lens position value."""
-    cm_lens_positions = {
-        8: 255, 9: 210, 10: 200, 11: 190, 12: 180, 13: 175, 14: 170, 15: 165, 16: 162, 17: 160,
-        18: 158, 19: 156, 20: 154, 21: 152, 22: 150, 23: 148, 24: 146, 25: 144, 26: 142, 27: 141,
-        28: 140, 29: 139, 30: 138, 31: 137, 32: 136, 34: 135, 36: 134, 38: 133, 40: 132, 42: 131,
-        45: 130, 48: 129, 52: 128, 56: 127, 60: 126, 64: 125, 68: 124, 72: 123, 76: 122, 80: 121
-    }
-    keys_cm = cm_lens_positions.keys()
+    if distance_cm in CM_KEYS:
+        return CM_LENS_POSITIONS[distance_cm]
 
-    def get_lens_position(cm_value):
-        """Get closest lens position for a given cm value."""
-        if cm_value in keys_cm:
-            return cm_lens_positions[cm_value]
-        closest_cm = min(keys_cm, key=lambda k: abs(k - cm_value))
-        return cm_lens_positions[closest_cm]
+    closest_cm = min(CM_KEYS, key=lambda k: abs(k - distance_cm))
 
-    if isinstance(distance_cm, (tuple, list)):
-        return type(distance_cm)(get_lens_position(cm) for cm in distance_cm)
-
-    return get_lens_position(distance_cm)
+    return CM_LENS_POSITIONS[closest_cm]

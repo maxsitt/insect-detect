@@ -14,6 +14,7 @@ Functions:
 import csv
 import logging
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import psutil
@@ -28,14 +29,16 @@ def print_logs():
     logging.info("RPi CPU temperature:  %s °C\n", round(CPUTemperature().temperature))
 
 
-def save_logs(cam_id, rec_id, device, rec_start_str, save_path, powermanager=None):
+def save_logs(save_path, cam_id, rec_id, device, powermanager=None):
     """Write information to .csv file during recording.
 
-    Write cam ID, recording ID, current time, RPi CPU + OAK chip temperature
+    Write cam ID, recording ID, timestamp, RPi CPU + OAK chip temperature
     and RPi available memory (MB) + CPU utilization (%) to .csv.
     If powermanager (pijuice or wittypi) is provided, also
     write PiJuice or Witty Pi battery info + temp to .csv.
     """
+    log_path = save_path.parent / f"{save_path.parent}_info_log.csv"
+
     try:
         temp_oak = round(device.getChipTemperature().average)
     except RuntimeError:
@@ -74,26 +77,29 @@ def save_logs(cam_id, rec_id, device, rec_start_str, save_path, powermanager=Non
         logs = {}
 
     if logs:
-        with open(save_path.parent / f"{rec_start_str[:10]}_info_log.csv", "a", encoding="utf-8") as log_file:
+        with open(log_path, "a", encoding="utf-8") as log_file:
             log_writer = csv.DictWriter(log_file, fieldnames=logs.keys())
             if log_file.tell() == 0:
                 log_writer.writeheader()
             log_writer.writerow(logs)
 
 
-def record_log(cam_id, rec_id, rec_start, rec_start_str, rec_end,
-               save_path, chargelevel_start=None, chargelevel=None):
+def record_log(save_path, cam_id, rec_id, rec_start, rec_end,
+               chargelevel_start=None, chargelevel=None):
     """Write information to .csv file at the end of the recording interval.
 
-    Write cam ID, recording ID, recording start and end time,
-    recording duration (min), number of cropped detections,
+    Write cam ID, recording ID, recording start and end time, recording duration (min),
     number of unique tracking IDs and available disk space (GB) to .csv.
     If chargelevel_start and chargelevel are provided, also write both to .csv.
     """
+    rec_log_path = save_path.parents[1] / "record_log.csv"
+
     try:
-        df_meta = pd.read_csv(save_path / f"{rec_start_str}_metadata.csv", encoding="utf-8")
-        unique_ids = df_meta["track_ID"].nunique()
-    except (pd.errors.EmptyDataError, FileNotFoundError):
+        metadata_path = next(save_path.glob("*metadata.csv"))
+        metadata = pd.read_csv(metadata_path, encoding="utf-8")
+        metadata_tracked = metadata[metadata["track_status"] == "TRACKED"]
+        unique_ids = metadata_tracked["track_ID"].nunique()
+    except (pd.errors.EmptyDataError, StopIteration):
         unique_ids = 0
 
     logs_rec = {
@@ -101,18 +107,17 @@ def record_log(cam_id, rec_id, rec_start, rec_start_str, rec_end,
         "rec_ID": rec_id,
         "rec_start": rec_start.isoformat(),
         "rec_end": rec_end.isoformat(),
-        "rec_time_min": round((rec_end - rec_start).total_seconds() / 60, 2),
-        "num_crops": len(list((save_path / "crop").glob("**/*.jpg"))),
-        "num_IDs": unique_ids,
+        "duration_min": round((rec_end - rec_start).total_seconds() / 60, 2),
+        "unique_track_IDs": unique_ids,
         "disk_free_gb": round(psutil.disk_usage("/").free / 1073741824, 1)
     }
-    if chargelevel_start and chargelevel:
+    if chargelevel_start is not None and chargelevel is not None:
         logs_rec.update({
             "chargelevel_start": chargelevel_start,
             "chargelevel_end": chargelevel
         })
 
-    with open(save_path.parents[1] / "record_log.csv", "a", encoding="utf-8") as log_rec_file:
+    with open(rec_log_path, "a", encoding="utf-8") as log_rec_file:
         log_rec_writer = csv.DictWriter(log_rec_file, fieldnames=logs_rec.keys())
         if log_rec_file.tell() == 0:
             log_rec_writer.writeheader()

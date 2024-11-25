@@ -1,4 +1,4 @@
-"""Utility functions for bounding box adjustment and data storage.
+"""Utility functions for data management and general functionality.
 
 Source:   https://github.com/maxsitt/insect-detect
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
@@ -7,19 +7,15 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
     create_signal_handler(): Create signal handler for a received signal.
-    frame_norm(): Convert relative bounding box coordinates (0-1) to pixel coordinates.
-    make_bbox_square(): Adjust bounding box dimensions to make it square.
+    save_encoded_frame(): Save MJPEG-encoded frame to .jpg file.
     archive_data(): Archive all captured data + logs and manage disk space.
     upload_data(): Upload archived data to cloud storage provider.
-
-frame_norm() is based on open source scripts available at https://github.com/luxonis
 """
 
 import shutil
 import subprocess
 from pathlib import Path
 
-import numpy as np
 import psutil
 
 
@@ -33,46 +29,10 @@ def create_signal_handler(external_shutdown):
     return signal_handler
 
 
-def frame_norm(frame, bbox):
-    """Convert relative bounding box coordinates (0-1) to pixel coordinates."""
-    norm_vals = np.full(len(bbox), frame.shape[0])
-    norm_vals[::2] = frame.shape[1]
-
-    return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
-
-
-def make_bbox_square(frame, bbox):
-    """Adjust bounding box dimensions to make it square.
-
-    Increase bounding box size on both sides of the minimum dimension,
-    or only on one side if bbox is localized at the frame margin.
-    """
-    bbox_width = bbox[2] - bbox[0]
-    bbox_height = bbox[3] - bbox[1]
-    bbox_diff = abs(bbox_width - bbox_height) // 2
-
-    if bbox_width < bbox_height:
-        if bbox[0] - bbox_diff < 0:
-            bbox[0] = 0
-            bbox[2] = bbox[2] + bbox_diff * 2 - bbox[0]
-        elif bbox[2] + bbox_diff > frame.shape[1]:
-            bbox[0] = bbox[0] - bbox_diff * 2 + frame.shape[1] - bbox[2]
-            bbox[2] = frame.shape[1]
-        else:
-            bbox[0] = bbox[0] - bbox_diff
-            bbox[2] = bbox[2] + bbox_diff
-    else:
-        if bbox[1] - bbox_diff < 0:
-            bbox[1] = 0
-            bbox[3] = bbox[3] + bbox_diff * 2 - bbox[1]
-        elif bbox[3] + bbox_diff > frame.shape[0]:
-            bbox[1] = bbox[1] - bbox_diff * 2 + frame.shape[0] - bbox[3]
-            bbox[3] = frame.shape[0]
-        else:
-            bbox[1] = bbox[1] - bbox_diff
-            bbox[3] = bbox[3] + bbox_diff
-
-    return bbox
+def save_encoded_frame(save_path, timestamp_str, frame):
+    """Save MJPEG-encoded frame to .jpg file."""
+    with open(save_path / f"{timestamp_str}.jpg", "wb") as jpg:
+        jpg.write(frame)
 
 
 def archive_data(data_path, cam_id, low_diskspace=1000):

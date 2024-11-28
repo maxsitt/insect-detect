@@ -35,7 +35,7 @@ def save_encoded_frame(save_path, timestamp_str, frame):
         jpg.write(frame)
 
 
-def archive_data(data_path, cam_id, low_diskspace=1000):
+def archive_data(data_path, cam_id, low_diskspace=5000):
     """Archive all captured data + logs and manage disk space.
 
     Directories (images + metadata) are saved to uncompressed .zip files,
@@ -50,21 +50,20 @@ def archive_data(data_path, cam_id, low_diskspace=1000):
     for file_or_dir in data_path.iterdir():
         if file_or_dir.is_dir():
             dirs_orig.append(file_or_dir)
-            zip_path = archive_path / (file_or_dir.name + ".zip")
+            zip_path = archive_path / f"{file_or_dir.name}.zip"
             subprocess.run(["zip", "-q", "-r", "-u", "-0", zip_path, "."],
                            cwd=file_or_dir, check=False)
         elif file_or_dir.is_file():
             subprocess.run(["rsync", "-a", "-u", file_or_dir, archive_path], check=True)
     dirs_orig.sort()
 
-    cronjob_log_file = Path.home() / "insect-detect" / "cronjob_log.log"
-    if cronjob_log_file.exists():
-        subprocess.run(["rsync", "-a", "-u", cronjob_log_file, archive_path], check=True)
+    cronjob_log = Path.home() / "insect-detect" / "cronjob_log.log"
+    if cronjob_log.exists():
+        subprocess.run(["rsync", "-a", "-u", cronjob_log, archive_path], check=True)
 
     disk_free = round(psutil.disk_usage("/").free / 1048576)
     while dirs_orig and disk_free < low_diskspace:
-        shutil.rmtree(dirs_orig[0], ignore_errors=True)
-        dirs_orig.pop(0)
+        shutil.rmtree(dirs_orig.pop(0), ignore_errors=True)
         disk_free = round(psutil.disk_usage("/").free / 1048576)
 
     return archive_path
@@ -75,13 +74,15 @@ def upload_data(data_path, archive_path):
     # this example uses MinIO as storage provider
     # for more providers and config setup see https://rclone.org/#providers
     # for more options see https://rclone.org/commands/rclone_copy/#options
+    #rclone_config_path = Path.home() / ".config" / "rclone" / "rclone.conf"  # default config path
     subprocess.run(["rclone", "copy",
-                    #"--progress",           # show transfer progress in terminal (optional)
+                    #f"--config={rclone_config_path}",  # use custom rclone config file (optional)
+                    #"--progress",          # show transfer progress in terminal (optional)
                     "--update",             # skip files that are newer on the destination
-                    "--transfers", "1",     # number of parallel file transfers
-                    "--buffer-size", "4M",  # memory buffer size when reading file(s)
-                    "--bwlimit", "4M",      # bandwidth limit in MB/s
+                    "--transfers", "1",     # limit number of parallel file transfers
+                    "--buffer-size", "4M",  # limit memory buffer size (MB) when reading file(s)
+                    "--bwlimit", "4M",      # limit bandwidth (MB/s)
                     f"--log-file={data_path / 'rclone.log'}",
-                    "--log-level=INFO",
-                    archive_path.parent, "minio:bucket"],
+                    "--log-level=INFO",     # set log level to DEBUG for more detailed output
+                    str(archive_path.parent), "minio:bucket"],
                     check=False)

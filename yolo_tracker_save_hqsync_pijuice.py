@@ -177,6 +177,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(m
 logger = logging.getLogger()
 logger.info("-------- Logger initialized --------")
 logging.getLogger("apscheduler").setLevel(logging.WARNING)  # decrease apscheduler logging level
+logging.getLogger("tzlocal").setLevel(logging.ERROR)  # suppress timezone warning (Debian Bookworm)
 
 # Initialize PiJuice with I2C bus 1 and address 0x14
 pijuice = PiJuice(1, 0x14)
@@ -320,7 +321,7 @@ if args.auto_exposure_region:
 try:
     # Connect to OAK device and start pipeline in USB2 mode
     with (dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device,
-          open(save_path / f"{timestamp_dir}_metadata.csv", "a", encoding="utf-8") as metadata_file,
+          open(save_path / f"{timestamp_dir}_metadata.csv", "a", buffering=1, encoding="utf-8") as metadata_file,
           ThreadPoolExecutor(max_workers=3) as executor):
 
         # Create output queues to get the synchronized HQ frames and tracker + model output

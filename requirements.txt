@@ -1,23 +1,44 @@
-# Required Python packages for the Insect Detect DIY camera trap (Raspberry Pi + OAK-1)
-# to use the DepthAI Python API (https://docs.luxonis.com/projects/api/en/latest/)
-# Docs: https://maxsitt.github.io/insect-detect-docs/
+# Required Python packages for the Insect Detect DIY camera trap (Raspberry Pi Zero 2 W + OAK-1)
 
-# First, install the dependencies for Raspberry Pi + OAK with:
-# sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
+# Source:   https://github.com/maxsitt/insect-detect
+# License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+# Author:   Maximilian Sittinger (https://github.com/maxsitt)
+# Docs:     https://maxsitt.github.io/insect-detect-docs/
 
-# Install the package libopenblas-dev (required for latest numpy version):
-# sudo apt install libopenblas-dev
+# Use Raspberry Pi Imager to set up the microSD card with:
+# Raspberry Pi OS Lite (32-bit) based on Debian 12 Bookworm (Python 3.11)
 
-# If you are using Raspberry Pi Zero W (v1.1), install libusb-1.0 with:
-# sudo apt install libusb-1.0-0-dev
+# Update the already installed software and reboot:
+# sudo apt update && sudo apt full-upgrade
+# sudo reboot
 
-# Install the required packages with:
-# python3 -m pip install -r insect-detect/requirements.txt
+# Install all required dependencies for RPi + OAK:
+# wget -qO- https://raw.githubusercontent.com/maxsitt/insect-detect/main/install_dependencies_oak.sh | sudo bash
 
+# Download the insect-detect GitHub repo:
+# git clone https://github.com/maxsitt/insect-detect
+
+# Create a virtual environment with access to the system site-packages:
+# python3 -m venv --system-site-packages env_insdet
+
+# Update pip in the virtual environment:
+# env_insdet/bin/python3 -m pip install --upgrade pip
+
+# Install all required packages in the virtual environment:
+# env_insdet/bin/python3 -m pip install -r insect-detect/requirements.txt
+
+# Run script with Python interpreter from the virtual environment:
+# env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py
+
+# Debian 12 Bookworm (Python 3.11)
 depthai==2.29.0.0
-opencv-python==4.6.0.66
+opencv-python==4.7.0.72
 numpy==1.26.4
 pandas==2.2.3
-psutil==6.1.0
-APScheduler==3.10.4
-av==10.0.0
+psutil==7.0.0
+APScheduler==3.11.0
+av==13.0.0
+
+# Debian 11 Bullseye (Python 3.9)
+#opencv-python==4.6.0.66
+#av==10.0.0

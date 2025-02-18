@@ -15,11 +15,12 @@ and deploying the **Insect Detect** DIY camera trap for automated insect monitor
 The camera trap system is composed of low-cost off-the-shelf hardware components
 ([Raspberry Pi Zero 2 W](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/),
 [Luxonis OAK-1](https://docs.luxonis.com/hardware/products/OAK-1),
+[Witty Pi 4 L3V7](https://www.uugear.com/product/witty-pi-4-l3v7/) or
 [PiJuice Zero pHAT](https://uk.pi-supply.com/products/pijuice-zero)), combined with
 open source software and can be easily assembled and set up with the
 [provided instructions](https://maxsitt.github.io/insect-detect-docs/).
 
-<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/hardware/assets/images/insectdetect_diy_cameratrap.jpg" width="400">
+<img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/hardware/assets/images/2024_mount_camtrap_platform.jpg" width="400">
 
 ## Installation
 
@@ -27,28 +28,40 @@ open source software and can be easily assembled and set up with the
 > Please make sure that you followed [all steps](https://maxsitt.github.io/insect-detect-docs/software/pisetup/)
 > to set up your Raspberry Pi.
 
-Install the required dependencies for Raspberry Pi + OAK by running:
+Install all required dependencies for RPi + OAK:
 
-```bash
-sudo curl -fL https://docs.luxonis.com/install_dependencies.sh | bash
+``` bash
+wget -qO- https://raw.githubusercontent.com/maxsitt/insect-detect/main/install_dependencies_oak.sh | sudo bash
 ```
 
-Install the package libopenblas-dev (required for numpy):
+Download the `insect-detect` GitHub repo:
 
-```bash
-sudo apt install libopenblas-dev
-```
-
-Download the `insect-detect` repository:
-
-```bash
+``` bash
 git clone https://github.com/maxsitt/insect-detect
 ```
 
-Install the required packages:
+Create a virtual environment with access to the system site-packages:
 
-```bash
-python3 -m pip install -r insect-detect/requirements.txt
+``` bash
+python3 -m venv --system-site-packages env_insdet
+```
+
+Update pip in the virtual environment:
+
+``` bash
+env_insdet/bin/python3 -m pip install --upgrade pip
+```
+
+Install all required packages in the virtual environment:
+
+``` bash
+env_insdet/bin/python3 -m pip install -r insect-detect/requirements.txt
+```
+
+Run the scripts with the Python interpreter from the virtual environment:
+
+``` bash
+env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py
 ```
 
 Check out the [**Programming**](https://maxsitt.github.io/insect-detect-docs/software/programming/)

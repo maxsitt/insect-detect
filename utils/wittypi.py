@@ -15,7 +15,7 @@ Class:
             get_input_voltage(): Get the input voltage in V.
             get_output_voltage(): Get the output voltage in V.
             get_output_current(): Get the output current in A.
-            estimate_chargelevel(): Roughly estimate the battery charge level.
+            estimate_chargelevel(): Estimate the battery charge level based on the input voltage.
 Functions:
     print_info(): Print power mode, temperature, input/output voltage,
                   output current and estimated charge level.
@@ -48,6 +48,22 @@ I2C_LM75B_TEMPERATURE = 50
 # Set minimum and maximum battery voltage (3.7V nominal voltage)
 MIN_VOLTAGE = 3.0
 MAX_VOLTAGE = 4.2
+
+# Create dictionary that maps voltage to SoC percentage for a typical 3.7V Li-ion battery
+VOLTAGE_TO_SOC = {
+    3.0: 0,
+    3.3: 10,
+    3.4: 20,
+    3.5: 30,
+    3.6: 40,
+    3.7: 50,
+    3.8: 60,
+    3.9: 70,
+    4.0: 80,
+    4.1: 90,
+    4.2: 100
+}
+VOLTAGE_KEYS = sorted(VOLTAGE_TO_SOC.keys())
 
 
 class WittyPiStatus:
@@ -110,16 +126,23 @@ class WittyPiStatus:
         return self.get_i2c_value(I2C_CURRENT_OUT_I, I2C_CURRENT_OUT_D)
 
     def estimate_chargelevel(self):
-        """Roughly estimate the battery charge level."""
+        """Estimate the battery charge level based on the input voltage."""
         power_mode = self.get_power_mode()
         if power_mode == "USB_C_IN":
             return "USB_C_IN"
+
         input_voltage = self.get_input_voltage()
-        if input_voltage is not None:
-            input_voltage = max(min(input_voltage, MAX_VOLTAGE), MIN_VOLTAGE)
-            est_chargelevel = int((input_voltage - MIN_VOLTAGE) / (MAX_VOLTAGE - MIN_VOLTAGE) * 100)
-            return est_chargelevel
-        return None
+        if input_voltage is None:
+            return None
+
+        # Linear interpolation between the two closest voltage values
+        input_voltage = max(min(input_voltage, MAX_VOLTAGE), MIN_VOLTAGE)
+        for i in range(len(VOLTAGE_KEYS) - 1):
+            if VOLTAGE_KEYS[i] <= input_voltage <= VOLTAGE_KEYS[i + 1]:
+                v1, v2 = VOLTAGE_KEYS[i], VOLTAGE_KEYS[i + 1]
+                soc1, soc2 = VOLTAGE_TO_SOC[v1], VOLTAGE_TO_SOC[v2]
+                est_chargelevel = int(soc1 + (input_voltage - v1) * (soc2 - soc1) / (v2 - v1))
+                return est_chargelevel
 
 
 def print_info(wittypi):

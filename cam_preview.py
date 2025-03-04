@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Show OAK camera livestream.
 
 Source:   https://github.com/maxsitt/insect-detect
@@ -28,7 +26,7 @@ import time
 import cv2
 import depthai as dai
 
-from utils.oak_cam import convert_cm_lens_position
+from utils.oak import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()

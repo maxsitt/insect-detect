@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Save HQ frames from OAK camera.
 
 Source:   https://github.com/maxsitt/insect-detect
@@ -40,8 +38,8 @@ import cv2
 import depthai as dai
 import psutil
 
-from utils.general import save_encoded_frame
-from utils.oak_cam import convert_cm_lens_position
+from utils.data import save_encoded_frame
+from utils.oak import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()

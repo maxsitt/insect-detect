@@ -34,6 +34,12 @@ Install all required dependencies for RPi + OAK:
 wget -qO- https://raw.githubusercontent.com/maxsitt/insect-detect/main/install_dependencies_oak.sh | sudo bash
 ```
 
+Install and configure [Rclone](https://rclone.org/docs/) if you want to use the upload feature:
+
+``` bash
+wget -qO- https://rclone.org/install.sh | sudo bash
+```
+
 Download the `insect-detect` GitHub repo:
 
 ``` bash
@@ -103,33 +109,37 @@ section for more details about the scripts and tips on possible software modific
 ## Processing pipeline
 
 > [!NOTE]
-> The new version of the processing pipeline (November 2024) differs to the descriptions in the
-> PLOS ONE paper and on the documentation website (will be updated soon). Please refer to the
-> following points for an up-to-date description.
+> The latest version of the processing pipeline (November 2024) differs to the descriptions
+> in the PLOS ONE paper and on the documentation website. Please refer to the following
+> points for an up-to-date description.
+
+All relevant configuration parameters can be modified in the
+[`configs/config_custom.yaml`](https://github.com/maxsitt/insect-detect/tree/main/configs/config_default.yaml) file.
 
 Processing pipeline for the
 [`yolo_tracker_save_hqsync.py`](https://github.com/maxsitt/insect-detect/blob/main/yolo_tracker_save_hqsync.py)
 script that can be used for automated insect monitoring:
 
 - A custom **YOLO insect detection model** is run in real time on device (OAK) and uses a
-  continuous stream of downscaled LQ frames (default: 320x320 px) as input
+  continuous stream of downscaled LQ frames as input (default: 320x320 px at 20 fps).
 - An **object tracker** uses the bounding box coordinates of detected insects to assign a unique
-  tracking ID to each individual present in the frame and track its movement through time
-- The object tracker (+ model) output from inference on LQ frames is synchronized with
-  **MJPEG-encoded HQ frames** (default: 3840x2160 px) on device (OAK) using the respective timestamps
-- The encoded HQ frames are saved to the Raspberry Pi's SD card at the specified **capture interval**
-  (default: 1 second) if an insect is detected and tracked and independent of detections at the
-  specified timelapse interval (default: 10 minutes)
+  tracking ID to each individual present in the frame and track its movement through time.
+- The tracker + model output from inference on LQ frames is synchronized with
+  **MJPEG-encoded HQ frames** (default: 3840x2160 px) on device (OAK) using the respective timestamps.
+- The encoded HQ frames are saved to the microSD card at the configured intervals if
+  an insect is detected (default: 1 s) and independent of detections (default: 10 min).
 - Corresponding **metadata** from the detection model and tracker output (including timestamp, label,
   confidence score, tracking ID, tracking status and bounding box coordinates) is saved to a
-  metadata .csv file for each detected and tracked insect at the specified capture interval
+  metadata .csv file for each detected and tracked insect at the configured interval.
 - The metadata can be used to **crop detected insects** from the HQ frames and save them as individual
-  .jpg images and/or save a copy of the frame with overlays. Depending on the post-processing settings,
-  the original HQ frames will be optionally deleted after the processing to save storage space
+  .jpg images. Depending on the post-processing configuration, the original HQ frames will be optionally deleted after the processing to save storage space.
 - During the recording, a maximum pipeline speed of **~19 FPS** for 4K resolution (3840x2160) and
   **~42 FPS** for 1080p resolution (1920x1080) can be reached if the capture interval is set to 0
-  and the camera frame rate is adjusted accordingly
-- With default settings, the new pipeline consumes **~3.8 W** during recording (previous version: ~4.4 W)
+  and the camera frame rate is adjusted accordingly.
+- With the default configuration, the recording pipeline consumes **~3.8 W** of power.
+- If a power management board (Witty Pi 4 L3V7 or PiJuice Zero) is connected and enabled in the
+  configuration, intelligent power management is activated which includes battery charge level
+  monitoring and conditional recording durations.
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="800">
 

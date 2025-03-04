@@ -1,80 +1,52 @@
-#!/usr/bin/env python3
-
-"""Save HQ frame + associated metadata from OAK camera if object is detected and tracked.
+"""Save HQ frame from OAK camera + synced metadata from model and tracker if object is detected.
 
 Source:   https://github.com/maxsitt/insect-detect
 License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
 Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
-- write info and error (+ traceback) messages to log file
-- shut down Raspberry Pi without recording if free disk space
-  is lower than the specified threshold (default: 1000 MB)
-- create a directory for each day and recording interval where images + metadata + logs are stored
-- run a custom YOLO object detection model (.blob format) on-device (Luxonis OAK)
-  -> inference on downscaled + stretched/cropped LQ frames (default: 320x320 px)
+Run this script with the Python interpreter from the virtual environment where you installed the
+required packages, e.g. with 'env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py'.
+
+Modify the "configs/config_custom.yaml" file to change the settings that are used in
+this Python script. Refer to the "configs/config_default.yaml" for the default settings.
+
+Optional arguments:
+'-config' set path to YAML file that contains all configuration parameters
+          -> e.g. '-config configs/config_custom.yaml' to use custom config file
+
+- load YAML file with configuration parameters and JSON file with detection model parameters
+- write info, warning and error (+ traceback) messages to log file
+- initialize power manager if enabled in config (Witty Pi 4 L3V7 or PiJuice Zero)
+- shut down Raspberry Pi without recording if free disk space or
+  battery charge level is lower than the configured threshold
+- duration of each recording session conditional on current battery charge level (if enabled)
+  -> increases efficiency of battery usage and can prevent gaps in recordings
+- create a directory for each day and recording session to store images, metadata, logs and configs
+- run a custom YOLO object detection model (.blob format) on device (Luxonis OAK)
+  -> inference on downscaled + stretched/cropped LQ frames
 - use an object tracker to track detected objects and assign unique tracking IDs
-  -> accuracy depends on object motion speed and inference speed of the detection model
-- synchronize tracker output (including model output) from inference on LQ frames with
-  MJPEG-encoded HQ frames (default: 3840x2160 px) on-device using the respective timestamps
+  -> accuracy depends on camera fps, inference speed of the detection model and object motion speed
+- synchronize tracker output (including model output) from inference on LQ frames
+  with MJPEG-encoded HQ frames on device (OAK) using the respective timestamps
   -> maximum pipeline speed (including saving HQ frames):
      full FOV (16:9):    ~19 FPS (3840x2160) | ~42 FPS (1920x1080)
      reduced FOV (~1:1): ~29 FPS (2176x2160) | ~42 FPS (1088x1080)
-- save MJPEG-encoded HQ frames to .jpg at specified intervals if object is detected
-  and tracked (default: 1 s) and independent of detections (default: 600 s)
-- save corresponding metadata from tracker and model output (time, label, confidence,
-  tracking ID, tracking status, relative bbox coordinates) to metadata .csv file
-- write info about recording interval (rec ID, start/end time, duration,
-  number of unique tracking IDs, free disk space) to 'record_log.csv' file
-- shut down Raspberry Pi after recording interval is finished or if free disk space
-  drops below the specified threshold or if an error occurs
-- optional arguments:
-  '-rec'  set recording time in minutes (default: 60)
-          -> e.g. '-rec 5' for 5 min recording time
-  '-res'  set camera resolution for HQ frames
-          default:  4K resolution    -> 3840x2160 px, cropped from 12MP  ('-res 4k')
-          optional: 1080p resolution -> 1920x1080 px, downscaled from 4K ('-res 1080p')
-  '-fov'  default:  stretch frames to square for model input ('-fov stretch')
-                    -> FOV is preserved, only aspect ratio of LQ frames is changed (adds distortion)
-                    -> HQ frame resolution: 3840x2160 px (default) or 1920x1080 px ('-res 1080p')
-          optional: crop frames to square for model input ('-fov crop')
-                    -> FOV is reduced due to cropping of LQ and HQ frames (no distortion)
-                    -> HQ frame resolution: 2176x2160 px (default) or 1088x1080 px ('-res 1080p')
-  '-cpi'  set capture interval in seconds at which HQ frame + associated metadata is saved
-          if object is currently detected and tracked (default: 1)
-          -> e.g. '-cpi 0.1' for 0.1 s interval (~10 FPS) or '-cpi 3' for 3 s interval (~0.33 FPS)
-  '-tli'  set time lapse interval in seconds at which HQ frame is saved
-          independent of detected and tracked objects (default: 600)
-          -> e.g. '-tli 60' for 1 min time lapse interval
-          -> can be used to capture images for training data collection or as control mechanism
-  '-af'   set auto focus range in cm (min - max distance to camera)
-          -> e.g. '-af 14 20' to restrict auto focus range to 14-20 cm
-  '-mf'   set manual focus position in cm (distance to camera)
-          -> e.g. '-mf 14' to set manual focus position to 14 cm
-  '-ae'   use bounding box coordinates from detections to set auto exposure region
-          -> can improve image quality of detections in certain lighting conditions
-  '-log'  write RPi CPU + OAK chip temperature and RPi available memory (MB) +
-          CPU utilization (%) to .csv file at specified interval (default: 30 s)
-  '-post' set post-processing method(s) for saved HQ frames
-          -> e.g. '-post crop delete' to save cropped detections and delete original HQ frames
-          -> several methods can be combined ('delete' requires 'crop' or 'overlay')
-             'crop':    crop detections from HQ frames and save as individual .jpg images
-             'overlay': draw overlays (bbox + info) on HQ frames and save copy as .jpg image
-             'delete':  delete original HQ frames after processing
-          -> increases on-device processing time and power consumption
-  '-crop' default:  save cropped detections with aspect ratio 1:1 ('-crop square')
-                    -> increases bbox size on both sides of the minimum dimension,
-                       or only on one side if object is localized at frame margin
-                    -> can increase classification accuracy by avoiding stretching of the
-                       cropped detection during resizing for classification inference
-          optional: keep original bbox size with variable aspect ratio ('-crop tight')
-                    -> no additional background information is added but cropped detection
-                       can be stretched during resizing for classification inference
-  '-arx'  archive all captured data + logs and manage disk space
-          -> increases file transfer speed (microSD to computer or upload to cloud)
-          -> increases on-device processing time and power consumption
-  '-ul'   upload archived data to cloud storage provider using Rclone
-          -> increases on-device processing time and power consumption
+- save MJPEG-encoded HQ frames to .jpg at configured intervals
+  if object is detected (trigger capture) and independent of detections (timelapse capture)
+- save corresponding metadata from tracker and model output to metadata .csv file
+  (time, label, confidence, tracking ID, tracking status, relative bbox coordinates)
+- stop recording session and shut down Raspberry Pi if either:
+  - configured recording duration is reached
+  - free disk space drops below configured threshold
+  - battery charge level drops below configured threshold for three times (if enabled)
+  - recording is stopped by external trigger (e.g. button press)
+  - error occurs during recording
+- write info about recording session to record log .csv file (rec ID, start/end time,
+  duration, number of unique tracking IDs, free disk space, battery charge level)
+- post-process saved HQ frames based on configured methods (if enabled)
+- archive all captured data + logs/configs and manage disk space (if enabled)
+- upload archived data to cloud storage provider (if enabled)
 
 partly based on open source scripts available at https://github.com/luxonis
 """
@@ -85,6 +57,7 @@ import json
 import logging
 import socket
 import subprocess
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -94,172 +67,163 @@ import depthai as dai
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from utils.general import archive_data, save_encoded_frame, upload_data
+from utils.config import parse_json, parse_yaml
+from utils.data import archive_data, save_encoded_frame, upload_data
 from utils.log import record_log, save_logs
-from utils.oak_cam import convert_bbox_roi, convert_cm_lens_position
+from utils.oak import convert_bbox_roi, convert_cm_lens_position
 from utils.post import process_images
+from utils.power import init_power_manager
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
-group = parser.add_mutually_exclusive_group()
-parser.add_argument("-rec", "--recording_time", type=int, default=60, metavar="MINUTES",
-    help="Set recording time in minutes (default: 60).")
-parser.add_argument("-res", "--resolution", type=str, choices=["4k", "1080p"], default="4k",
-    help="Set camera resolution (default: 4k).")
-parser.add_argument("-fov", "--field_of_view", type=str, choices=["stretch", "crop"], default="stretch",
-    help=("Stretch frames to square and preserve FOV ('stretch') or "
-          "crop frames to square and reduce FOV ('crop') (default: 'stretch')."))
-parser.add_argument("-cpi", "--capture_interval", type=float, default=1, metavar="SECONDS",
-    help=("Set time interval in seconds at which HQ frame + associated metadata "
-          "is saved if object is currently detected and tracked (default: 1)."))
-parser.add_argument("-tli", "--timelapse_interval", type=float, default=600, metavar="SECONDS",
-    help=("Set time interval in seconds at which HQ frame is saved "
-          "independent of detected and tracked objects (default: 600)."))
-group.add_argument("-af", "--auto_focus_range", type=int, nargs=2, metavar=("CM_MIN", "CM_MAX"),
-    help="Set auto focus range in cm (min - max distance to camera).")
-group.add_argument("-mf", "--manual_focus", type=int, metavar="CM",
-    help="Set manual focus position in cm (distance to camera).")
-parser.add_argument("-ae", "--auto_exposure_region", action="store_true",
-    help="Use bounding box coordinates from detections to set auto exposure region.")
-parser.add_argument("-log", "--save_logs", action="store_true",
-    help=("Write RPi CPU + OAK chip temperature and RPi available memory (MB) + "
-          "CPU utilization (%%) to .csv file."))
-parser.add_argument("-post", "--post_processing", type=str, nargs="+", choices=["crop", "overlay", "delete"],
-    help="Set post-processing method(s) for saved HQ frames.", metavar="METHOD")
-parser.add_argument("-crop", "--crop_method", type=str, choices=["square", "tight"], default="square",
-    help=("Save cropped detections with aspect ratio 1:1 ('square') or "
-          "keep original bbox size with variable aspect ratio ('tight') (default: 'square')."))
-parser.add_argument("-arx", "--archive_data", action="store_true",
-    help="Archive all captured data + logs and manage disk space.")
-parser.add_argument("-ul", "--upload_data", action="store_true",
-    help="Upload archived data to cloud storage provider.")
+parser.add_argument("-config", type=str, default="configs/config_default.yaml",
+    help="Set path to YAML file with configuration parameters.")
 args = parser.parse_args()
 
-# Set path to directory where all captured data will be stored (images + metadata + logs)
-DATA_PATH = Path.home() / "insect-detect" / "data"
+# Set camera trap ID (default: hostname)
+CAM_ID = socket.gethostname()
+
+# Set base path (default: "insect-detect" directory)
+BASE_PATH = Path.home() / "insect-detect"
+
+# Create directory where all data will be stored (images, metadata, logs, configs)
+DATA_PATH = BASE_PATH / "data"
 DATA_PATH.mkdir(parents=True, exist_ok=True)
 
-# Set file paths to the detection model and corresponding config JSON
-MODEL_PATH = Path.home() / "insect-detect" / "models" / "yolov5n_320_openvino_2022.1_4shave.blob"
-CONFIG_PATH = Path.home() / "insect-detect" / "models" / "json" / "yolov5_v7_320.json"
-
-# Set camera trap ID
-CAM_ID = socket.gethostname()  # default: hostname
-
-# Set camera frame rate
-FPS = 20  # default: 20 FPS
-
-# Set minimum free disk space threshold required to start and continue a recording
-MIN_DISKSPACE = 1000  # default: 1000 MB
-
-# Set low free disk space threshold up to which no original data will be removed if "-arx" is used
-LOW_DISKSPACE = 5000  # default: 5000 MB
-
-# Set time interval at which logs are saved to .csv file if "-log" is used
-LOG_INT = 30  # default: 30 seconds
-
-# Set time interval at which free disk space is checked during recording
-FREE_SPACE_INT = 30  # default: 30 seconds
-
-# Set time interval at which HQ frame + metadata is saved if object is detected and tracked
-CAPTURE_INT = args.capture_interval  # default: 1 second
-
-# Set time interval at which HQ frame is saved independent of detected and tracked objects
-TIMELAPSE_INT = args.timelapse_interval  # default: 600 seconds (= 10 minutes)
-
-# Set recording time
-REC_TIME = args.recording_time * 60  # default: 60 minutes
-
-# Set logging level and format, write logs to file
-script_name = Path(__file__).stem
+# Set logging levels and format, write logs to file
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s",
-                    filename=f"{DATA_PATH}/{script_name}_log.log", encoding="utf-8")
+                    filename=f"{DATA_PATH}/yolo_tracker_save_hqsync.log", encoding="utf-8")
 logger = logging.getLogger()
 logger.info("-------- Logger initialized --------")
 logging.getLogger("apscheduler").setLevel(logging.WARNING)  # decrease apscheduler logging level
-logging.getLogger("tzlocal").setLevel(logging.ERROR)  # suppress timezone warning (Debian Bookworm)
+logging.getLogger("tzlocal").setLevel(logging.ERROR)        # suppress timezone warning
 
-# Shut down Raspberry Pi if free disk space (MB) is lower than threshold
+# Parse configuration files
+config = parse_yaml(BASE_PATH / args.config)
+config_model = parse_json(BASE_PATH / config.detection.model.config)
+
+# Extract some frequently used configuration parameters
+PWR_MGMT = config.powermanager.enabled
+PWR_MGMT_MODEL = config.powermanager.model if PWR_MGMT else None
+CHARGE_MIN = config.powermanager.charge_min if PWR_MGMT else None
+CHARGE_CHECK = config.powermanager.charge_check if PWR_MGMT else None
+DISK_MIN = config.storage.disk_min
+DISK_CHECK = config.storage.disk_check
+RES_HQ = (config.camera.resolution.width, config.camera.resolution.height)
+RES_LQ = (config.detection.resolution.width, config.detection.resolution.height)
+CAP_INT_DET = config.recording.capture_detection.interval
+CAP_INT_TL = config.recording.capture_timelapse.interval
+EXP_REGION = config.detection.exposure_region.enabled
+
+# Initialize power manager (Witty Pi 4 L3V7 or PiJuice Zero - None if disabled)
+try:
+    get_chargelevel, get_power_info, external_shutdown = init_power_manager(PWR_MGMT_MODEL)
+    chargelevel_start = get_chargelevel() if PWR_MGMT else None
+except Exception:
+    logger.exception("Error during initialization of power manager, disabling power management")
+    PWR_MGMT = False
+    PWR_MGMT_MODEL, CHARGE_MIN, CHARGE_CHECK, chargelevel_start = None, None, None, None
+    get_chargelevel, get_power_info = lambda: None, lambda: {}
+    external_shutdown = threading.Event()
+
+# Check free disk space (MB) and battery charge level (%) before starting recording session
 disk_free = round(psutil.disk_usage("/").free / 1048576)
-if disk_free < MIN_DISKSPACE:
-    logger.info("Shut down without recording | Free disk space: %s MB", disk_free)
+if disk_free < DISK_MIN:
+    logger.warning("Shut down without recording due to low disk space: %s MB", disk_free)
     subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+if PWR_MGMT:
+    if (chargelevel_start != "USB_C_IN" and chargelevel_start < CHARGE_MIN) or chargelevel_start == "NA":
+        logger.warning("Shut down without recording due to low charge level: %s%%", chargelevel_start)
+        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+
+# Set duration of recording session (*60 to convert from min to s)
+if PWR_MGMT:
+    if chargelevel_start == "USB_C_IN" or chargelevel_start >= 70:
+        REC_TIME = config.recording.duration.battery.high * 60
+    elif 50 <= chargelevel_start < 70:
+        REC_TIME = config.recording.duration.battery.medium * 60
+    elif 30 <= chargelevel_start < 50:
+        REC_TIME = config.recording.duration.battery.low * 60
+    else:
+        REC_TIME = config.recording.duration.battery.minimal * 60
+else:
+    REC_TIME = config.recording.duration.default * 60
 
 # Get last recording ID from text file and increment by 1 (create text file for first recording)
 rec_id_file = DATA_PATH / "last_rec_id.txt"
 rec_id = int(rec_id_file.read_text(encoding="utf-8")) + 1 if rec_id_file.exists() else 1
 rec_id_file.write_text(str(rec_id), encoding="utf-8")
 
-# Create directory per day (date) and recording interval (datetime) to save images + metadata + logs
+# Create directory per day (date) and recording session (datetime)
 timestamp_dir = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 save_path = DATA_PATH / timestamp_dir[:10] / timestamp_dir
 save_path.mkdir(parents=True, exist_ok=True)
 
-# Get detection model metadata from config JSON
-with CONFIG_PATH.open(encoding="utf-8") as config_json:
-    config = json.load(config_json)
-nn_config = config.get("nn_config", {})
-nn_metadata = nn_config.get("NN_specific_metadata", {})
-classes = nn_metadata.get("classes", {})
-coordinates = nn_metadata.get("coordinates", {})
-anchors = nn_metadata.get("anchors", {})
-anchor_masks = nn_metadata.get("anchor_masks", {})
-iou_threshold = nn_metadata.get("iou_threshold", {})
-confidence_threshold = nn_metadata.get("confidence_threshold", {})
-nn_mappings = config.get("mappings", {})
-labels = nn_mappings.get("labels", {})
+# Save configurations of the current recording session as JSON files
+config_path = save_path / f"{timestamp_dir}_{Path(args.config).stem}.json"
+config_model_path = save_path / f"{timestamp_dir}_{Path(config.detection.model.config).stem}.json"
+json.dump(config, config_path.open("w", encoding="utf-8"), indent=2)
+json.dump(config_model, config_model_path.open("w", encoding="utf-8"), indent=2)
 
 # Create depthai pipeline
 pipeline = dai.Pipeline()
 
 # Create and configure color camera node
 cam_rgb = pipeline.create(dai.node.ColorCamera)
-cam_rgb.setFps(FPS)  # frames per second available for auto focus/exposure and model input
+cam_rgb.setFps(config.camera.fps)  # frames per second available for focus/exposure and model input
 cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-if args.resolution == "1080p":
-    cam_rgb.setIspScale(1, 2)     # downscale 4K to 1080p resolution -> HQ frames (16:9)
-cam_rgb.setPreviewSize(320, 320)  # downscale frames for model input -> LQ frames (1:1)
-if args.field_of_view == "stretch":
-    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch LQ frames to square for model input
-elif args.field_of_view == "crop" and args.resolution == "4k":
-    cam_rgb.setVideoSize(2176, 2160)  # crop LQ and HQ frames to square
-elif args.field_of_view == "crop" and args.resolution == "1080p":
-    cam_rgb.setVideoSize(1088, 1080)  # width must be multiple of 32 for MJPEG encoder
+SENSOR_RES = cam_rgb.getResolutionSize()
 cam_rgb.setInterleaved(False)  # planar layout
 cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
-SENSOR_RES = cam_rgb.getResolutionSize()
 
-if args.auto_focus_range:
-    # Convert cm to lens position values and set auto focus range
-    lens_pos_min = convert_cm_lens_position(args.auto_focus_range[1])
-    lens_pos_max = convert_cm_lens_position(args.auto_focus_range[0])
-    cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
-elif args.manual_focus:
-    # Convert cm to lens position value and set manual focus position
-    lens_pos = convert_cm_lens_position(args.manual_focus)
-    cam_rgb.initialControl.setManualFocus(lens_pos)
+if RES_HQ == (1920, 1080):
+    cam_rgb.setIspScale(1, 2)      # use ISP to downscale 4K to 1080p resolution -> HQ frames
+elif RES_HQ != (3840, 2160):
+    cam_rgb.setVideoSize(*RES_HQ)  # crop to configured HQ resolution -> HQ frames
+cam_rgb.setPreviewSize(*RES_LQ)    # downscale frames for model input -> LQ frames
+if abs(RES_HQ[0] / RES_HQ[1] - 1) > 0.01:     # check if HQ resolution is not ~1:1 aspect ratio
+    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch LQ frames to square for model input
 
-# Configure ISP settings (default: 1, range: 0-4)
-# -> setting Sharpness and LumaDenoise to 0 can reduce artifacts in some cases
-cam_rgb.initialControl.setSharpness(1)
-cam_rgb.initialControl.setLumaDenoise(1)
-cam_rgb.initialControl.setChromaDenoise(1)
+if config.camera.focus.mode == "range":
+    # Set auto focus range using either distance to camera (cm) or lens position (0-255)
+    if config.camera.focus.distance.enabled:
+        lens_pos_min = convert_cm_lens_position(config.camera.focus.distance.range.max)
+        lens_pos_max = convert_cm_lens_position(config.camera.focus.distance.range.min)
+        cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+    elif config.camera.focus.lens_position.enabled:
+        lens_pos_min = config.camera.focus.lens_position.range.min
+        lens_pos_max = config.camera.focus.lens_position.range.max
+        cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
+elif config.camera.focus.mode == "manual":
+    # Set manual focus position using either distance to camera (cm) or lens position (0-255)
+    if config.camera.focus.distance.enabled:
+        lens_pos = convert_cm_lens_position(config.camera.focus.distance.manual)
+        cam_rgb.initialControl.setManualFocus(lens_pos)
+    elif config.camera.focus.lens_position.enabled:
+        lens_pos = config.camera.focus.lens_position.manual
+        cam_rgb.initialControl.setManualFocus(lens_pos)
+
+# Set ISP configuration parameters
+cam_rgb.initialControl.setSharpness(config.camera.isp.sharpness)
+cam_rgb.initialControl.setLumaDenoise(config.camera.isp.luma_denoise)
+cam_rgb.initialControl.setChromaDenoise(config.camera.isp.chroma_denoise)
 
 # Create and configure video encoder node and define input
 encoder = pipeline.create(dai.node.VideoEncoder)
 encoder.setDefaultProfilePreset(1, dai.VideoEncoderProperties.Profile.MJPEG)
-encoder.setQuality(80)  # JPEG quality (0-100)
+encoder.setQuality(config.camera.jpeg_quality)
 cam_rgb.video.link(encoder.input)  # HQ frames as encoder input
 
 # Create and configure YOLO detection network node and define input
 yolo = pipeline.create(dai.node.YoloDetectionNetwork)
-yolo.setBlobPath(MODEL_PATH)
-yolo.setNumClasses(classes)
-yolo.setCoordinateSize(coordinates)
-yolo.setAnchors(anchors)
-yolo.setAnchorMasks(anchor_masks)
-yolo.setIouThreshold(iou_threshold)
-yolo.setConfidenceThreshold(confidence_threshold)
+labels = config_model.mappings.labels
+yolo.setBlobPath(BASE_PATH / config.detection.model.weights)
+yolo.setConfidenceThreshold(config.detection.conf_threshold)
+yolo.setIouThreshold(config.detection.iou_threshold)
+yolo.setNumClasses(config_model.nn_config.NN_specific_metadata.classes)
+yolo.setCoordinateSize(config_model.nn_config.NN_specific_metadata.coordinates)
+yolo.setAnchors(config_model.nn_config.NN_specific_metadata.anchors)
+yolo.setAnchorMasks(config_model.nn_config.NN_specific_metadata.anchor_masks)
 yolo.setNumInferenceThreads(2)
 cam_rgb.preview.link(yolo.input)  # downscaled + stretched/cropped LQ frames as model input
 yolo.input.setBlocking(False)     # non-blocking input stream
@@ -290,25 +254,25 @@ xout_tracker = pipeline.create(dai.node.XLinkOut)
 xout_tracker.setStreamName("track")
 demux.outputs["tracker"].link(xout_tracker.input)  # synced tracker + model output
 
-if args.auto_exposure_region:
+if EXP_REGION:
     # Create XLinkIn node to send control commands to color camera node
     xin_ctrl = pipeline.create(dai.node.XLinkIn)
     xin_ctrl.setStreamName("control")
     xin_ctrl.out.link(cam_rgb.inputControl)
 
 try:
-    # Connect to OAK device and start pipeline in USB2 mode
-    with (dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device,
-          open(save_path / f"{timestamp_dir}_metadata.csv", "a", buffering=1, encoding="utf-8") as metadata_file,
+    # Create metadata .csv file, connect to OAK device and start pipeline in USB2 mode
+    metadata_path = save_path / f"{timestamp_dir}_metadata.csv"
+    with (open(metadata_path, "a", buffering=1, encoding="utf-8") as metadata_file,
+          dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device,
           ThreadPoolExecutor(max_workers=3) as executor):
 
         # Create output queues to get the synchronized HQ frames and tracker + model output
         q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
         q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
-        if args.auto_exposure_region:
-            # Create input queue to send control commands to OAK camera
-            q_ctrl = device.getInputQueue(name="control", maxSize=4, blocking=False)
+        # Create input queue to send control commands to OAK camera (if exposure_region is enabled)
+        q_ctrl = device.getInputQueue(name="control", maxSize=4, blocking=False) if EXP_REGION else None
 
         # Write header to metadata .csv file
         metadata_writer = csv.DictWriter(metadata_file, fieldnames=[
@@ -317,39 +281,49 @@ try:
         ])
         metadata_writer.writeheader()
 
-        if args.save_logs:
-            # Write RPi + OAK info to .csv file at specified interval
+        if config.logging.enabled:
+            # Write RPi + OAK info to .csv file at configured interval
             scheduler = BackgroundScheduler()
-            scheduler.add_job(save_logs, "interval", seconds=LOG_INT, id="log",
-                              args=[save_path, CAM_ID, rec_id, device],
+            scheduler.add_job(save_logs, "interval", seconds=config.logging.interval, id="log",
+                              args=[save_path, CAM_ID, rec_id, device, get_power_info],
                               next_run_time=datetime.now() + timedelta(seconds=2))
             scheduler.start()
 
         # Wait for 2 seconds to let camera adjust auto focus and exposure
         time.sleep(2)
 
-        # Write info on start of recording to log file
-        logger.info("Cam ID: %s | Rec ID: %s | Rec time: %s min", CAM_ID, rec_id, int(REC_TIME / 60))
+        # Write info on start of recording session to log file
+        if PWR_MGMT:
+            logger.info("Recording %s started | Duration: %s min | Free disk space: %s MB | Charge level: %s%%",
+                        rec_id, round(REC_TIME / 60), disk_free, chargelevel_start)
+        else:
+            logger.info("Recording %s started | Duration: %s min | Free disk space: %s MB",
+                        rec_id, round(REC_TIME / 60), disk_free)
 
         # Create variables for start of recording and capture/check events
         rec_start = datetime.now()
         start_time = time.monotonic()
-        last_capture = start_time - TIMELAPSE_INT  # capture first frame immediately at start
-        next_capture = start_time + CAPTURE_INT
+        last_capture = start_time - CAP_INT_TL  # capture first frame immediately at start
+        next_capture = start_time + CAP_INT_DET
         last_disk_check = start_time
+        last_charge_check = start_time if PWR_MGMT else None
+        chargelevel = chargelevel_start if PWR_MGMT else None
+        chargelevels = []
 
         try:
-            # Record until recording time is finished
-            # Stop recording early if free disk space drops below threshold
-            while time.monotonic() < start_time + REC_TIME and disk_free > MIN_DISKSPACE:
+            # Run recording until either:
+            # - configured recording duration (REC_TIME) is reached
+            # - free disk space drops below threshold (DISK_MIN)
+            # - battery charge level drops below threshold (CHARGE_MIN) for three times
+            while time.monotonic() < start_time + REC_TIME and disk_free > DISK_MIN and len(chargelevels) < 3:
 
-                # Activate trigger to save HQ frame based on current time and specified intervals
+                # Activate HQ frame capture events based on current time and configured intervals
                 track_active = False
                 current_time = time.monotonic()
                 trigger_capture = current_time >= next_capture
-                trigger_timelapse = current_time - last_capture >= TIMELAPSE_INT
+                timelapse_capture = current_time >= last_capture + CAP_INT_TL
 
-                if q_frame.has() and (trigger_capture or trigger_timelapse):
+                if q_frame.has() and (trigger_capture or timelapse_capture):
                     # Get MJPEG-encoded HQ frame (synced with tracker output)
                     timestamp = datetime.now()
                     timestamp_iso = timestamp.isoformat()
@@ -385,72 +359,106 @@ try:
                                 }
                                 metadata_writer.writerow(metadata)
 
-                                if args.auto_exposure_region and tracklet_status == "TRACKED" and tracklet is tracklets[-1]:
+                                if EXP_REGION and tracklet_status == "TRACKED" and tracklet is tracklets[-1]:
                                     # Use model bbox from latest active tracking ID to set auto exposure region
                                     roi_x, roi_y, roi_w, roi_h = convert_bbox_roi(bbox, SENSOR_RES)
                                     q_ctrl.send(dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h))
 
-                    if track_active or trigger_timelapse:
+                    if track_active or timelapse_capture:
                         # Save MJPEG-encoded HQ frame to .jpg file in separate thread
                         executor.submit(save_encoded_frame, save_path, timestamp_str, frame_hq)
                         last_capture = current_time
-                        next_capture = current_time + CAPTURE_INT
+                        next_capture = current_time + CAP_INT_DET
 
-                        # Update free disk space (MB) at specified interval
-                        if current_time - last_disk_check >= FREE_SPACE_INT:
+                        # Update free disk space (MB) at configured interval
+                        if current_time >= last_disk_check + DISK_CHECK:
                             disk_free = round(psutil.disk_usage("/").free / 1048576)
                             last_disk_check = current_time
+
+                # Update charge level at configured interval and add to list if lower than threshold or not readable
+                if PWR_MGMT:
+                    if current_time >= last_charge_check + CHARGE_CHECK:
+                        chargelevel = get_chargelevel()
+                        if (chargelevel != "USB_C_IN" and chargelevel < CHARGE_MIN) or chargelevel == "NA":
+                            chargelevels.append(chargelevel)
+                        last_charge_check = current_time
 
                 # Sleep for a short duration to avoid busy waiting
                 time.sleep(0.02)
 
             # Write info on end of recording to log file
-            logger.info("Recording %s finished | Free disk space: %s MB", rec_id, disk_free)
+            rec_stop_disk = disk_free < DISK_MIN
+            rec_stop_charge = PWR_MGMT and len(chargelevels) >= 3
+            if rec_stop_disk:
+                logger.warning("Recording %s stopped early due to low disk space: %s MB", rec_id, disk_free)
+            elif rec_stop_charge:
+                logger.warning("Recording %s stopped early due to low charge level: %s%%", rec_id, chargelevel)
+            elif PWR_MGMT:
+                logger.info("Recording %s finished | Duration: %s min | Free disk space: %s MB | Charge level: %s%%",
+                            rec_id, round(REC_TIME / 60), disk_free, chargelevel)
+            else:
+                logger.info("Recording %s finished | Duration: %s min | Free disk space: %s MB",
+                            rec_id, round(REC_TIME / 60), disk_free)
 
         except Exception:
             logger.exception("Error during recording %s", rec_id)
         finally:
             # Write recording logs to .csv file
             rec_end = datetime.now()
-            record_log(save_path, CAM_ID, rec_id, rec_start, rec_end)
+            record_log(save_path, CAM_ID, rec_id, rec_start, rec_end, chargelevel_start, chargelevel)
 
             if "scheduler" in locals():
                 # Shut down scheduler (wait until currently executing jobs are finished)
                 scheduler.shutdown()
 
-    if args.post_processing:
-        if disk_free > MIN_DISKSPACE:
-            try:
-                # Post-process saved HQ frames based on specified methods
-                if any(save_path.glob("*.jpg")):
-                    processing_methods = set(args.post_processing)
-                    required_methods = {"crop", "overlay"}
-                    if required_methods.intersection(processing_methods):
-                        process_images(save_path, processing_methods, args.crop_method)
+    if config.post_processing.crop.enabled or config.post_processing.overlay.enabled:
+        if not rec_stop_disk and not rec_stop_charge:
+            power_ok = not PWR_MGMT or (chargelevel == "USB_C_IN" or chargelevel > CHARGE_MIN + 5)
+            if power_ok:
+                try:
+                    # Post-process saved HQ frames based on configured methods
+                    if next(save_path.glob("*.jpg"), None):
+                        processing_methods = {method for method in ["crop", "overlay", "delete"]
+                                              if getattr(config.post_processing, method).enabled}
+                        process_images(save_path, processing_methods, config.post_processing.crop.method)
                     logger.info("Post-processing of saved HQ frames finished")
-            except Exception:
-                logger.exception("Error during post-processing of saved HQ frames")
-        else:
-            logger.info("Shut down without post-processing | Free disk space: %s MB", disk_free)
+                except Exception:
+                    logger.exception("Error during post-processing of saved HQ frames")
+            else:
+                logger.warning("Skipped post-processing due to low charge level: %s%%", chargelevel)
+        elif rec_stop_disk:
+            logger.warning("Skipped post-processing as recording was stopped due to low disk space: %s MB", disk_free)
+        elif rec_stop_charge:
+            logger.warning("Skipped post-processing as recording was stopped due to low charge level: %s%%", chargelevel)
 
-    if args.archive_data or args.upload_data:
-        if disk_free > MIN_DISKSPACE:
-            try:
-                # Archive all captured data + logs and manage disk space
-                archive_path = archive_data(DATA_PATH, CAM_ID, LOW_DISKSPACE)
-                if args.upload_data:
-                    # Upload archived data to cloud storage provider
-                    upload_data(DATA_PATH, archive_path)
-                logger.info("Archiving/uploading of data finished")
-            except Exception:
-                logger.exception("Error during archiving/uploading of data")
-        else:
-            logger.info("Shut down without archiving/uploading | Free disk space: %s MB", disk_free)
+    if config.archive.enabled or config.upload.enabled:
+        if not rec_stop_disk and not rec_stop_charge:
+            power_ok = not PWR_MGMT or (chargelevel == "USB_C_IN" or chargelevel > CHARGE_MIN + 10)
+            if power_ok:
+                try:
+                    # Archive all captured data + logs/configs and manage disk space
+                    archive_path = archive_data(DATA_PATH, CAM_ID, config.archive.disk_low)
+                    logger.info("Archiving of data finished")
+                    if config.upload.enabled:
+                        # Upload archived data to cloud storage provider
+                        upload_data(DATA_PATH, archive_path, config.upload.content)
+                        logger.info("Uploading of data finished")
+                except Exception:
+                    logger.exception("Error during archiving/uploading of data")
+            else:
+                logger.warning("Skipped archiving/uploading due to low charge level: %s%%", chargelevel)
+        elif rec_stop_disk:
+            logger.warning("Skipped archiving/uploading as recording was stopped due to low disk space: %s MB", disk_free)
+        elif rec_stop_charge:
+            logger.warning("Skipped archiving/uploading as recording was stopped due to low charge level: %s%%", chargelevel)
 
 except KeyboardInterrupt:
-    logger.info("Recording %s stopped by Ctrl+C", rec_id)
+    logger.warning("Recording %s stopped by Ctrl+C", rec_id)
+except SystemExit:
+    logger.warning("Recording %s stopped by external trigger", rec_id)
 except Exception:
     logger.exception("Error during initialization of recording %s", rec_id)
 finally:
-    # Shut down Raspberry Pi
-    subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+    if not external_shutdown.is_set():
+        # Shut down Raspberry Pi
+        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

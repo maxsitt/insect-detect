@@ -109,8 +109,11 @@ def process_images(save_path, processing_methods, crop_method="square"):
     delete_original_images = "delete" in processing_methods
 
     # Load metadata and group by timestamp (= image)
+    required_columns = ["timestamp", "label", "track_ID", "x_min", "y_min", "x_max", "y_max"]
+    if draw_overlays:
+        required_columns.append("confidence")
     metadata_path = next(save_path.glob("*metadata.csv"))
-    metadata = pd.read_csv(metadata_path, encoding="utf-8")
+    metadata = pd.read_csv(metadata_path, usecols=required_columns, encoding="utf-8")
     metadata_grouped = metadata.groupby("timestamp")  # grouped metadata per image
 
     # Create directories for processed images

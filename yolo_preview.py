@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Show OAK camera livestream with detection model output.
 
 Source:   https://github.com/maxsitt/insect-detect
@@ -39,7 +37,7 @@ import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from utils.log import print_logs
-from utils.oak_cam import convert_bbox_roi, convert_cm_lens_position
+from utils.oak import convert_bbox_roi, convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()
@@ -60,7 +58,7 @@ args = parser.parse_args()
 
 # Set file paths to the detection model and corresponding config JSON
 MODEL_PATH = Path.home() / "insect-detect" / "models" / "yolov5n_320_openvino_2022.1_4shave.blob"
-CONFIG_PATH = Path.home() / "insect-detect" / "models" / "json" / "yolov5_v7_320.json"
+CONFIG_PATH = Path.home() / "insect-detect" / "models" / "yolov5n_320_openvino_2022.1_4shave.json"
 
 # Set camera frame rate
 FPS = 20  # default: 20 FPS

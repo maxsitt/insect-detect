@@ -1,0 +1,58 @@
+{
+    "model": {
+        "blob": "/insect-detect/models/yolov7tiny_320_openvino_2021.4_4shave.blob"
+    },
+    "nn_config": {
+        "output_format": "detection",
+        "NN_family": "YOLO",
+        "input_size": "320x320",
+        "NN_specific_metadata": {
+            "classes": 1,
+            "coordinates": 4,
+            "anchors": [
+                10,
+                13,
+                16,
+                30,
+                33,
+                23,
+                30,
+                61,
+                62,
+                45,
+                59,
+                119,
+                116,
+                90,
+                156,
+                198,
+                373,
+                326
+            ],
+            "anchor_masks": {
+                "side40": [
+                    0,
+                    1,
+                    2
+                ],
+                "side20": [
+                    3,
+                    4,
+                    5
+                ],
+                "side10": [
+                    6,
+                    7,
+                    8
+                ]
+            },
+            "iou_threshold": 0.5,
+            "confidence_threshold": 0.5
+        }
+    },
+    "mappings": {
+        "labels": [
+            "insect"
+        ]
+    }
+}

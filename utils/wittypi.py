@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Utility class for reading status information from Witty Pi 4 L3V7.
 
 Source:   https://github.com/maxsitt/insect-detect
@@ -18,7 +16,6 @@ Class:
             get_output_voltage(): Get the output voltage in V.
             get_output_current(): Get the output current in A.
             estimate_chargelevel(): Roughly estimate the battery charge level.
-
 Functions:
     print_info(): Print power mode, temperature, input/output voltage,
                   output current and estimated charge level.

@@ -22,6 +22,7 @@ CM_KEYS = tuple(CM_LENS_POSITIONS.keys())
 
 def convert_bbox_roi(bbox, sensor_res):
     """Convert bounding box coordinates to ROI (region of interest)."""
+
     def clamp(val, min_val, max_val):
         """Clamp a value between a minimum and a maximum value."""
         return max(min_val, min(val, max_val))

@@ -15,6 +15,9 @@
 # Install all required dependencies for RPi + OAK:
 # wget -qO- https://raw.githubusercontent.com/maxsitt/insect-detect/main/install_dependencies_oak.sh | sudo bash
 
+# Install and configure Rclone (https://rclone.org/docs/) if you want to use the upload feature:
+# wget -qO- https://rclone.org/install.sh | sudo bash
+
 # Download the insect-detect GitHub repo:
 # git clone https://github.com/maxsitt/insect-detect
 
@@ -34,6 +37,7 @@
 depthai==2.29.0.0
 opencv-python==4.7.0.72
 numpy==1.26.4
+PyYAML==6.0.2
 pandas==2.2.3
 psutil==7.0.0
 APScheduler==3.11.0

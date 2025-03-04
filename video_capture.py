@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Save video from OAK camera.
 
 Source:   https://github.com/maxsitt/insect-detect
@@ -33,7 +31,7 @@ import av
 import depthai as dai
 import psutil
 
-from utils.oak_cam import convert_cm_lens_position
+from utils.oak import convert_cm_lens_position
 
 # Define optional arguments
 parser = argparse.ArgumentParser()

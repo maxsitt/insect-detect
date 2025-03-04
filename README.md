@@ -114,7 +114,7 @@ section for more details about the scripts and tips on possible software modific
 > points for an up-to-date description.
 
 All relevant configuration parameters can be modified in the
-[`configs/config_custom.yaml`](https://github.com/maxsitt/insect-detect/tree/main/configs/config_default.yaml) file.
+[`configs/config_custom.yaml`](https://github.com/maxsitt/insect-detect/tree/main/configs/config_custom.yaml) file.
 
 Processing pipeline for the
 [`yolo_tracker_save_hqsync.py`](https://github.com/maxsitt/insect-detect/blob/main/yolo_tracker_save_hqsync.py)

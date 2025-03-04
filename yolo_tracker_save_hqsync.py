@@ -70,7 +70,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from utils.config import parse_json, parse_yaml
 from utils.data import archive_data, save_encoded_frame, upload_data
 from utils.log import record_log, save_logs
-from utils.oak import convert_bbox_roi, convert_cm_lens_position
+from utils.oak import convert_bbox_roi, convert_cm_lens_position, create_get_temp_oak
 from utils.post import process_images
 from utils.power import init_power_manager
 
@@ -107,6 +107,8 @@ PWR_MGMT = config.powermanager.enabled
 PWR_MGMT_MODEL = config.powermanager.model if PWR_MGMT else None
 CHARGE_MIN = config.powermanager.charge_min if PWR_MGMT else None
 CHARGE_CHECK = config.powermanager.charge_check if PWR_MGMT else None
+TEMP_OAK_MAX = config.oak.temp_max
+TEMP_OAK_CHECK = config.oak.temp_check
 DISK_MIN = config.storage.disk_min
 DISK_CHECK = config.storage.disk_check
 RES_HQ = (config.camera.resolution.width, config.camera.resolution.height)
@@ -281,11 +283,15 @@ try:
         ])
         metadata_writer.writeheader()
 
+        # Create function to get OAK chip temperature
+        get_temp_oak = create_get_temp_oak(device)
+        temp_oak = get_temp_oak()
+
         if config.logging.enabled:
             # Write RPi + OAK info to .csv file at configured interval
             scheduler = BackgroundScheduler()
             scheduler.add_job(save_logs, "interval", seconds=config.logging.interval, id="log",
-                              args=[save_path, CAM_ID, rec_id, device, get_power_info],
+                              args=[save_path, CAM_ID, rec_id, get_temp_oak, get_power_info],
                               next_run_time=datetime.now() + timedelta(seconds=2))
             scheduler.start()
 
@@ -305,17 +311,18 @@ try:
         start_time = time.monotonic()
         last_capture = start_time - CAP_INT_TL  # capture first frame immediately at start
         next_capture = start_time + CAP_INT_DET
+        last_temp_check = start_time
         last_disk_check = start_time
         last_charge_check = start_time if PWR_MGMT else None
         chargelevel = chargelevel_start if PWR_MGMT else None
         chargelevels = []
 
         try:
-            # Run recording until either:
-            # - configured recording duration (REC_TIME) is reached
-            # - free disk space drops below threshold (DISK_MIN)
-            # - battery charge level drops below threshold (CHARGE_MIN) for three times
-            while time.monotonic() < start_time + REC_TIME and disk_free > DISK_MIN and len(chargelevels) < 3:
+            # Run recording session until either:
+            while (time.monotonic() < start_time + REC_TIME and  # configured recording duration is reached
+                   disk_free > DISK_MIN and                      # free disk space drops below threshold
+                   temp_oak < TEMP_OAK_MAX and                   # OAK chip temperature exceeds threshold
+                   len(chargelevels) < 3):                       # charge level drops below threshold for three times
 
                 # Activate HQ frame capture events based on current time and configured intervals
                 track_active = False
@@ -375,6 +382,13 @@ try:
                             disk_free = round(psutil.disk_usage("/").free / 1048576)
                             last_disk_check = current_time
 
+                # Update OAK chip temperature at configured interval
+                if current_time >= last_temp_check + TEMP_OAK_CHECK:
+                    temp_oak = get_temp_oak()
+                    if temp_oak == "NA":
+                        temp_oak = 0  # set to 0 if "NA" is returned
+                    last_temp_check = current_time
+
                 # Update charge level at configured interval and add to list if lower than threshold or not readable
                 if PWR_MGMT:
                     if current_time >= last_charge_check + CHARGE_CHECK:
@@ -388,9 +402,12 @@ try:
 
             # Write info on end of recording to log file
             rec_stop_disk = disk_free < DISK_MIN
+            rec_stop_temp_oak = temp_oak >= TEMP_OAK_MAX
             rec_stop_charge = PWR_MGMT and len(chargelevels) >= 3
             if rec_stop_disk:
                 logger.warning("Recording %s stopped early due to low disk space: %s MB", rec_id, disk_free)
+            elif rec_stop_temp_oak:
+                logger.warning("Recording %s stopped early due to high OAK chip temperature: %s °C", rec_id, temp_oak)
             elif rec_stop_charge:
                 logger.warning("Recording %s stopped early due to low charge level: %s%%", rec_id, chargelevel)
             elif PWR_MGMT:

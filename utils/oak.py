@@ -8,7 +8,10 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 Functions:
     convert_bbox_roi(): Convert bounding box coordinates to ROI (region of interest).
     convert_cm_lens_position(): Convert centimeter value to OAK lens position value.
+    create_get_temp_oak(): Create a thread-safe function to get average OAK chip temperature.
 """
+
+import threading
 
 # Create dictionary containing centimeter values and corresponding OAK lens positions
 CM_LENS_POSITIONS = {
@@ -42,3 +45,20 @@ def convert_cm_lens_position(distance_cm):
     closest_cm = min(CM_KEYS, key=lambda k: abs(k - distance_cm))
 
     return CM_LENS_POSITIONS[closest_cm]
+
+
+def create_get_temp_oak(device):
+    """Create a thread-safe function to get average OAK chip temperature."""
+
+    temp_oak_lock = threading.Lock()
+
+    def get_temp_oak():
+        """Get average OAK chip temperature."""
+        with temp_oak_lock:
+            try:
+                temp_oak = round(device.getChipTemperature().average)
+            except RuntimeError:
+                temp_oak = "NA"
+        return temp_oak
+
+    return get_temp_oak

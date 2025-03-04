@@ -13,6 +13,9 @@ powermanager:
   model: wittypi    # Power management board model (options: wittypi, pijuice)
   charge_min: 20    # Minimum required battery charge level (%) to start/continue a recording
   charge_check: 30  # Time interval (seconds) for checking battery charge level during recording
+oak:
+  temp_max: 100     # Maximum allowed OAK chip temperature (°C) to continue a recording
+  temp_check: 30    # Time interval (seconds) for checking OAK chip temperature during recording
 storage:
   disk_min: 1000    # Minimum required free disk space (MB) to start/continue a recording
   disk_check: 60    # Time interval (seconds) for checking free disk space during recording

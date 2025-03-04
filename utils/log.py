@@ -29,7 +29,7 @@ def print_logs():
     logging.info("RPi CPU temperature:  %s °C\n", round(CPUTemperature().temperature))
 
 
-def save_logs(save_path, cam_id, rec_id, device, get_power_info=None):
+def save_logs(save_path, cam_id, rec_id, get_temp_oak, get_power_info=None):
     """Write system information to .csv file during recording.
 
     Write cam ID, recording ID, timestamp, RPi CPU + OAK chip temperature
@@ -40,17 +40,12 @@ def save_logs(save_path, cam_id, rec_id, device, get_power_info=None):
     log_path = save_path / f"{save_path.name}_system_log.csv"
 
     try:
-        temp_oak = round(device.getChipTemperature().average)
-    except RuntimeError:
-        temp_oak = "NA"
-
-    try:
         logs = {
             "cam_ID": cam_id,
             "rec_ID": rec_id,
             "timestamp": datetime.now().isoformat(),
             "temp_pi": round(CPUTemperature().temperature),
-            "temp_oak": temp_oak,
+            "temp_oak": get_temp_oak(),
             "pi_mem_available": round(psutil.virtual_memory().available / 1048576),
             "pi_cpu_used": psutil.cpu_percent(interval=None)
         }

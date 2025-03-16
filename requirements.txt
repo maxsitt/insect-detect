@@ -37,7 +37,9 @@
 depthai==2.29.0.0
 opencv-python==4.7.0.72
 numpy==1.26.4
+nicegui==2.12.1
 PyYAML==6.0.2
+ruamel.yaml==0.18.10
 pandas==2.2.3
 psutil==7.0.0
 APScheduler==3.11.0

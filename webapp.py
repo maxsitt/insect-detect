@@ -93,9 +93,9 @@ def create_pipeline():
         if RES_HQ_STREAM != (1280, 720):
             cam_rgb.setVideoSize(*RES_HQ_STREAM)
 
-    cam_rgb.setPreviewSize(*RES_LQ)  # downscale frames for model input -> LQ frames
-    if abs(RES_HQ_STREAM[0] / RES_HQ_STREAM[1] - 1) > 0.01:  # check if HQ resolution is not ~1:1 aspect ratio
-        cam_rgb.setPreviewKeepAspectRatio(False)             # stretch LQ frames to square for model input
+    cam_rgb.setPreviewSize(*RES_LQ)               # downscale frames for model input -> LQ frames
+    if abs(aspect_ratio_hq - 1) > 0.01:           # check if HQ resolution is not ~1:1 aspect ratio
+        cam_rgb.setPreviewKeepAspectRatio(False)  # stretch LQ frames to square for model input
 
     if config.camera.focus.mode == "range":
         if config.camera.focus.distance.enabled:
@@ -179,9 +179,11 @@ def setup_app():
     pipeline = create_pipeline()
     app.state.device = dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH)
 
-    # Create output queues
+    # Create output queues to get the synchronized HQ frames and tracker + model output
     app.state.q_frame = app.state.device.getOutputQueue(name="frame", maxSize=4, blocking=False)
     app.state.q_track = app.state.device.getOutputQueue(name="track", maxSize=4, blocking=False)
+
+    # Create input queue to send control commands to OAK camera
     app.state.q_ctrl = app.state.device.getInputQueue(name="control", maxSize=4, blocking=False)
 
     # Set relevant app.state variables
@@ -334,19 +336,24 @@ def setup_app():
         # Slider for auto focus range control
         with ui.column().classes("w-full gap-0"):
 
-            def set_focus_range():
-                """Set auto focus range of OAK camera."""
-                if app.state.focus_initialized:
-                    afr_ctrl = dai.CameraControl()
-                    afr_ctrl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
-                    afr_ctrl.setAutoFocusLensRange(app.state.lens_pos_range["min"], app.state.lens_pos_range["max"])
-                    app.state.q_ctrl.send(afr_ctrl)
-                    config_updates["camera"]["focus"]["lens_position"].update({"range": app.state.lens_pos_range})
-                else:
+            def preview_focus_range():
+                """Set manual focus position of OAK camera based on which focus range position is updated."""
+                if not hasattr(app.state, "previous_lens_pos_range"):
+                    app.state.previous_lens_pos_range = app.state.lens_pos_range
                     app.state.focus_initialized = True
+                    return
+
+                if app.state.previous_lens_pos_range["min"] != app.state.lens_pos_range["min"]:
+                    mf_ctrl = dai.CameraControl().setManualFocus(app.state.lens_pos_range["min"])
+                    app.state.q_ctrl.send(mf_ctrl)
+                elif app.state.previous_lens_pos_range["max"] != app.state.lens_pos_range["max"]:
+                    mf_ctrl = dai.CameraControl().setManualFocus(app.state.lens_pos_range["max"])
+                    app.state.q_ctrl.send(mf_ctrl)
+                config_updates["camera"]["focus"]["lens_position"].update({"range": app.state.lens_pos_range})
+                app.state.previous_lens_pos_range = app.state.lens_pos_range
 
             ui.label("Focus Range:").bind_visibility_from(app.state, "focus_range_enabled").classes("font-bold")
-            (ui.range(min=0, max=255, step=1, on_change=set_focus_range)
+            (ui.range(min=0, max=255, step=1, on_change=preview_focus_range)
              .bind_visibility_from(app.state, "focus_range_enabled")
              .bind_value(app.state, "lens_pos_range").props("label"))
 
@@ -372,9 +379,7 @@ def setup_app():
                             app.state.manual_focus_enabled = e.value == "manual"
                             app.state.focus_range_enabled = e.value == "range"
                             if e.value == "continuous":
-                                af_ctrl = dai.CameraControl()
-                                af_ctrl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
-                                #af_ctrl.setAutoFocusLensRange(0, 255)  # not working as expected
+                                af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
                                 app.state.q_ctrl.send(af_ctrl)
                             elif e.value == "manual":
                                 config_updates["camera"]["focus"]["lens_position"].update({"enabled": True})
@@ -426,15 +431,24 @@ def setup_app():
                             else:
                                 template[key] = value
 
-                    yaml = ruamel.yaml.YAML()
-                    yaml.width = 150
-                    yaml.preserve_quotes = True  # preserve all comments
-
                     config_default_path = BASE_PATH / "configs" / "config_default.yaml"
                     config_webapp_path = BASE_PATH / "configs" / "config_custom_webapp.yaml"
 
                     with open(config_default_path, "r", encoding="utf-8") as file:
-                        config_template = yaml.load(file)
+                        config_text = file.read()
+
+                    config_text = config_text.replace(
+                        "# Insect Detect - Default Configuration Settings", 
+                        "# Insect Detect - Custom Configuration Settings"
+                    ).replace(
+                        "# DO NOT MODIFY THIS DEFAULT CONFIG FILE - use \"config_custom.yaml\" for modifications",
+                        "# This custom config file was generated by the Insect Detect web app"
+                    )
+
+                    yaml = ruamel.yaml.YAML()
+                    yaml.width = 150
+                    yaml.preserve_quotes = True  # preserve all comments
+                    config_template = yaml.load(config_text)
 
                     update_nested_dict(config_template, config_updates)
 
@@ -463,7 +477,7 @@ def setup_app():
     ui.timer(1/FPS_WEBAPP, update_frame_and_overlay)
 
     # Print additional welcome message
-    print(f"\nYou can also use http://{CAM_ID}:5000 to open the Insect Detect webapp.")
+    print(f"\nYou can also use http://{CAM_ID}:5000 to open the Insect Detect web app.")
 
     async def disconnect():
         """Disconnect all clients from current running server."""

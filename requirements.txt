@@ -34,10 +34,10 @@
 # env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py
 
 # Debian 12 Bookworm (Python 3.11)
-depthai==2.29.0.0
+depthai==2.30.0.0
 opencv-python==4.7.0.72
 numpy==1.26.4
-nicegui==2.12.1
+nicegui==2.13.0
 PyYAML==6.0.2
 ruamel.yaml==0.18.10
 pandas==2.2.3

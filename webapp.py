@@ -13,15 +13,16 @@ Optional arguments:
           -> e.g. '-config configs/config_custom.yaml' to use custom config file
 
 - load YAML file with configuration parameters and JSON file with detection model parameters
-- stream frames (MJPEG-encoded bitstream) from OAK camera to browser-based web app
-- draw tracker/model output overlay on frames using client-side SVG
+- stream frames (MJPEG-encoded bitstream) from OAK camera to browser-based web app via HTTP
+- draw SVG overlay with tracker/model data (bounding box, label, confidence, tracking ID) on frames
 - control camera settings via web app
-- save modified configuration parameters to new config file
+- save modified configuration parameters to config file
 
 partly based on scripts from https://github.com/luxonis and https://github.com/zauberzeug/nicegui
 """
 
 import argparse
+import asyncio
 import base64
 import copy
 import signal
@@ -186,7 +187,7 @@ def setup_app():
     # Create input queue to send control commands to OAK camera
     app.state.q_ctrl = app.state.device.getInputQueue(name="control", maxSize=4, blocking=False)
 
-    # Set relevant app.state variables
+    # Initialize app.state variables
     app.state.show_overlay = False
     app.state.tracker_data = []
     app.state.labels = config_model.mappings.labels
@@ -197,29 +198,32 @@ def setup_app():
     app.state.lens_pos_range = {"min": config.camera.focus.lens_position.range.min,
                                 "max": config.camera.focus.lens_position.range.max}
     app.state.fps = 0
+    app.state.lens_pos = 0
+    app.state.iso_sens = 0
+    app.state.exp_time = timedelta(milliseconds=0)
     app.state.frame_count = 0
     app.state.prev_time = time.monotonic()
 
     @app.get("/video/frame")
-    async def fetch_frame():
-        """Return the latest MJPEG-encoded frame from OAK camera."""
+    async def serve_frame():
+        """Serve MJPEG-encoded frame from OAK camera over HTTP and update camera parameters."""
         if app.state.q_frame.has():
-            frame_dai = app.state.q_frame.get()  # depthai.ImgFrame
-            frame = frame_dai.getData()          # numpy.ndarray
-            app.state.lens_pos = frame_dai.getLensPosition()
+            frame_dai = app.state.q_frame.get()          # depthai.ImgFrame (type: BITSTREAM)
+            frame_bytes = frame_dai.getData().tobytes()  # convert bitstream (numpy array) to bytes
 
-            # Update FPS counter
+            # Update FPS, lens position, exposure time and ISO sensitivity every second
             app.state.frame_count += 1
             current_time = time.monotonic()
             elapsed_time = current_time - app.state.prev_time
-
-            # Calculate fps every second
             if elapsed_time > 1:
                 app.state.fps = round(app.state.frame_count / elapsed_time, 2)
+                app.state.lens_pos = frame_dai.getLensPosition()
+                app.state.iso_sens = frame_dai.getSensitivity()
+                app.state.exp_time = frame_dai.getExposureTime()
                 app.state.frame_count = 0
                 app.state.prev_time = current_time
 
-            return Response(content=frame.tobytes(), media_type="image/jpeg")
+            return Response(content=frame_bytes, media_type="image/jpeg")
         else:
             return placeholder
 
@@ -227,8 +231,8 @@ def setup_app():
         """Update frame source with a timestamp to prevent caching."""
         app.state.frame_ii.set_source(f"/video/frame?{time.time()}")
 
-    def fetch_tracker_data():
-        """Fetch tracker/model output."""
+    def update_tracker_data():
+        """Update metadata from object tracker and detection model."""
         if app.state.q_track.has():
             tracklets = app.state.q_track.get().tracklets
             tracklets_data = []
@@ -247,7 +251,7 @@ def setup_app():
             app.state.tracker_data = tracklets_data
 
     def update_overlay():
-        """Update the SVG overlay based on current tracker/model output."""
+        """Update SVG overlay to show latest tracker/model metadata."""
         if not app.state.show_overlay:
             return
 
@@ -273,7 +277,7 @@ def setup_app():
                 'fill="none" stroke="red" stroke-width="0.006" stroke-opacity="0.5" />'
             )
 
-            # Add text for tracker/model output
+            # Add text for tracker/model metadata
             text_y = y_min + height + 0.04 if y_min + height < 0.95 else y_min - 0.05
             svg_overlay.append(
                 f'<text x="{x_min}" y="{text_y}" '
@@ -287,10 +291,10 @@ def setup_app():
         app.state.frame_ii.content = "".join(svg_overlay)
 
     def update_frame_and_overlay():
-        """Update frame and tracker/model output + overlay if enabled."""
+        """Update frame and tracker/model data + overlay if enabled."""
         update_frame()
         if app.state.show_overlay:
-            fetch_tracker_data()
+            update_tracker_data()
             update_overlay()
 
     # Create UI components
@@ -302,10 +306,12 @@ def setup_app():
                 with ui.element("div").classes("absolute inset-0 flex items-center justify-center"):
                     app.state.frame_ii = ui.interactive_image(content="").classes("max-w-full max-h-full object-contain")
 
-        # FPS label, lens position label and overlay toggle switch
-        with ui.row().classes("w-full justify-between items-center"):
+        # FPS, lens position, exposure time and ISO sensitivity labels + overlay toggle switch
+        with ui.row().classes("w-full justify-between items-center flex-wrap gap-2"):
             ui.label().bind_text_from(app.state, "fps", lambda fps: f"FPS: {fps}").classes("font-bold")
             ui.label().bind_text_from(app.state, "lens_pos", lambda pos: f"Lens Position: {pos}").classes("font-bold")
+            ui.label().bind_text_from(app.state, "iso_sens", lambda iso: f"ISO: {iso}").classes("font-bold")
+            ui.label().bind_text_from(app.state, "exp_time", lambda exp: f"Exposure: {exp.total_seconds()*1000:.1f} ms").classes("font-bold")
 
             def toggle_overlay(e):
                 """Toggle the tracker/model overlay visibility."""
@@ -342,7 +348,6 @@ def setup_app():
                     app.state.previous_lens_pos_range = app.state.lens_pos_range
                     app.state.focus_initialized = True
                     return
-
                 if app.state.previous_lens_pos_range["min"] != app.state.lens_pos_range["min"]:
                     mf_ctrl = dai.CameraControl().setManualFocus(app.state.lens_pos_range["min"])
                     app.state.q_ctrl.send(mf_ctrl)
@@ -473,34 +478,38 @@ def setup_app():
 
             ui.button("Shutdown", on_click=confirm_shutdown, color="red", icon="power_settings_new").classes("font-bold")
 
-    # Set timer to update frame (and overlay) depending on camera frame rate
+    # Set timer to update frame (and overlay if enabled) depending on camera frame rate
     ui.timer(1/FPS_WEBAPP, update_frame_and_overlay)
 
     # Print additional welcome message
-    print(f"\nYou can also use http://{CAM_ID}:5000 to open the Insect Detect web app.")
+    print(f"\nUse your hostname to open the Insect Detect web app: http://{CAM_ID}:5000")
 
     async def disconnect():
-        """Disconnect all clients from current running server."""
+        """Disconnect all clients from currently running server."""
         for client_id in Client.instances:
             await core.sio.disconnect(client_id)
 
     async def cleanup():
-        """Cleanup function to be called on application shutdown."""
+        """Disconnect clients and close running OAK device."""
         await disconnect()
         if hasattr(app.state, "device") and app.state.device is not None:
             app.state.device.close()
 
-    def signal_handler(signum, frame):
-        """Handle a received signal to gracefully shut down the application."""
-        ui.timer(0.1, disconnect, once=True)
-        ui.timer(1, lambda: signal.default_int_handler(signum, frame), once=True)
-
-    # Register signal handler for graceful shutdown
+    # Register cleanup function to be called on app shutdown
     app.on_shutdown(cleanup)
+
+    def signal_handler(signum, frame):
+        """Handle a received signal (e.g. keyboard interrupt) to gracefully shut down the app."""
+        loop = asyncio.get_event_loop()
+        loop.call_later(5, lambda: print("\nForcing exit after timeout\n") or exit(0))
+        app.shutdown()
+
+    # Register signal handler for graceful shutdown if SIGINT or SIGTERM is received
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
 # Set up and run the app
 app.on_startup(setup_app)
-ui.run(host="0.0.0.0", port=5000, title=f"{CAM_ID} Camera Control",
+ui.run(host="0.0.0.0", port=5000, title=f"{CAM_ID} Web App",
        favicon=str(BASE_PATH / "static" / "favicon.ico"),
        dark=True, show=False, reload=False)

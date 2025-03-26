@@ -6,7 +6,6 @@
 # Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 # Use this custom config file for modifications (copy and create multiple configurations if needed)
-# The default configuration file is located at: insect-detect/configs/config_default.yaml
 
 # System settings
 powermanager:
@@ -53,16 +52,15 @@ camera:
 # Recording settings
 recording:
   duration:
-    default: 60    # Duration (minutes) per recording session if powermanager is disabled
+    default: 60     # Duration (minutes) per recording session if powermanager is disabled
     battery:
-      high: 60     # Duration (minutes) if battery charge level is > 70% or USB power is connected
-      medium: 40   # Duration (minutes) if battery charge level is between 50-70%
-      low: 20      # Duration (minutes) if battery charge level is between 30-50%
-      minimal: 10  # Duration (minutes) if battery charge level is < 30%
-  capture_detection:
-    interval: 1.0  # Time interval (seconds) for saving HQ frame + metadata while object is detected
-  capture_timelapse:
-    interval: 600  # Time interval (seconds) for saving HQ frame (independent of detected objects)
+      high: 60      # Duration (minutes) if battery charge level is > 70% or USB power is connected
+      medium: 40    # Duration (minutes) if battery charge level is between 50-70%
+      low: 20       # Duration (minutes) if battery charge level is between 30-50%
+      minimal: 10   # Duration (minutes) if battery charge level is < 30%
+  capture_interval:
+    detection: 1.0  # Time interval (seconds) for saving HQ frame + metadata while object is detected
+    timelapse: 600  # Time interval (seconds) for saving HQ frame (independent of detected objects)
 
 # Detection settings
 detection:

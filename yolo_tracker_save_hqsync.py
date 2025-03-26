@@ -113,8 +113,8 @@ DISK_MIN = config.storage.disk_min
 DISK_CHECK = config.storage.disk_check
 RES_HQ = (config.camera.resolution.width, config.camera.resolution.height)
 RES_LQ = (config.detection.resolution.width, config.detection.resolution.height)
-CAP_INT_DET = config.recording.capture_detection.interval
-CAP_INT_TL = config.recording.capture_timelapse.interval
+CAP_INT_DET = config.recording.capture_interval.detection
+CAP_INT_TL = config.recording.capture_interval.timelapse
 EXP_REGION = config.detection.exposure_region.enabled
 
 # Initialize power manager (Witty Pi 4 L3V7 or PiJuice Zero - None if disabled)

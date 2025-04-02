@@ -8,12 +8,11 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 Run this script with the Python interpreter from the virtual environment where you installed the
 required packages, e.g. with 'env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py'.
 
-Modify the "configs/config_custom.yaml" file to change the settings that are used in
-this Python script. Refer to the "configs/config_default.yaml" for the default settings.
+Modify the 'configs/config_selector.yaml' file to select the active configuration file
+that will be used to load all configuration parameters.
 
-Optional arguments:
-'-config' set path to YAML file that contains all configuration parameters
-          -> e.g. '-config configs/config_custom.yaml' to use custom config file
+Modify the 'configs/config_custom.yaml' file to change the settings that are used in
+this Python script. Refer to the 'configs/config_default.yaml' for the default settings.
 
 - load YAML file with configuration parameters and JSON file with detection model parameters
 - write info, warning and error (+ traceback) messages to log file
@@ -51,7 +50,6 @@ Optional arguments:
 partly based on open source scripts available at https://github.com/luxonis
 """
 
-import argparse
 import csv
 import json
 import logging
@@ -74,16 +72,8 @@ from utils.oak import convert_bbox_roi, convert_cm_lens_position, create_get_tem
 from utils.post import process_images
 from utils.power import init_power_manager
 
-# Define optional arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("-config", type=str, default="configs/config_default.yaml",
-    help="Set path to YAML file with configuration parameters.")
-args = parser.parse_args()
-
-# Set camera trap ID (default: hostname)
+# Set camera trap ID (default: hostname) and base path (default: "insect-detect" directory)
 CAM_ID = socket.gethostname()
-
-# Set base path (default: "insect-detect" directory)
 BASE_PATH = Path.home() / "insect-detect"
 
 # Create directory where all data will be stored (images, metadata, logs, configs)
@@ -99,8 +89,10 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)  # decrease apschedul
 logging.getLogger("tzlocal").setLevel(logging.ERROR)        # suppress timezone warning
 
 # Parse configuration files
-config = parse_yaml(BASE_PATH / args.config)
-config_model = parse_json(BASE_PATH / config.detection.model.config)
+config_selector = parse_yaml(BASE_PATH / "configs" / "config_selector.yaml")
+config_active = config_selector.config_active
+config = parse_yaml(BASE_PATH / "configs" / config_active)
+config_model = parse_json(BASE_PATH / "models" / config.detection.model.config)
 
 # Extract some frequently used configuration parameters
 PWR_MGMT = config.powermanager.enabled
@@ -162,8 +154,8 @@ save_path = DATA_PATH / timestamp_dir[:10] / timestamp_dir
 save_path.mkdir(parents=True, exist_ok=True)
 
 # Save configurations of the current recording session as JSON files
-config_path = save_path / f"{timestamp_dir}_{Path(args.config).stem}.json"
-config_model_path = save_path / f"{timestamp_dir}_{Path(config.detection.model.config).stem}.json"
+config_path = save_path / f"{timestamp_dir}_{Path(config_active).stem}.json"
+config_model_path = save_path / f"{timestamp_dir}_{config.detection.model.config}"
 json.dump(config, config_path.open("w", encoding="utf-8"), indent=2)
 json.dump(config_model, config_model_path.open("w", encoding="utf-8"), indent=2)
 
@@ -219,7 +211,7 @@ cam_rgb.video.link(encoder.input)  # HQ frames as encoder input
 # Create and configure YOLO detection network node and define input
 yolo = pipeline.create(dai.node.YoloDetectionNetwork)
 labels = config_model.mappings.labels
-yolo.setBlobPath(BASE_PATH / config.detection.model.weights)
+yolo.setBlobPath(BASE_PATH / "models" / config.detection.model.weights)
 yolo.setConfidenceThreshold(config.detection.conf_threshold)
 yolo.setIouThreshold(config.detection.iou_threshold)
 yolo.setNumClasses(config_model.nn_config.NN_specific_metadata.classes)
@@ -477,5 +469,6 @@ except Exception:
     logger.exception("Error during initialization of recording %s", rec_id)
 finally:
     if not external_shutdown.is_set():
-        # Shut down Raspberry Pi
-        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+        if config.recording.shutdown.enabled:
+            # Shut down Raspberry Pi
+            subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)

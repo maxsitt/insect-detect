@@ -28,7 +28,7 @@ camera:
   fps: 20              # Camera frame rate (range: 1-30) -> higher fps increases power consumption
   resolution:          # Resolution of HQ frames (captured images)
     width: 3840        # Frame width (max. 3840) -> must be multiple of 32, e.g. 2176 for ~square
-    height: 2160       # Frame height (max. 2160)
+    height: 2160       # Frame height (max. 2160) -> must be multiple of 2
   jpeg_quality: 80     # JPEG quality of captured images (range: 0-100)
   focus:
     mode: continuous   # Options: continuous, range, manual
@@ -61,12 +61,14 @@ recording:
   capture_interval:
     detection: 1.0  # Time interval (seconds) for saving HQ frame + metadata while object is detected
     timelapse: 600  # Time interval (seconds) for saving HQ frame (independent of detected objects)
+  shutdown:
+    enabled: true   # Shut down Raspberry Pi after recording session is finished or interrupted
 
 # Detection settings
 detection:
   model:
-    weights: "models/yolov5n_320_openvino_2022.1_4shave.blob"  # Path to model weights file (.blob)
-    config: "models/yolov5n_320_openvino_2022.1_4shave.json"   # Path to model config file (.json)
+    weights: yolov5n_320_openvino_2022.1_4shave.blob  # Model weights file in "models" directory
+    config: yolov5n_320_openvino_2022.1_4shave.json   # Model config file in "models" directory
   resolution:          # Resolution of downscaled + stretched/cropped LQ frames for model input
     width: 320         # Frame width
     height: 320        # Frame height
@@ -96,5 +98,5 @@ webapp:
   fps: 20           # Camera frame rate (range: 1-30) -> max. streamed fps depends on resolution
   resolution:       # Resolution of streamed frames
     width: 1280     # Frame width (max. 1920) -> must be multiple of 32, e.g. 736 or 1088 for ~square
-    height: 720     # Frame height (max. 1080)
+    height: 720     # Frame height (max. 1080) -> must be multiple of 2
   jpeg_quality: 70  # JPEG quality of streamed MJPEG-encoded frames (range: 0-100)

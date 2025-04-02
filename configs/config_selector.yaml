@@ -1,0 +1,11 @@
+# Insect Detect - Configuration File Selector
+
+# Source:   https://github.com/maxsitt/insect-detect
+# License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
+# Author:   Maximilian Sittinger (https://github.com/maxsitt)
+# Docs:     https://maxsitt.github.io/insect-detect-docs/
+
+# Select a configuration file that will be used by the recording script and the web app
+
+# Active configuration
+config_active: config_default.yaml  # Config file in "configs" directory

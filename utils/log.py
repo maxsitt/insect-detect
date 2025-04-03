@@ -6,27 +6,17 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
-    print_logs(): Print Raspberry Pi information.
     save_logs(): Write system information to .csv file during recording.
     record_log(): Write information to .csv file at the end of the recording interval.
 """
 
 import csv
-import logging
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import psutil
 from gpiozero import CPUTemperature
-
-
-def print_logs():
-    """Print Raspberry Pi information."""
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    logging.info("\nAvailable RPi memory: %s MB", round(psutil.virtual_memory().available / 1048576))
-    logging.info("RPi CPU utilization:  %s %%", round(psutil.cpu_percent(interval=None)))
-    logging.info("RPi CPU temperature:  %s °C\n", round(CPUTemperature().temperature))
 
 
 def save_logs(save_path, cam_id, rec_id, get_temp_oak, get_power_info=None):

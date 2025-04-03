@@ -40,7 +40,7 @@ Install and configure [Rclone](https://rclone.org/docs/) if you want to use the 
 wget -qO- https://rclone.org/install.sh | sudo bash
 ```
 
-Download the `insect-detect` GitHub repo:
+Clone the `insect-detect` GitHub repo:
 
 ``` bash
 git clone https://github.com/maxsitt/insect-detect
@@ -67,11 +67,11 @@ env_insdet/bin/python3 -m pip install -r insect-detect/requirements.txt
 Run the scripts with the Python interpreter from the virtual environment:
 
 ``` bash
-env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py
+env_insdet/bin/python3 insect-detect/webapp.py
 ```
 
-Check out the [**Programming**](https://maxsitt.github.io/insect-detect-docs/software/programming/)
-section for more details about the scripts and tips on possible software modifications.
+Check out the [**Usage**](https://maxsitt.github.io/insect-detect-docs/software/usage/)
+section for more details about the scripts.
 
 ---
 
@@ -94,11 +94,6 @@ section for more details about the scripts and tips on possible software modific
   downscaled to 320x320 pixel with only 1 class ("insect").
 - Model metrics (mAP, Precision, Recall) are shown for the original PyTorch (.pt) model before conversion to ONNX ->
   OpenVINO -> .blob format. Reproduce metrics by using the respective model validation method.
-- Speed (fps) is shown for the converted models (.blob 4 shaves), running on OAK-1 connected to RPi Zero 2 W (~2 fps slower
-  with object tracker). Set `cam_rgb.setFps()` to the respective fps shown for each model to reproduce the speed measurements.
-- While connected via SSH (X11 forwarding of the frames), print fps to the console and comment out `cv2.imshow()`,
-  as forwarding the frames will slow down the received message output and thereby fps. If you are using
-  a Raspberry Pi 4 B connected to a screen, fps will be correctly shown in the livestream (see gif).
 
 </details>
 
@@ -108,38 +103,34 @@ section for more details about the scripts and tips on possible software modific
 
 ## Processing pipeline
 
-> [!NOTE]
-> The latest version of the processing pipeline (November 2024) differs to the descriptions
-> in the PLOS ONE paper and on the documentation website. Please refer to the following
-> points for an up-to-date description.
-
-All relevant configuration parameters can be modified in the
-[`configs/config_custom.yaml`](https://github.com/maxsitt/insect-detect/tree/main/configs/config_custom.yaml) file.
+All configuration parameters can be customized in the web app or by directly modifying the
+[`config_custom.yaml`](https://github.com/maxsitt/insect-detect/tree/main/configs/config_custom.yaml)
+file. You can generate multiple custom configuration files and select the active config either in
+the web app or by modifying the
+[`config_selector.yaml`](https://github.com/maxsitt/insect-detect/blob/main/configs/config_selector.yaml).
 
 Processing pipeline for the
 [`yolo_tracker_save_hqsync.py`](https://github.com/maxsitt/insect-detect/blob/main/yolo_tracker_save_hqsync.py)
 script that can be used for automated insect monitoring:
 
 - A custom **YOLO insect detection model** is run in real time on device (OAK) and uses a
-  continuous stream of downscaled LQ frames as input (default: 320x320 px at 20 fps).
+  continuous stream of downscaled LQ frames as input.
 - An **object tracker** uses the bounding box coordinates of detected insects to assign a unique
   tracking ID to each individual present in the frame and track its movement through time.
 - The tracker + model output from inference on LQ frames is synchronized with
-  **MJPEG-encoded HQ frames** (default: 3840x2160 px) on device (OAK) using the respective timestamps.
-- The encoded HQ frames are saved to the microSD card at the configured intervals if
-  an insect is detected (default: 1 s) and independent of detections (default: 10 min).
-- Corresponding **metadata** from the detection model and tracker output (including timestamp, label,
-  confidence score, tracking ID, tracking status and bounding box coordinates) is saved to a
-  metadata .csv file for each detected and tracked insect at the configured interval.
-- The metadata can be used to **crop detected insects** from the HQ frames and save them as individual
-  .jpg images. Depending on the post-processing configuration, the original HQ frames will be optionally deleted after the processing to save storage space.
-- During the recording, a maximum pipeline speed of **~19 FPS** for 4K resolution (3840x2160) and
-  **~42 FPS** for 1080p resolution (1920x1080) can be reached if the capture interval is set to 0
-  and the camera frame rate is adjusted accordingly.
-- With the default configuration, the recording pipeline consumes **~3.8 W** of power.
+  **MJPEG-encoded HQ frames** (default: 3840x2160 px) on device (OAK).
+- The HQ frames are saved to the microSD card at the configured **capture intervals** while
+  an insect is detected (triggered capture) and independent of detections (time-lapse capture).
+- Corresponding **metadata** from the detection model and tracker output is saved to a
+  metadata .csv file for each detected and tracked insect (including timestamp, label,
+  confidence score, tracking ID, tracking status and bounding box coordinates).
+- The bounding box coordinates can be used to **crop detected insects** from the corresponding
+  HQ frames and save them as individual .jpg images. Depending on the post-processing configuration,
+  the original HQ frames are optionally deleted to save storage space.
 - If a power management board (Witty Pi 4 L3V7 or PiJuice Zero) is connected and enabled in the
-  configuration, intelligent power management is activated which includes battery charge level
-  monitoring and conditional recording durations.
+  configuration, **intelligent power management** is activated which includes battery charge level
+  monitoring with conditional recording durations.
+- With the default configuration, running the recording consumes **~3.8 W** of power.
 
 <img src="https://raw.githubusercontent.com/maxsitt/insect-detect-docs/main/docs/deployment/assets/images/hq_sync_pipeline.png" width="800">
 

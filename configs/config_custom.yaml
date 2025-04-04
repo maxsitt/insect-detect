@@ -14,7 +14,7 @@ powermanager:
   charge_min: 20    # Minimum required battery charge level (%) to start/continue a recording
   charge_check: 30  # Time interval (seconds) for checking battery charge level during recording
 oak:
-  temp_max: 100     # Maximum allowed OAK chip temperature (°C) to continue a recording
+  temp_max: 100     # Maximum allowed OAK chip temperature (°C) to continue a recording (< 105°C)
   temp_check: 30    # Time interval (seconds) for checking OAK chip temperature during recording
 storage:
   disk_min: 1000    # Minimum required free disk space (MB) to start/continue a recording
@@ -26,10 +26,10 @@ logging:
 # Camera settings
 camera:
   fps: 20              # Camera frame rate (range: 1-30) -> higher fps increases power consumption
-  resolution:          # Resolution of HQ frames (captured images)
+  resolution:          # Resolution of captured images (HQ frames)
     width: 3840        # Frame width (max. 3840) -> must be multiple of 32, e.g. 2176 for ~square
     height: 2160       # Frame height (max. 2160) -> must be multiple of 2
-  jpeg_quality: 80     # JPEG quality of captured images (range: 0-100)
+  jpeg_quality: 80     # JPEG quality of captured images (range: 0-100, recommended: 60-90)
   focus:
     mode: continuous   # Options: continuous, range, manual
     distance:
@@ -96,7 +96,7 @@ upload:
 # Web app settings
 webapp:
   fps: 20           # Camera frame rate (range: 1-30) -> max. streamed fps depends on resolution
-  resolution:       # Resolution of streamed frames
+  resolution:       # Resolution of streamed HQ frames
     width: 1280     # Frame width (max. 1920) -> must be multiple of 32, e.g. 736 or 1088 for ~square
     height: 720     # Frame height (max. 1080) -> must be multiple of 2
-  jpeg_quality: 70  # JPEG quality of streamed MJPEG-encoded frames (range: 0-100)
+  jpeg_quality: 70  # JPEG quality of streamed HQ frames (range: 0-100, recommended: 50-80)

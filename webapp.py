@@ -108,6 +108,7 @@ def create_pipeline(config, config_model):
         cam_rgb.setPreviewKeepAspectRatio(False)  # stretch LQ frames to square for model input
 
     if config.camera.focus.mode == "range":
+        # Set auto focus range using either distance to camera (cm) or lens position (0-255)
         if config.camera.focus.distance.enabled:
             lens_pos_min = convert_cm_lens_position(config.camera.focus.distance.range.max)
             lens_pos_max = convert_cm_lens_position(config.camera.focus.distance.range.min)
@@ -117,6 +118,7 @@ def create_pipeline(config, config_model):
             lens_pos_max = config.camera.focus.lens_position.range.max
             cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
     elif config.camera.focus.mode == "manual":
+        # Set manual focus position using either distance to camera (cm) or lens position (0-255)
         if config.camera.focus.distance.enabled:
             lens_pos = convert_cm_lens_position(config.camera.focus.distance.manual)
             cam_rgb.initialControl.setManualFocus(lens_pos)
@@ -133,7 +135,7 @@ def create_pipeline(config, config_model):
     encoder = pipeline.create(dai.node.VideoEncoder)
     encoder.setDefaultProfilePreset(1, dai.VideoEncoderProperties.Profile.MJPEG)
     encoder.setQuality(config.webapp.jpeg_quality)
-    cam_rgb.video.link(encoder.input)
+    cam_rgb.video.link(encoder.input)  # HQ frames as encoder input
 
     # Create and configure YOLO detection network node and define input
     yolo = pipeline.create(dai.node.YoloDetectionNetwork)
@@ -145,16 +147,16 @@ def create_pipeline(config, config_model):
     yolo.setAnchors(config_model.nn_config.NN_specific_metadata.anchors)
     yolo.setAnchorMasks(config_model.nn_config.NN_specific_metadata.anchor_masks)
     yolo.setNumInferenceThreads(2)
-    cam_rgb.preview.link(yolo.input)
-    yolo.input.setBlocking(False)
+    cam_rgb.preview.link(yolo.input)  # downscaled + stretched/cropped LQ frames as model input
+    yolo.input.setBlocking(False)     # non-blocking input stream
 
     # Create and configure object tracker node and define inputs
     tracker = pipeline.create(dai.node.ObjectTracker)
     tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
     tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
-    yolo.passthrough.link(tracker.inputTrackerFrame)
+    yolo.passthrough.link(tracker.inputTrackerFrame)  # passthrough LQ frames as tracker input
     yolo.passthrough.link(tracker.inputDetectionFrame)
-    yolo.out.link(tracker.inputDetections)
+    yolo.out.link(tracker.inputDetections)            # detections from YOLO model as tracker input
 
     # Create and configure sync node and define inputs
     sync = pipeline.create(dai.node.Sync)
@@ -367,16 +369,26 @@ async def setup_app():
                         app.state.frame_ii = (ui.interactive_image(content="")
                                               .classes("max-w-full max-h-full object-contain"))
 
-            # Labels for current camera/frame parameters + overlay toggle switch
-            with ui.row(align_items="center").classes("w-full justify-between gap-2"):
+            # Labels for current camera/frame parameters
+            with ui.row(align_items="center").classes("w-full gap-2 -mt-3"):
                 (ui.label().bind_text_from(app.state, "fps", lambda fps: f"FPS: {fps}")
-                 .classes("font-bold"))
+                 .classes("font-bold text-xs"))
+                ui.separator().props("vertical")
                 (ui.label().bind_text_from(app.state, "lens_pos", lambda pos: f"Lens Position: {pos}")
-                 .classes("font-bold"))
+                 .classes("font-bold text-xs"))
+                ui.separator().props("vertical")
                 (ui.label().bind_text_from(app.state, "iso_sens", lambda iso: f"ISO: {iso}")
-                 .classes("font-bold"))
+                 .classes("font-bold text-xs"))
+                ui.separator().props("vertical")
                 (ui.label().bind_text_from(app.state, "exp_time", lambda exp: f"Exposure: {exp:.1f} ms")
-                 .classes("font-bold"))
+                 .classes("font-bold text-xs"))
+
+            # Switches to toggle dark mode and model/tracker overlay
+            dark = ui.dark_mode()
+            with ui.row(align_items="center").classes("w-full gap-4"):
+                (ui.switch("Dark Mode", value=True).bind_value_to(dark)
+                 .props("color=green").classes("font-bold"))
+                ui.separator().props("vertical")
                 (ui.switch("Model/Tracker Overlay").bind_value(app.state, "show_overlay")
                  .props("color=green").classes("font-bold"))
 
@@ -423,9 +435,9 @@ async def setup_app():
                     update_config_selector(e.value)
                     await restart_camera()
 
-            ui.separator()
             with ui.row(align_items="center").classes("w-full gap-2 mt-0"):
-                ui.label("Active Config:").classes("font-bold whitespace-nowrap")
+                (ui.label("Active Config:").classes("font-bold whitespace-nowrap")
+                 .tooltip("Activate config file that will be used by the web app and recording script"))
                 (ui.select(app.state.configs, value=app.state.config_active, on_change=on_config_change)
                  .classes("flex-1 truncate"))
 
@@ -465,7 +477,8 @@ async def setup_app():
                          .bind_value(app.state.config_updates["camera"]["focus"], "mode"))
 
                         grid_separator()
-                        ui.label("Frame Rate").classes("font-bold")
+                        (ui.label("Frame Rate").classes("font-bold")
+                         .tooltip("Higher FPS increases power consumption"))
                         (ui.number(label="FPS", placeholder=app.state.config.camera.fps,
                                    min=1, max=30, precision=0, step=1,
                                    validation={"Required value between 1-30":
@@ -474,7 +487,8 @@ async def setup_app():
                                      forward=lambda v: int(v) if v is not None else None))
 
                         grid_separator()
-                        ui.label("Resolution").classes("font-bold")
+                        (ui.label("Resolution").classes("font-bold")
+                         .tooltip("Resolution of captured images (HQ frames)"))
                         with ui.row(align_items="center").classes("w-full gap-2"):
                             (ui.number(label="Width", placeholder=app.state.config.camera.resolution.width,
                                        min=320, max=3840, precision=0, step=32,
@@ -492,7 +506,8 @@ async def setup_app():
                              .classes("flex-1"))
 
                         grid_separator()
-                        ui.label("JPEG Quality").classes("font-bold")
+                        (ui.label("JPEG Quality").classes("font-bold")
+                         .tooltip("JPEG quality of captured images"))
                         (ui.number(label="JPEG", placeholder=app.state.config.camera.jpeg_quality,
                                    min=10, max=100, precision=0, step=1,
                                    validation={"Required value between 10-100":
@@ -501,7 +516,8 @@ async def setup_app():
                                      forward=lambda v: int(v) if v is not None else None))
 
                         grid_separator()
-                        ui.label("ISP Settings").classes("font-bold")
+                        (ui.label("ISP Settings").classes("font-bold")
+                         .tooltip("Setting Sharpness and Luma Denoise to 0 can reduce artifacts"))
                         with ui.row(align_items="center").classes("w-full gap-2"):
                             (ui.number(label="Sharpness",
                                        placeholder=app.state.config.camera.isp.sharpness,
@@ -541,7 +557,8 @@ async def setup_app():
                          .classes("truncate"))
 
                         grid_separator()
-                        ui.label("Input Resolution").classes("font-bold")
+                        (ui.label("Input Resolution").classes("font-bold")
+                         .tooltip("Resolution of downscaled + stretched/cropped LQ frames for model input"))
                         with ui.row(align_items="center").classes("w-full gap-2"):
                             (ui.number(label="Width", placeholder=app.state.config.detection.resolution.width,
                                        min=128, max=640, precision=0, step=1,
@@ -559,7 +576,8 @@ async def setup_app():
                              .classes("flex-1"))
 
                         grid_separator()
-                        ui.label("Confidence Threshold").classes("font-bold")
+                        (ui.label("Confidence Threshold").classes("font-bold")
+                         .tooltip("Overrides model config file"))
                         (ui.number(label="Confidence", placeholder=app.state.config.detection.conf_threshold,
                                    min=0, max=1, precision=2, step=0.01,
                                    validation={"Required value between 0-1":
@@ -567,7 +585,8 @@ async def setup_app():
                          .bind_value(app.state.config_updates["detection"], "conf_threshold"))
 
                         grid_separator()
-                        ui.label("IoU Threshold").classes("font-bold")
+                        (ui.label("IoU Threshold").classes("font-bold")
+                         .tooltip("Overrides model config file"))
                         (ui.number(label="IoU", placeholder=app.state.config.detection.iou_threshold,
                                    min=0, max=1, precision=2, step=0.01,
                                    validation={"Required value between 0-1":
@@ -575,7 +594,8 @@ async def setup_app():
                          .bind_value(app.state.config_updates["detection"], "iou_threshold"))
 
                         grid_separator()
-                        ui.label("Detection-based Exposure").classes("font-bold")
+                        (ui.label("Detection-based Exposure").classes("font-bold")
+                         .tooltip("Use coordinates from most recent detection to set auto exposure region"))
                         (ui.switch("Enable")
                          .bind_value(app.state.config_updates["detection"]["exposure_region"], "enabled")
                          .props("color=green").classes("font-bold"))
@@ -602,14 +622,17 @@ async def setup_app():
                         else:
                             config_target[duration_type] = total_minutes
 
-                def create_duration_inputs(duration_type, label_text):
+                def create_duration_inputs(duration_type, label_text, tooltip_text=None):
                     """Create hours and minutes input fields for a specific duration type."""
                     if duration_type == "default":
                         duration_setting = app.state.rec_durations["default"]
                     else:
                         duration_setting = app.state.rec_durations["battery"][duration_type]
 
-                    ui.label(label_text).classes("font-bold")
+                    label = ui.label(label_text).classes("font-bold")
+                    if tooltip_text:
+                        label.tooltip(tooltip_text)
+
                     with ui.row(align_items="center").classes("w-full gap-2"):
                         (ui.number(label="Hours", placeholder=1, min=0, max=24, precision=0, step=1,
                                    on_change=lambda e: on_duration_change(e, duration_type, "hours"),
@@ -624,32 +647,43 @@ async def setup_app():
 
                 ui.separator()
                 with ui.expansion("Recording Settings", icon="videocam").classes("w-full font-bold"):
-                    with ui.grid(columns="auto 1fr").classes("w-full gap-x-8 items-center"):
+                    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
-                        ui.label("Duration").classes("font-bold")
-                        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-                            create_duration_inputs("default", "Default")
+                        (ui.label("Duration").classes("font-bold")
+                         .tooltip("Duration per recording session"))
+                        with ui.column().classes("w-full"):
+                            with ui.tabs().classes("w-full") as tabs:
+                                ui.tab("No Battery", icon="timer")
+                                ui.tab("Battery", icon="battery_charging_full")
 
-                        ui.label("")
-                        with ui.expansion("Battery", icon="battery_charging_full").classes("w-full font-bold"):
-                            with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-                                create_duration_inputs("high", "High")
-                                create_duration_inputs("medium", "Medium")
-                                create_duration_inputs("low", "Low")
-                                create_duration_inputs("minimal", "Minimal")
+                            with ui.tab_panels(tabs, value="No Battery").classes("w-full"):
+                                with ui.tab_panel("No Battery"):
+                                    create_duration_inputs("default", "Default",
+                                        "Duration if powermanager is disabled")
+                                with ui.tab_panel("Battery"):
+                                    create_duration_inputs("high", "High",
+                                        "Duration if battery charge level is > 70% or USB power is connected")
+                                    create_duration_inputs("medium", "Medium",
+                                        "Duration if battery charge level is between 50-70%")
+                                    create_duration_inputs("low", "Low",
+                                        "Duration if battery charge level is between 30-50%")
+                                    create_duration_inputs("minimal", "Minimal",
+                                        "Duration if battery charge level is < 30%",)
 
                         grid_separator()
                         ui.label("Capture Interval").classes("font-bold")
                         with ui.column().classes("w-full"):
                             with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-                                ui.label("Detection").classes("font-bold")
+                                (ui.label("Detection").classes("font-bold")
+                                 .tooltip("Interval for saving HQ frame + metadata while object is detected"))
                                 (ui.number(label="Seconds",
                                            placeholder=app.state.config.recording.capture_interval.detection,
                                            min=0, max=60, precision=1, step=0.1,
                                            validation={"Required value between 0-60":
                                                        lambda v: validate_number(v, 0, 60)})
                                  .bind_value(app.state.config_updates["recording"]["capture_interval"], "detection"))
-                                ui.label("Timelapse").classes("font-bold")
+                                (ui.label("Timelapse").classes("font-bold")
+                                 .tooltip("Interval for saving HQ frame (independent of detected objects)"))
                                 (ui.number(label="Seconds",
                                            placeholder=app.state.config.recording.capture_interval.timelapse,
                                            min=0, max=3600, precision=1, step=0.1,
@@ -658,7 +692,8 @@ async def setup_app():
                                  .bind_value(app.state.config_updates["recording"]["capture_interval"], "timelapse"))
 
                         grid_separator()
-                        ui.label("Shutdown After Recording").classes("font-bold")
+                        (ui.label("Shutdown After Recording").classes("font-bold")
+                         .tooltip("Shut down Raspberry Pi after recording session is finished or interrupted"))
                         (ui.switch("Enable")
                          .bind_value(app.state.config_updates["recording"]["shutdown"], "enabled")
                          .props("color=green").classes("font-bold"))
@@ -668,7 +703,8 @@ async def setup_app():
                 with ui.expansion("Post-Processing Settings", icon="tune").classes("w-full font-bold"):
                     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
-                        ui.label("Crop Detections").classes("font-bold")
+                        (ui.label("Crop Detections").classes("font-bold")
+                         .tooltip("Crop detections from HQ frames and save as individual .jpg images"))
                         with ui.column().classes("w-full gap-1"):
                             (ui.switch("Enable")
                              .bind_value(app.state.config_updates["post_processing"]["crop"], "enabled")
@@ -679,19 +715,22 @@ async def setup_app():
                              .classes("w-full"))
 
                         grid_separator()
-                        ui.label("Draw Overlays").classes("font-bold")
+                        (ui.label("Draw Overlays").classes("font-bold")
+                         .tooltip("Draw overlays on HQ frame copies (bounding box, label, confidence, track ID)"))
                         (ui.switch("Enable")
                          .bind_value(app.state.config_updates["post_processing"]["overlay"], "enabled")
                          .props("color=green").classes("font-bold"))
 
                         grid_separator()
-                        ui.label("Delete Originals").classes("font-bold")
+                        (ui.label("Delete Originals").classes("font-bold")
+                         .tooltip("Delete original HQ frames with detections after processing"))
                         (ui.switch("Enable")
                          .bind_value(app.state.config_updates["post_processing"]["delete"], "enabled")
                          .props("color=green").classes("font-bold"))
 
                         grid_separator()
-                        ui.label("Archive Data").classes("font-bold")
+                        (ui.label("Archive Data").classes("font-bold")
+                         .tooltip("Archive (zip) all captured data + logs/configs and manage disk space"))
                         with ui.column().classes("w-full gap-1"):
                             (ui.switch("Enable")
                              .bind_value(app.state.config_updates["archive"], "enabled")
@@ -703,10 +742,12 @@ async def setup_app():
                              .bind_visibility_from(app.state.config_updates["archive"], "enabled")
                              .bind_value(app.state.config_updates["archive"], "disk_low",
                                          forward=lambda v: int(v) if v is not None else None)
+                             .tooltip("Minimum required free disk space for unarchived data retention")
                              .classes("w-full"))
 
                         grid_separator()
-                        ui.label("Upload to Cloud").classes("font-bold")
+                        (ui.label("Upload to Cloud").classes("font-bold")
+                         .tooltip("Upload archived data to cloud storage provider (always runs archive)"))
                         with ui.column().classes("w-full gap-1"):
                             (ui.switch("Enable")
                              .bind_value(app.state.config_updates["upload"], "enabled")
@@ -714,6 +755,7 @@ async def setup_app():
                             (ui.select(["all", "full", "crop", "metadata"], label="Content")
                              .bind_visibility_from(app.state.config_updates["upload"], "enabled")
                              .bind_value(app.state.config_updates["upload"], "content")
+                             .tooltip("Select content for upload, always including metadata")
                              .classes("w-full"))
 
                 # System settings
@@ -721,7 +763,8 @@ async def setup_app():
                 with ui.expansion("System Settings", icon="settings").classes("w-full font-bold"):
                     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
-                        ui.label("Power Management").classes("font-bold")
+                        (ui.label("Power Management").classes("font-bold")
+                         .tooltip("Disable if no power management board is connected"))
                         with ui.column().classes("w-full gap-1"):
                             (ui.switch("Enable")
                              .bind_value(app.state.config_updates["powermanager"], "enabled")
@@ -740,6 +783,7 @@ async def setup_app():
                                                            lambda v: validate_number(v, 10, 90)})
                                      .bind_value(app.state.config_updates["powermanager"], "charge_min",
                                                  forward=lambda v: int(v) if v is not None else None)
+                                     .tooltip("Minimum required charge level to start/continue a recording")
                                      .classes("flex-1"))
                                     (ui.number(label="Check Interval",
                                                placeholder=app.state.config.powermanager.charge_check,
@@ -751,7 +795,8 @@ async def setup_app():
                                      .classes("flex-1"))
 
                         grid_separator()
-                        ui.label("OAK Temperature").classes("font-bold")
+                        (ui.label("OAK Temperature").classes("font-bold")
+                         .tooltip("Maximum allowed OAK chip temperature to continue a recording"))
                         with ui.row(align_items="center").classes("w-full gap-2"):
                             (ui.number(label="Max. Temperature", placeholder=app.state.config.oak.temp_max,
                                        min=70, max=100, precision=0, step=1, suffix="°C",
@@ -777,6 +822,7 @@ async def setup_app():
                                                    lambda v: validate_number(v, 100, 10000)})
                              .bind_value(app.state.config_updates["storage"], "disk_min",
                                          forward=lambda v: int(v) if v is not None else None)
+                             .tooltip("Minimum required free disk space to start/continue a recording")
                              .classes("flex-1"))
                             (ui.number(label="Check Interval", placeholder=app.state.config.storage.disk_check,
                                        min=5, max=300, precision=0, step=5, suffix="seconds",
@@ -787,7 +833,8 @@ async def setup_app():
                              .classes("flex-1"))
 
                         grid_separator()
-                        ui.label("System Logging").classes("font-bold")
+                        (ui.label("System Logging").classes("font-bold")
+                         .tooltip("Log system information (temperature, memory, CPU utilization, battery info)"))
                         with ui.column().classes("w-full gap-1"):
                             (ui.switch("Enable")
                              .bind_value(app.state.config_updates["logging"], "enabled")
@@ -806,7 +853,8 @@ async def setup_app():
                 with ui.expansion("Web App Settings", icon="video_settings").classes("w-full font-bold"):
                     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
-                        ui.label("Frame Rate").classes("font-bold")
+                        (ui.label("Frame Rate").classes("font-bold")
+                         .tooltip("Max. possible streamed FPS depends on resolution"))
                         (ui.number(label="FPS", placeholder=app.state.config.webapp.fps,
                                    min=1, max=30, precision=0, step=1,
                                    validation={"Required value between 1-30":
@@ -815,7 +863,8 @@ async def setup_app():
                                      forward=lambda v: int(v) if v is not None else None))
 
                         grid_separator()
-                        ui.label("Resolution").classes("font-bold")
+                        (ui.label("Resolution").classes("font-bold")
+                         .tooltip("Resolution of streamed HQ frames"))
                         with ui.row(align_items="center").classes("w-full gap-2"):
                             (ui.number(label="Width", placeholder=app.state.config.webapp.resolution.width,
                                        min=320, max=1920, precision=0, step=32,
@@ -833,7 +882,8 @@ async def setup_app():
                              .classes("flex-1"))
 
                         grid_separator()
-                        ui.label("JPEG Quality").classes("font-bold")
+                        (ui.label("JPEG Quality").classes("font-bold")
+                         .tooltip("JPEG quality of streamed HQ frames"))
                         (ui.number(label="JPEG", placeholder=app.state.config.webapp.jpeg_quality,
                                    min=10, max=100, precision=0, step=1,
                                    validation={"Required value between 10-100":
@@ -1067,9 +1117,8 @@ async def setup_app():
                 app.shutdown()
 
 
-        # Buttons for saving configuration, restarting camera pipeline and shutting down web app
+        # Buttons to save config, start recording and stop web app
         with ui.row().classes("w-full justify-end mt-2 mb-4"):
-            ui.button("Restart Cam", on_click=restart_camera, color="blue", icon="refresh")
             ui.button("Save Config", on_click=save_config, color="green", icon="save")
             ui.button("Start Recording", on_click=start_recording, color="teal", icon="play_circle")
             ui.button("Stop App", on_click=confirm_shutdown, color="red", icon="power_settings_new")
@@ -1129,4 +1178,4 @@ async def setup_app():
 app.on_startup(setup_app)
 ui.run(host="0.0.0.0", port=5000, title=f"{CAM_ID} Web App",
        favicon=str(BASE_PATH / "static" / "favicon.ico"),
-       dark=True, show=False, reload=False)
+       show=False, reload=False)

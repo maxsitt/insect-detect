@@ -31,19 +31,19 @@ camera:
     height: 2160       # Frame height (max. 2160) -> must be multiple of 2
   jpeg_quality: 80     # JPEG quality of captured images (range: 0-100, recommended: 60-90)
   focus:
-    mode: continuous   # Options: continuous, range, manual
+    mode: continuous   # Options: continuous, manual, range
     distance:
       enabled: true    # Use distance-based focus (in cm)
+      manual: 19       # Manual focus position (distance to camera in cm)
       range:
         min: 15        # Minimum auto focus position (distance to camera in cm)
         max: 20        # Maximum auto focus position (distance to camera in cm)
-      manual: 19       # Manual focus position (distance to camera in cm)
     lens_position:
       enabled: false   # Use lens position-based focus (0-255)
+      manual: 156      # Manual lens position (range: 0-255)
       range:
         min: 154       # Minimum lens position (range: 0-255) - greater distance to camera
         max: 165       # Maximum lens position (range: 0-255) - shorter distance to camera
-      manual: 156      # Manual lens position (range: 0-255)
   isp:
     sharpness: 1       # Image sharpness (range: 0-4) - setting to 0 can reduce artifacts
     luma_denoise: 1    # Luminance noise reduction (range: 0-4) - setting to 0 can reduce artifacts

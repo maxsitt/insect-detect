@@ -23,7 +23,7 @@ this Python script. Refer to the 'configs/config_default.yaml' for the default s
   -> increases efficiency of battery usage and can prevent gaps in recordings
 - create a directory for each day and recording session to store images, metadata, logs and configs
 - run a custom YOLO object detection model (.blob format) on device (Luxonis OAK)
-  -> inference on downscaled + stretched/cropped LQ frames
+  -> inference on downscaled + cropped/stretched LQ frames
 - use an object tracker to track detected objects and assign unique tracking IDs
   -> accuracy depends on camera fps, inference speed of the detection model and object motion speed
 - synchronize tracker output (including model output) from inference on LQ frames
@@ -32,7 +32,7 @@ this Python script. Refer to the 'configs/config_default.yaml' for the default s
      full FOV (16:9):    ~19 FPS (3840x2160) | ~42 FPS (1920x1080)
      reduced FOV (~1:1): ~29 FPS (2176x2160) | ~42 FPS (1088x1080)
 - save MJPEG-encoded HQ frames to .jpg at configured intervals
-  if object is detected (trigger capture) and independent of detections (timelapse capture)
+  if object is detected (triggered capture) and independent of detections (timelapse capture)
 - save corresponding metadata from tracker and model output to metadata .csv file
   (time, label, confidence, tracking ID, tracking status, relative bbox coordinates)
 - stop recording session and shut down Raspberry Pi if either:
@@ -68,7 +68,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from utils.config import parse_json, parse_yaml
 from utils.data import archive_data, save_encoded_frame, upload_data
 from utils.log import record_log, save_logs
-from utils.oak import convert_bbox_roi, convert_cm_lens_position, create_get_temp_oak
+from utils.oak import convert_bbox_roi, create_get_temp_oak, create_pipeline
 from utils.post import process_images
 from utils.power import init_power_manager
 
@@ -103,11 +103,10 @@ TEMP_OAK_MAX = config.oak.temp_max
 TEMP_OAK_CHECK = config.oak.temp_check
 DISK_MIN = config.storage.disk_min
 DISK_CHECK = config.storage.disk_check
-RES_HQ = (config.camera.resolution.width, config.camera.resolution.height)
-RES_LQ = (config.detection.resolution.width, config.detection.resolution.height)
 CAP_INT_DET = config.recording.capture_interval.detection
 CAP_INT_TL = config.recording.capture_interval.timelapse
 EXP_REGION = config.detection.exposure_region.enabled
+LABELS = config_model.mappings.labels
 
 # Initialize power manager (Witty Pi 4 L3V7 or PiJuice Zero - None if disabled)
 try:
@@ -159,106 +158,14 @@ config_model_path = save_path / f"{timestamp_dir}_{config.detection.model.config
 json.dump(config, config_path.open("w", encoding="utf-8"), indent=2)
 json.dump(config_model, config_model_path.open("w", encoding="utf-8"), indent=2)
 
-# Create depthai pipeline
-pipeline = dai.Pipeline()
-
-# Create and configure color camera node
-cam_rgb = pipeline.create(dai.node.ColorCamera)
-cam_rgb.setFps(config.camera.fps)  # frames per second available for focus/exposure and model input
-cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-SENSOR_RES = cam_rgb.getResolutionSize()
-cam_rgb.setInterleaved(False)  # planar layout
-cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
-
-if RES_HQ == (1920, 1080):
-    cam_rgb.setIspScale(1, 2)      # use ISP to downscale 4K to 1080p resolution -> HQ frames
-elif RES_HQ != (3840, 2160):
-    cam_rgb.setVideoSize(*RES_HQ)  # crop to configured HQ resolution -> HQ frames
-cam_rgb.setPreviewSize(*RES_LQ)    # downscale frames for model input -> LQ frames
-if abs(RES_HQ[0] / RES_HQ[1] - 1) > 0.01:     # check if HQ resolution is not ~1:1 aspect ratio
-    cam_rgb.setPreviewKeepAspectRatio(False)  # stretch LQ frames to square for model input
-
-if config.camera.focus.mode == "range":
-    # Set auto focus range using either distance to camera (cm) or lens position (0-255)
-    if config.camera.focus.distance.enabled:
-        lens_pos_min = convert_cm_lens_position(config.camera.focus.distance.range.max)
-        lens_pos_max = convert_cm_lens_position(config.camera.focus.distance.range.min)
-        cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
-    elif config.camera.focus.lens_position.enabled:
-        lens_pos_min = config.camera.focus.lens_position.range.min
-        lens_pos_max = config.camera.focus.lens_position.range.max
-        cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
-elif config.camera.focus.mode == "manual":
-    # Set manual focus position using either distance to camera (cm) or lens position (0-255)
-    if config.camera.focus.distance.enabled:
-        lens_pos = convert_cm_lens_position(config.camera.focus.distance.manual)
-        cam_rgb.initialControl.setManualFocus(lens_pos)
-    elif config.camera.focus.lens_position.enabled:
-        lens_pos = config.camera.focus.lens_position.manual
-        cam_rgb.initialControl.setManualFocus(lens_pos)
-
-# Set ISP configuration parameters
-cam_rgb.initialControl.setSharpness(config.camera.isp.sharpness)
-cam_rgb.initialControl.setLumaDenoise(config.camera.isp.luma_denoise)
-cam_rgb.initialControl.setChromaDenoise(config.camera.isp.chroma_denoise)
-
-# Create and configure video encoder node and define input
-encoder = pipeline.create(dai.node.VideoEncoder)
-encoder.setDefaultProfilePreset(1, dai.VideoEncoderProperties.Profile.MJPEG)
-encoder.setQuality(config.camera.jpeg_quality)
-cam_rgb.video.link(encoder.input)  # HQ frames as encoder input
-
-# Create and configure YOLO detection network node and define input
-yolo = pipeline.create(dai.node.YoloDetectionNetwork)
-labels = config_model.mappings.labels
-yolo.setBlobPath(BASE_PATH / "models" / config.detection.model.weights)
-yolo.setConfidenceThreshold(config.detection.conf_threshold)
-yolo.setIouThreshold(config.detection.iou_threshold)
-yolo.setNumClasses(config_model.nn_config.NN_specific_metadata.classes)
-yolo.setCoordinateSize(config_model.nn_config.NN_specific_metadata.coordinates)
-yolo.setAnchors(config_model.nn_config.NN_specific_metadata.anchors)
-yolo.setAnchorMasks(config_model.nn_config.NN_specific_metadata.anchor_masks)
-yolo.setNumInferenceThreads(2)
-cam_rgb.preview.link(yolo.input)  # downscaled + stretched/cropped LQ frames as model input
-yolo.input.setBlocking(False)     # non-blocking input stream
-
-# Create and configure object tracker node and define inputs
-tracker = pipeline.create(dai.node.ObjectTracker)
-tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
-tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
-yolo.passthrough.link(tracker.inputTrackerFrame)  # passthrough LQ frames as tracker input
-yolo.passthrough.link(tracker.inputDetectionFrame)
-yolo.out.link(tracker.inputDetections)            # detections from YOLO model as tracker input
-
-# Create and configure sync node and define inputs
-sync = pipeline.create(dai.node.Sync)
-sync.setSyncThreshold(timedelta(milliseconds=100))
-encoder.bitstream.link(sync.inputs["frames"])  # HQ frames (MJPEG-encoded bitstream)
-tracker.out.link(sync.inputs["tracker"])       # tracker + model output
-
-# Create message demux node and define input + outputs
-demux = pipeline.create(dai.node.MessageDemux)
-sync.out.link(demux.input)
-
-xout_rgb = pipeline.create(dai.node.XLinkOut)
-xout_rgb.setStreamName("frame")
-demux.outputs["frames"].link(xout_rgb.input)       # synced HQ frames
-
-xout_tracker = pipeline.create(dai.node.XLinkOut)
-xout_tracker.setStreamName("track")
-demux.outputs["tracker"].link(xout_tracker.input)  # synced tracker + model output
-
-if EXP_REGION:
-    # Create XLinkIn node to send control commands to color camera node
-    xin_ctrl = pipeline.create(dai.node.XLinkIn)
-    xin_ctrl.setStreamName("control")
-    xin_ctrl.out.link(cam_rgb.inputControl)
+# Create depthai pipeline and set path to metadata .csv file
+pipeline, sensor_res = create_pipeline(BASE_PATH, config, config_model,
+                                       use_webapp_config=False, create_xin=EXP_REGION)
+metadata_path = save_path / f"{timestamp_dir}_metadata.csv"
 
 try:
-    # Create metadata .csv file, connect to OAK device and start pipeline in USB2 mode
-    metadata_path = save_path / f"{timestamp_dir}_metadata.csv"
     with (open(metadata_path, "a", buffering=1, encoding="utf-8") as metadata_file,
-          dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device,
+          dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH) as device,  # start device in USB2 mode
           ThreadPoolExecutor(max_workers=3) as executor):
 
         # Create output queues to get the synchronized HQ frames and tracker + model output
@@ -270,8 +177,8 @@ try:
 
         # Write header to metadata .csv file
         metadata_writer = csv.DictWriter(metadata_file, fieldnames=[
-            "cam_ID", "rec_ID", "timestamp", "label", "confidence",
-            "track_ID", "track_status", "x_min", "y_min", "x_max", "y_max"
+            "cam_ID", "rec_ID", "timestamp", "lens_position", "iso_sensitivity", "exposure_time",
+            "label", "confidence", "track_ID", "track_status", "x_min", "y_min", "x_max", "y_max"
         ])
         metadata_writer.writeheader()
 
@@ -298,7 +205,7 @@ try:
             logger.info("Recording %s started | Duration: %s min | Free disk space: %s MB",
                         rec_id, round(REC_TIME / 60), disk_free)
 
-        # Create variables for start of recording and capture/check events
+        # Initialize variables for start of recording and capture/check events
         rec_start = datetime.now()
         start_time = time.monotonic()
         last_capture = start_time - CAP_INT_TL  # capture first frame immediately at start
@@ -308,6 +215,7 @@ try:
         last_charge_check = start_time if PWR_MGMT else None
         chargelevel = chargelevel_start if PWR_MGMT else None
         chargelevels = []
+        exposure_region_active = False
 
         try:
             # Run recording session until either:
@@ -316,18 +224,26 @@ try:
                    temp_oak < TEMP_OAK_MAX and                   # OAK chip temperature exceeds threshold
                    len(chargelevels) < 3):                       # charge level drops below threshold for three times
 
-                # Activate HQ frame capture events based on current time and configured intervals
+                # Initialize tracking variables
                 track_active = False
+                track_id_max = -1
+                track_id_max_bbox = None
+
+                # Activate HQ frame capture events based on current time and configured intervals
                 current_time = time.monotonic()
-                trigger_capture = current_time >= next_capture
+                triggered_capture = current_time >= next_capture
                 timelapse_capture = current_time >= last_capture + CAP_INT_TL
 
-                if q_frame.has() and (trigger_capture or timelapse_capture):
-                    # Get MJPEG-encoded HQ frame (synced with tracker output)
+                if q_frame.has() and (triggered_capture or timelapse_capture):
+                    # Get MJPEG-encoded HQ frame and associated data (synced with tracker output)
                     timestamp = datetime.now()
                     timestamp_iso = timestamp.isoformat()
                     timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S-%f")
-                    frame_hq = q_frame.get().getData()
+                    frame_dai = q_frame.get()       # depthai.ImgFrame (type: BITSTREAM)
+                    frame_hq = frame_dai.getData()  # frame data (bitstream in numpy array)
+                    lens_pos = frame_dai.getLensPosition()
+                    iso_sens = frame_dai.getSensitivity()
+                    exp_time = frame_dai.getExposureTime().total_seconds() * 1000  # milliseconds
 
                     if q_track.has():
                         # Get tracker output (including passthrough model output)
@@ -337,19 +253,25 @@ try:
                             tracklet_status = tracklet.status.name
                             if tracklet_status in {"TRACKED", "NEW"}:
                                 track_active = True
-
-                                # Get bounding box from model output
+                                track_id = tracklet.id
                                 bbox = (tracklet.srcImgDetection.xmin, tracklet.srcImgDetection.ymin,
                                         tracklet.srcImgDetection.xmax, tracklet.srcImgDetection.ymax)
 
-                                # Get metadata from tracker + model output and save to .csv file
+                                if tracklet_status == "TRACKED" and track_id > track_id_max:
+                                    track_id_max = track_id
+                                    track_id_max_bbox = bbox
+
+                                # Save metadata from camera and tracker + model output to .csv file
                                 metadata = {
                                     "cam_ID": CAM_ID,
                                     "rec_ID": rec_id,
                                     "timestamp": timestamp_iso,
-                                    "label": labels[tracklet.srcImgDetection.label],
+                                    "lens_position": lens_pos,
+                                    "iso_sensitivity": iso_sens,
+                                    "exposure_time": round(exp_time, 2),
+                                    "label": LABELS[tracklet.srcImgDetection.label],
                                     "confidence": round(tracklet.srcImgDetection.confidence, 2),
-                                    "track_ID": tracklet.id,
+                                    "track_ID": track_id,
                                     "track_status": tracklet_status,
                                     "x_min": round(bbox[0], 4),
                                     "y_min": round(bbox[1], 4),
@@ -358,10 +280,19 @@ try:
                                 }
                                 metadata_writer.writerow(metadata)
 
-                                if EXP_REGION and tracklet_status == "TRACKED" and tracklet is tracklets[-1]:
-                                    # Use model bbox from latest active tracking ID to set auto exposure region
-                                    roi_x, roi_y, roi_w, roi_h = convert_bbox_roi(bbox, SENSOR_RES)
-                                    q_ctrl.send(dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h))
+                        if EXP_REGION:
+                            if track_id_max_bbox:
+                                # Use model bbox from most recent active tracking ID to set auto exposure region
+                                roi_x, roi_y, roi_w, roi_h = convert_bbox_roi(track_id_max_bbox, sensor_res)
+                                exp_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h)
+                                q_ctrl.send(exp_ctrl)
+                                exposure_region_active = True
+                            elif exposure_region_active:
+                                # Reset auto exposure region to full frame if there is no active tracking ID
+                                roi_x, roi_y, roi_w, roi_h = 1, 1, sensor_res[0] - 1, sensor_res[1] - 1
+                                exp_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h)
+                                q_ctrl.send(exp_ctrl)
+                                exposure_region_active = False
 
                     if track_active or timelapse_capture:
                         # Save MJPEG-encoded HQ frame to .jpg file in separate thread

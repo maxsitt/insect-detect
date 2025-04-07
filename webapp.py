@@ -28,7 +28,7 @@ import socket
 import subprocess
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import depthai as dai
@@ -37,7 +37,7 @@ from fastapi import Response
 from nicegui import Client, app, core, ui
 
 from utils.config import parse_json, parse_yaml
-from utils.oak import convert_bbox_roi, convert_cm_lens_position
+from utils.oak import convert_bbox_roi, create_pipeline
 
 # Set camera trap ID (default: hostname) and base path (default: "insect-detect" directory)
 CAM_ID = socket.gethostname()
@@ -52,8 +52,8 @@ def convert_duration(total_minutes):
 def update_nested_dict(template, updates, defaults):
     """Update nested dictionary recursively. Replace 'None' with default values."""
     for key, value in updates.items():
-        if (isinstance(value, dict) and 
-            isinstance(template.get(key), dict) and 
+        if (isinstance(value, dict) and
+            isinstance(template.get(key), dict) and
             isinstance(defaults.get(key), dict)):
             update_nested_dict(template[key], value, defaults[key])
         else:
@@ -77,113 +77,6 @@ def update_config_selector(config_active):
         yaml.dump(config_selector, file)
 
 
-def create_pipeline(config, config_model):
-    """Create and configure depthai pipeline for OAK camera."""
-    pipeline = dai.Pipeline()
-
-    # Create and configure color camera node
-    cam_rgb = pipeline.create(dai.node.ColorCamera)
-    cam_rgb.setFps(config.webapp.fps)  # frames per second available for focus/exposure and model input
-    cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-    SENSOR_RES = cam_rgb.getResolutionSize()
-    cam_rgb.setInterleaved(False)  # planar layout
-    cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
-
-    RES_HQ = (config.webapp.resolution.width, config.webapp.resolution.height)        # HQ stream
-    RES_LQ = (config.detection.resolution.width, config.detection.resolution.height)  # model input
-
-    if RES_HQ[0] > 1280 or RES_HQ[1] > 720:
-        cam_rgb.setIspScale(1, 2)             # use ISP to downscale 4K to 1080p resolution
-        if RES_HQ[0] < 1920 or RES_HQ[1] < 1080:
-            cam_rgb.setVideoSize(*RES_HQ)     # crop to configured HQ resolution
-        else:
-            cam_rgb.setVideoSize(1920, 1080)  # always cap resolution at 1080p
-    else:
-        cam_rgb.setIspScale(1, 3)             # use ISP to downscale 4K to 720p resolution
-        if RES_HQ != (1280, 720):
-            cam_rgb.setVideoSize(*RES_HQ)     # crop to configured HQ resolution
-
-    cam_rgb.setPreviewSize(*RES_LQ)               # downscale frames for model input -> LQ frames
-    if abs(RES_HQ[0] / RES_HQ[1] - 1) > 0.01:     # check if HQ resolution is not ~1:1 aspect ratio
-        cam_rgb.setPreviewKeepAspectRatio(False)  # stretch LQ frames to square for model input
-
-    if config.camera.focus.mode == "range":
-        # Set auto focus range using either distance to camera (cm) or lens position (0-255)
-        if config.camera.focus.distance.enabled:
-            lens_pos_min = convert_cm_lens_position(config.camera.focus.distance.range.max)
-            lens_pos_max = convert_cm_lens_position(config.camera.focus.distance.range.min)
-            cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
-        elif config.camera.focus.lens_position.enabled:
-            lens_pos_min = config.camera.focus.lens_position.range.min
-            lens_pos_max = config.camera.focus.lens_position.range.max
-            cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
-    elif config.camera.focus.mode == "manual":
-        # Set manual focus position using either distance to camera (cm) or lens position (0-255)
-        if config.camera.focus.distance.enabled:
-            lens_pos = convert_cm_lens_position(config.camera.focus.distance.manual)
-            cam_rgb.initialControl.setManualFocus(lens_pos)
-        elif config.camera.focus.lens_position.enabled:
-            lens_pos = config.camera.focus.lens_position.manual
-            cam_rgb.initialControl.setManualFocus(lens_pos)
-
-    # Set ISP configuration parameters
-    cam_rgb.initialControl.setSharpness(config.camera.isp.sharpness)
-    cam_rgb.initialControl.setLumaDenoise(config.camera.isp.luma_denoise)
-    cam_rgb.initialControl.setChromaDenoise(config.camera.isp.chroma_denoise)
-
-    # Create and configure video encoder node and define input
-    encoder = pipeline.create(dai.node.VideoEncoder)
-    encoder.setDefaultProfilePreset(1, dai.VideoEncoderProperties.Profile.MJPEG)
-    encoder.setQuality(config.webapp.jpeg_quality)
-    cam_rgb.video.link(encoder.input)  # HQ frames as encoder input
-
-    # Create and configure YOLO detection network node and define input
-    yolo = pipeline.create(dai.node.YoloDetectionNetwork)
-    yolo.setBlobPath(BASE_PATH / "models" / config.detection.model.weights)
-    yolo.setConfidenceThreshold(config.detection.conf_threshold)
-    yolo.setIouThreshold(config.detection.iou_threshold)
-    yolo.setNumClasses(config_model.nn_config.NN_specific_metadata.classes)
-    yolo.setCoordinateSize(config_model.nn_config.NN_specific_metadata.coordinates)
-    yolo.setAnchors(config_model.nn_config.NN_specific_metadata.anchors)
-    yolo.setAnchorMasks(config_model.nn_config.NN_specific_metadata.anchor_masks)
-    yolo.setNumInferenceThreads(2)
-    cam_rgb.preview.link(yolo.input)  # downscaled + stretched/cropped LQ frames as model input
-    yolo.input.setBlocking(False)     # non-blocking input stream
-
-    # Create and configure object tracker node and define inputs
-    tracker = pipeline.create(dai.node.ObjectTracker)
-    tracker.setTrackerType(dai.TrackerType.ZERO_TERM_IMAGELESS)
-    tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
-    yolo.passthrough.link(tracker.inputTrackerFrame)  # passthrough LQ frames as tracker input
-    yolo.passthrough.link(tracker.inputDetectionFrame)
-    yolo.out.link(tracker.inputDetections)            # detections from YOLO model as tracker input
-
-    # Create and configure sync node and define inputs
-    sync = pipeline.create(dai.node.Sync)
-    sync.setSyncThreshold(timedelta(milliseconds=100))
-    encoder.bitstream.link(sync.inputs["frames"])
-    tracker.out.link(sync.inputs["tracker"])
-
-    # Create message demux node and define input + outputs
-    demux = pipeline.create(dai.node.MessageDemux)
-    sync.out.link(demux.input)
-
-    xout_rgb = pipeline.create(dai.node.XLinkOut)
-    xout_rgb.setStreamName("frame")
-    demux.outputs["frames"].link(xout_rgb.input)
-
-    xout_tracker = pipeline.create(dai.node.XLinkOut)
-    xout_tracker.setStreamName("track")
-    demux.outputs["tracker"].link(xout_tracker.input)
-
-    # Create XLinkIn node to send control commands to color camera node
-    xin_ctrl = pipeline.create(dai.node.XLinkIn)
-    xin_ctrl.setStreamName("control")
-    xin_ctrl.out.link(cam_rgb.inputControl)
-
-    return pipeline, SENSOR_RES
-
-
 async def start_camera():
     """Start OAK camera with selected configuration."""
 
@@ -200,6 +93,7 @@ async def start_camera():
 
     # Initialize relevant app.state variables
     app.state.start_recording_after_shutdown = False
+    app.state.exposure_region_active = False
     app.state.show_overlay = False
     app.state.tracker_data = []
     app.state.labels = app.state.config_model.mappings.labels
@@ -220,7 +114,8 @@ async def start_camera():
     app.state.frame_count = 0
     app.state.prev_time = time.monotonic()
 
-    pipeline, app.state.sensor_res = create_pipeline(app.state.config, app.state.config_model)
+    pipeline, app.state.sensor_res = create_pipeline(BASE_PATH, app.state.config, app.state.config_model,
+                                                     use_webapp_config=True, create_xin=True)
     app.state.device = dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH)  # start device in USB2 mode
 
     # Create output queues to get the synchronized HQ frames and tracker + model output
@@ -246,6 +141,7 @@ async def setup_app():
     async def serve_frame():
         """Serve MJPEG-encoded frame from OAK camera over HTTP and update camera parameters."""
         if hasattr(app.state, "q_frame") and app.state.q_frame and app.state.q_frame.has():
+            # Get MJPEG-encoded HQ frame and associated data (synced with tracker output)
             frame_dai = app.state.q_frame.get()          # depthai.ImgFrame (type: BITSTREAM)
             frame_bytes = frame_dai.getData().tobytes()  # convert bitstream (numpy array) to bytes
 
@@ -257,7 +153,7 @@ async def setup_app():
                 app.state.fps = round(app.state.frame_count / elapsed_time, 2)
                 app.state.lens_pos = frame_dai.getLensPosition()
                 app.state.iso_sens = frame_dai.getSensitivity()
-                app.state.exp_time = frame_dai.getExposureTime().total_seconds()*1000  # milliseconds
+                app.state.exp_time = frame_dai.getExposureTime().total_seconds() * 1000  # milliseconds
                 app.state.frame_count = 0
                 app.state.prev_time = current_time
 
@@ -272,36 +168,52 @@ async def setup_app():
     async def update_tracker_data():
         """Update data from object tracker and detection model, set exposure region if enabled."""
         tracklets_data = []
+        track_id_max = -1
+        track_id_max_bbox = None
+
         if hasattr(app.state, "q_track") and app.state.q_track and app.state.q_track.has():
+            # Get tracker output (including passthrough model output)
             tracklets = app.state.q_track.get().tracklets
             for tracklet in tracklets:
+                # Check if tracklet is active (not "LOST" or "REMOVED")
                 tracklet_status = tracklet.status.name
                 if tracklet_status in {"TRACKED", "NEW"}:
+                    track_id = tracklet.id
+                    bbox = (tracklet.srcImgDetection.xmin, tracklet.srcImgDetection.ymin,
+                            tracklet.srcImgDetection.xmax, tracklet.srcImgDetection.ymax)
+
+                    if tracklet_status == "TRACKED" and track_id > track_id_max:
+                        track_id_max = track_id
+                        track_id_max_bbox = bbox
+
                     tracklet_data = {
                         "label": app.state.labels[tracklet.srcImgDetection.label],
                         "confidence": round(tracklet.srcImgDetection.confidence, 2),
-                        "track_ID": tracklet.id,
+                        "track_ID": track_id,
                         "track_status": tracklet_status,
-                        "x_min": round(tracklet.srcImgDetection.xmin, 4),
-                        "y_min": round(tracklet.srcImgDetection.ymin, 4),
-                        "x_max": round(tracklet.srcImgDetection.xmax, 4),
-                        "y_max": round(tracklet.srcImgDetection.ymax, 4)
+                        "x_min": round(bbox[0], 4),
+                        "y_min": round(bbox[1], 4),
+                        "x_max": round(bbox[2], 4),
+                        "y_max": round(bbox[3], 4)
                     }
                     tracklets_data.append(tracklet_data)
+
+            if app.state.config_updates["detection"]["exposure_region"]["enabled"]:
+                if track_id_max_bbox:
+                    # Use model bbox from most recent active tracking ID to set auto exposure region
+                    roi_x, roi_y, roi_w, roi_h = convert_bbox_roi(track_id_max_bbox, app.state.sensor_res)
+                    exp_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h)
+                    app.state.q_ctrl.send(exp_ctrl)
+                    app.state.exposure_region_active = True
+                elif app.state.exposure_region_active:
+                    # Reset auto exposure region to full frame if there is no active tracking ID
+                    roi_x, roi_y, roi_w, roi_h = 1, 1, app.state.sensor_res[0] - 1, app.state.sensor_res[1] - 1
+                    exp_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h)
+                    app.state.q_ctrl.send(exp_ctrl)
+                    app.state.exposure_region_active = False
+
         app.state.tracker_data = tracklets_data
 
-        if app.state.config_updates["detection"]["exposure_region"]["enabled"] and tracklets_data:
-            # Use model bbox from most recent active tracklet to set auto exposure region
-            tracklets_tracked = [t for t in tracklets_data if t["track_status"] == "TRACKED"]
-            if tracklets_tracked:
-                tracklet_max_id = max(tracklets_tracked, key=lambda t: t["track_ID"])
-                roi_x, roi_y, roi_w, roi_h = convert_bbox_roi((tracklet_max_id["x_min"],
-                                                               tracklet_max_id["y_min"],
-                                                               tracklet_max_id["x_max"],
-                                                               tracklet_max_id["y_max"]),
-                                                               app.state.sensor_res)
-                exp_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h)
-                app.state.q_ctrl.send(exp_ctrl)
 
     async def update_overlay():
         """Update SVG overlay to show latest tracker/model data."""
@@ -343,9 +255,9 @@ async def setup_app():
     async def update_frame_and_overlay():
         """Update frame and tracker/model data + overlay if enabled."""
         await update_frame()
-        if app.state.show_overlay:
+        if app.state.show_overlay or app.state.config_updates["detection"]["exposure_region"]["enabled"]:
             await update_tracker_data()
-            if app.state.tracker_data:
+            if app.state.show_overlay and app.state.tracker_data:
                 await update_overlay()
             else:
                 app.state.frame_ii.set_content("")
@@ -383,15 +295,6 @@ async def setup_app():
                 (ui.label().bind_text_from(app.state, "exp_time", lambda exp: f"Exposure: {exp:.1f} ms")
                  .classes("font-bold text-xs"))
 
-            # Switches to toggle dark mode and model/tracker overlay
-            dark = ui.dark_mode()
-            with ui.row(align_items="center").classes("w-full gap-4"):
-                (ui.switch("Dark Mode", value=True).bind_value_to(dark)
-                 .props("color=green").classes("font-bold"))
-                ui.separator().props("vertical")
-                (ui.switch("Model/Tracker Overlay").bind_value(app.state, "show_overlay")
-                 .props("color=green").classes("font-bold"))
-
             # Slider for manual focus control (only visible if focus mode is set to "manual")
             async def set_manual_focus(e):
                 """Set manual focus position of OAK camera."""
@@ -426,6 +329,15 @@ async def setup_app():
                 (ui.range(min=0, max=255, step=1, on_change=preview_focus_range)
                  .bind_value(app.state.config_updates["camera"]["focus"]["lens_position"], "range")
                  .props("label"))
+
+            # Switches to toggle dark mode and model/tracker overlay
+            dark = ui.dark_mode()
+            with ui.row(align_items="center").classes("w-full gap-4"):
+                (ui.switch("Dark Mode", value=True).bind_value_to(dark)
+                 .props("color=green").classes("font-bold"))
+                ui.separator().props("vertical")
+                (ui.switch("Model/Tracker Overlay").bind_value(app.state, "show_overlay")
+                 .props("color=green").classes("font-bold"))
 
             # Config file selector
             async def on_config_change(e):
@@ -545,10 +457,25 @@ async def setup_app():
                              .classes("flex-1"))
 
                 # Detection settings
+                async def on_exposure_region_change(e):
+                    """Reset auto exposure region to full frame if setting is disabled."""
+                    if not e.value and app.state.exposure_region_active:
+                        roi_x, roi_y, roi_w, roi_h = 1, 1, app.state.sensor_res[0] - 1, app.state.sensor_res[1] - 1
+                        exp_ctrl = dai.CameraControl().setAutoExposureRegion(roi_x, roi_y, roi_w, roi_h)
+                        app.state.q_ctrl.send(exp_ctrl)
+                        app.state.exposure_region_active = False
+
                 ui.separator()
                 with ui.expansion("Detection Settings", icon="radar").classes("w-full font-bold"):
                     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
+                        (ui.label("Detection-based Exposure").classes("font-bold")
+                         .tooltip("Use bounding box from most recent tracking ID to set auto exposure region"))
+                        (ui.switch("Enable", on_change=on_exposure_region_change)
+                         .bind_value(app.state.config_updates["detection"]["exposure_region"], "enabled")
+                         .props("color=green").classes("font-bold"))
+
+                        grid_separator()
                         ui.label("Detection Model").classes("font-bold")
                         (ui.select(app.state.models, label="Model", value=app.state.model_active)
                          .bind_value(app.state.config_updates["detection"]["model"], "weights")
@@ -592,13 +519,6 @@ async def setup_app():
                                    validation={"Required value between 0-1":
                                                lambda v: validate_number(v, 0, 1)})
                          .bind_value(app.state.config_updates["detection"], "iou_threshold"))
-
-                        grid_separator()
-                        (ui.label("Detection-based Exposure").classes("font-bold")
-                         .tooltip("Use coordinates from most recent detection to set auto exposure region"))
-                        (ui.switch("Enable")
-                         .bind_value(app.state.config_updates["detection"]["exposure_region"], "enabled")
-                         .props("color=green").classes("font-bold"))
 
                 # Recording settings
                 async def on_duration_change(e, duration_type, field_type):

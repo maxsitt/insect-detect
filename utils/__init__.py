@@ -6,7 +6,8 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Modules:
-    config: Utility functions for parsing of configuration files.
+    app: Utility functions for NiceGUI-based web app.
+    config: Utility functions for configuration file management.
     data: Utility functions for data management.
     log: Utility functions for information logging.
     oak: Utility functions for Luxonis OAK camera control.

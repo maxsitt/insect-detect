@@ -303,6 +303,8 @@ def create_ui_components():
         create_system_settings()
         ui.separator()
         create_webapp_settings()
+        ui.separator()
+        create_deployment_section()
 
 
 def create_video_stream_container():
@@ -779,6 +781,99 @@ def create_webapp_settings():
              .bind_value(app.state.config_updates["webapp"]["https"], "enabled"))
 
 
+async def get_location():
+    """Get current location using the Geolocation API and save to config."""
+    try:
+        response = await ui.run_javascript('''
+            return await new Promise((resolve, reject) => {
+                if ("geolocation" in navigator) {
+                    const options = {
+                        enableHighAccuracy: true,
+                        timeout: 20000,
+                        maximumAge: 0
+                    };
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const result = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            };
+                            if (position.coords.accuracy != null) {
+                                result.accuracy = position.coords.accuracy;
+                            }
+                            resolve(result);
+                        },
+                        error => reject(error),
+                        options
+                    );
+                } else {
+                    reject("Geolocation is not supported by this browser.");
+                }
+            });
+        ''', timeout=25)
+
+        if response is None:
+            ui.notification("Location request failed. Please try again", type="warning", timeout=3)
+            return None
+
+        app.state.config_updates["deployment"]["location"]["latitude"] = response["latitude"]
+        app.state.config_updates["deployment"]["location"]["longitude"] = response["longitude"]
+        if "accuracy" in response:
+            app.state.config_updates["deployment"]["location"]["accuracy"] = round(response["accuracy"])
+
+    except TimeoutError:
+        ui.notification("Location request timed out. Please try again", type="warning", timeout=3)
+        return None
+
+
+def create_deployment_section():
+    """Create deployment metadata expansion panel."""
+    with ui.expansion("Deployment Metadata", icon="location_on").classes("w-full font-bold"):
+        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
+            (ui.label("Start Time").classes("font-bold")
+             .tooltip("Start date + time of the camera deployment (ISO 8601 format)"))
+            with ui.row(align_items="center").classes("w-full gap-2"):
+                time_label = (ui.label()
+                              .classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                              .bind_text(app.state.config_updates["deployment"], "start"))
+                ui.button("Get Time", icon="event",
+                          on_click=lambda: time_label.set_text(str(datetime.now().isoformat())))
+
+            grid_separator()
+            (ui.label("Location").classes("font-bold")
+             .tooltip("Location of the camera deployment (latitude + longitude)"))
+            with ui.column().classes("w-full gap-2"):
+                with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+                    ui.label("Latitude:").classes("font-bold")
+                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                     .bind_text(app.state.config_updates["deployment"]["location"], "latitude"))
+                    ui.label("Longitude:").classes("font-bold")
+                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                     .bind_text(app.state.config_updates["deployment"]["location"], "longitude"))
+                    ui.label("Accuracy (m):").classes("font-bold")
+                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                     .bind_text(app.state.config_updates["deployment"]["location"], "accuracy"))
+                loc_button = ui.button("Get Location", icon="my_location", on_click=get_location)
+                if not app.state.config.webapp.https.enabled:
+                    loc_button.disable()
+                    loc_button.tooltip("HTTPS must be enabled for Geolocation API to work")
+
+            grid_separator()
+            (ui.label("Setting").classes("font-bold")
+             .tooltip("Background setting of the camera (e.g. platform type/flower species)"))
+            (ui.input(placeholder="Enter background setting").props("clearable")
+             .bind_value(app.state.config_updates["deployment"], "setting",
+                         forward=lambda v: str(v) if v is not None else None))
+
+            grid_separator()
+            (ui.label("Notes").classes("font-bold")
+             .tooltip("Additional notes about the deployment"))
+            (ui.textarea(placeholder="Enter deployment notes").props("clearable")
+             .bind_value(app.state.config_updates["deployment"], "notes",
+                         forward=lambda v: str(v) if v is not None else None))
+
+
 async def save_config():
     """Save configuration while preserving comments and structure."""
     if app.state.config_active == "config_default.yaml":
@@ -1047,7 +1142,6 @@ if __name__ == "__main__":
         if use_https:
             print("Accept the self-signed SSL certificate in your browser when first connecting.")
         print()
-
 
     app.on_startup(startup_message)
 

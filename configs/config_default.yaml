@@ -102,3 +102,13 @@ webapp:
   jpeg_quality: 70  # JPEG quality of streamed HQ frames (range: 0-100, recommended: 50-80)
   https:
     enabled: false  # Use HTTPS protocol (required for browser Geolocation API to get GPS coordinates)
+
+# Deployment metadata (recommended to use web app for editing - Geolocation API requires https)
+deployment:
+  start:        # Start date + time of the camera deployment (ISO 8601 format)
+  location:
+    latitude:   # Latitude (decimal degrees)
+    longitude:  # Longitude (decimal degrees)
+    accuracy:   # GPS accuracy (meters)
+  setting:      # Background setting (e.g. platform type/flower species)
+  notes:        # Additional notes

@@ -100,3 +100,5 @@ webapp:
     width: 1280     # Frame width (max. 1920) -> must be multiple of 32, e.g. 736 or 1088 for ~square
     height: 720     # Frame height (max. 1080) -> must be multiple of 2
   jpeg_quality: 70  # JPEG quality of streamed HQ frames (range: 0-100, recommended: 50-80)
+  https:
+    enabled: false  # Use HTTPS protocol (required for browser Geolocation API to get GPS coordinates)

@@ -41,9 +41,18 @@ from utils.app import create_duration_inputs, convert_duration, grid_separator, 
 from utils.config import parse_json, parse_yaml, update_config_selector, update_nested_dict
 from utils.oak import convert_bbox_roi, create_pipeline
 
-# Set camera trap ID (default: hostname) and base path (default: "insect-detect" directory)
-CAM_ID = socket.gethostname()
+
+def get_ip_address():
+    """Get network IP address."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+
+
+# Set base path and get hostname + IP address
 BASE_PATH = Path.home() / "insect-detect"
+HOSTNAME = socket.gethostname()
+IP_ADDRESS = get_ip_address()
 
 
 async def start_camera(base_path):
@@ -760,6 +769,15 @@ def create_webapp_settings():
              .bind_value(app.state.config_updates["webapp"], "jpeg_quality",
                          forward=lambda v: int(v) if v is not None else None))
 
+            grid_separator()
+            (ui.label("Use HTTPS").classes("font-bold")
+             .tooltip("Use HTTPS protocol (required for browser Geolocation API to get GPS location)"))
+            (ui.switch("Enable", on_change=lambda e: ui.notification(
+                "Protocol changes require a full web app restart to take effect.",
+                type="warning", timeout=2) if e.value != app.state.config.webapp.https.enabled else None)
+             .props("color=green").classes("font-bold")
+             .bind_value(app.state.config_updates["webapp"]["https"], "enabled"))
+
 
 async def save_config():
     """Save configuration while preserving comments and structure."""
@@ -993,24 +1011,54 @@ def signal_handler(signum, frame):
     app.shutdown()
 
 
+# Register cleanup function to be called on app shutdown
+app.on_shutdown(cleanup)
+
 # Register signal handler for graceful shutdown if SIGINT or SIGTERM is received
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-# Register cleanup function to be called on app shutdown
-app.on_shutdown(cleanup)
-
-
 if __name__ == "__main__":
-    print(f"Use your hostname to open the Insect Detect web app: http://{CAM_ID}:5000")
-    print("Or use the RPi's IP address shown in the next line:")
+    # Parse config to get web app settings
+    config_selector = parse_yaml(BASE_PATH / "configs" / "config_selector.yaml")
+    config_active = config_selector.config_active
+    config = parse_yaml(BASE_PATH / "configs" / config_active)
+
+    # Check for HTTPS configuration and certificate existence
+    https_enabled = config.webapp.https.enabled
+    ssl_cert_path = Path.home() / "ssl_certificates" / "cert.pem"
+    ssl_key_path = Path.home() / "ssl_certificates" / "key.pem"
+    use_https = https_enabled and ssl_cert_path.exists() and ssl_key_path.exists()
+    if https_enabled and not use_https:
+        print("\nHTTPS is enabled but no SSL certificates were found. Using HTTP instead.\n")
+
+    # Set parameters based on HTTPS setting
+    protocol = "https" if use_https else "http"
+    port = 8443 if use_https else 5000
+    ssl_cert = str(ssl_cert_path) if use_https else None
+    ssl_key = str(ssl_key_path) if use_https else None
 
     # Start the web app with specified parameters
+    def startup_message():
+        """Print startup message with information about web app access."""
+        print("\nInsect Detect web app ready to go!")
+        print(f"Access via hostname:   {protocol}://{HOSTNAME}:{port}")
+        print(f"Access via IP address: {protocol}://{IP_ADDRESS}:{port}")
+        if use_https:
+            print("Accept the self-signed SSL certificate in your browser when first connecting.")
+        print()
+
+
+    app.on_startup(startup_message)
+
     ui.run(
         host="0.0.0.0",
-        port=5000,
-        title=f"{CAM_ID} Web App",
+        port=port,
+        title=f"{HOSTNAME} Web App",
         favicon=str(BASE_PATH / "static" / "favicon.ico"),
         show=False,
-        reload=False
+        reload=False,
+        show_welcome_message=False,
+        ssl_certfile=ssl_cert,
+        ssl_keyfile=ssl_key
     )

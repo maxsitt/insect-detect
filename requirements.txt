@@ -15,10 +15,7 @@
 # Install all required dependencies for RPi + OAK:
 # wget -qO- https://raw.githubusercontent.com/maxsitt/insect-detect/main/install_dependencies_oak.sh | sudo bash
 
-# Install and configure Rclone (https://rclone.org/docs/) if you want to use the upload feature:
-# wget -qO- https://rclone.org/install.sh | sudo bash
-
-# Download the insect-detect GitHub repo:
+# Clone the insect-detect GitHub repo:
 # git clone https://github.com/maxsitt/insect-detect
 
 # Create a virtual environment with access to the system site-packages:
@@ -30,8 +27,14 @@
 # Install all required packages in the virtual environment:
 # env_insdet/bin/python3 -m pip install -r insect-detect/requirements.txt
 
-# Run script with Python interpreter from the virtual environment:
-# env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py
+# Generate self-signed SSL certificates to optionally enable HTTPS for the web app:
+# bash insect-detect/generate_ssl_certificates.sh
+
+# Optional: Install and configure Rclone (https://rclone.org/docs/) if you want to use the upload feature:
+# wget -qO- https://rclone.org/install.sh | sudo bash
+
+# Run the scripts with the Python interpreter from the virtual environment:
+# env_insdet/bin/python3 insect-detect/webapp.py
 
 # Debian 12 Bookworm (Python 3.11)
 depthai==2.30.0.0
@@ -40,6 +43,7 @@ numpy==1.26.4
 nicegui==2.15.0
 PyYAML==6.0.2
 ruamel.yaml==0.18.10
+nmcli==1.5.0
 pandas==2.2.3
 psutil==7.0.0
 APScheduler==3.11.0

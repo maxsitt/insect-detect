@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source:      https://github.com/maxsitt/insect-detect (this modified version)
-# Based on:    https://github.com/luxonis/depthai-python/blob/feat/install-rework/docs/install_dependencies.sh (original version)
+# Based on:    https://github.com/luxonis/depthai-python/blob/main/docs/install_dependencies.sh (original version)
 # License:     MIT (https://choosealicense.com/licenses/mit/)
 # Modified by: Maximilian Sittinger (https://github.com/maxsitt)
 # Docs:        https://maxsitt.github.io/insect-detect-docs/
@@ -164,7 +164,7 @@ lookup_debian_version_number() {
 )
 debian_version_string="$1"
   version_number="${debian_versions[$debian_version_string]}"
-  
+
   if [ -n "$version_number" ]; then
     echo "$version_number"
   else
@@ -201,7 +201,7 @@ elif [ -f /etc/os-release ]; then
         echo $output
         if [[ $output == *sid ]]; then
             version=$(lookup_debian_version_number $output)
-        else 
+        else
             version=$output
         fi
 
@@ -249,7 +249,7 @@ elif [ -f /etc/os-release ]; then
             elif version_lte "$version" "11.99"; then
                 echo "Using pre-22.04 package list"
                 sudo apt install -y "${debian_pkgs_pre22_04[@]}"
- 
+
             else
                 echo "Using post-22.04 package list"
                 sudo apt install -y "${debian_pkgs_post22_04[@]}"

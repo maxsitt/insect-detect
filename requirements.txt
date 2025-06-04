@@ -40,13 +40,13 @@
 depthai==2.30.0.0
 opencv-python==4.7.0.72
 numpy==1.26.4
-nicegui==2.18.0
-PyYAML==6.0.2
+nicegui==2.19.0
+pyyaml==6.0.2
 ruamel.yaml==0.18.10
 nmcli==1.5.0
 pandas==2.2.3
 psutil==7.0.0
-APScheduler==3.11.0
+apscheduler==3.11.0
 av==13.0.0
 
 # Debian 11 Bullseye (Python 3.9)

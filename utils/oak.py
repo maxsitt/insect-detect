@@ -105,19 +105,19 @@ def create_pipeline(base_path, config, config_model, use_webapp_config=False, cr
 
     if config.camera.focus.mode == "manual":
         # Set manual focus position using either distance to camera (cm) or lens position (0-255)
-        if config.camera.focus.distance.enabled:
+        if config.camera.focus.type == "distance":
             lens_pos = convert_cm_lens_position(config.camera.focus.distance.manual)
             cam_rgb.initialControl.setManualFocus(lens_pos)
-        elif config.camera.focus.lens_position.enabled:
+        elif config.camera.focus.type == "lens_position":
             lens_pos = config.camera.focus.lens_position.manual
             cam_rgb.initialControl.setManualFocus(lens_pos)
     elif config.camera.focus.mode == "range":
         # Set auto focus range using either distance to camera (cm) or lens position (0-255)
-        if config.camera.focus.distance.enabled:
+        if config.camera.focus.type == "distance":
             lens_pos_min = convert_cm_lens_position(config.camera.focus.distance.range.max)
             lens_pos_max = convert_cm_lens_position(config.camera.focus.distance.range.min)
             cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)
-        elif config.camera.focus.lens_position.enabled:
+        elif config.camera.focus.type == "lens_position":
             lens_pos_min = config.camera.focus.lens_position.range.min
             lens_pos_max = config.camera.focus.lens_position.range.max
             cam_rgb.initialControl.setAutoFocusLensRange(lens_pos_min, lens_pos_max)

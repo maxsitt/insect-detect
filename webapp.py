@@ -38,16 +38,9 @@ from fastapi import Response
 from nicegui import Client, app, core, ui
 
 from utils.app import create_duration_inputs, convert_duration, grid_separator, validate_number
-from utils.config import parse_json, parse_yaml, update_config_selector, update_nested_dict
+from utils.config import check_config_changes, parse_json, parse_yaml, update_config_selector, update_nested_dict
+from utils.network import get_ip_address, set_up_network
 from utils.oak import convert_bbox_roi, create_pipeline
-
-
-def get_ip_address():
-    """Get network IP address."""
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-
 
 # Set base path and get hostname + IP address
 BASE_PATH = Path.home() / "insect-detect"
@@ -78,6 +71,7 @@ async def start_camera(base_path):
     app.state.focus_initialized = False
     app.state.manual_focus_enabled = app.state.config.camera.focus.mode == "manual"
     app.state.focus_range_enabled = app.state.config.camera.focus.mode == "range"
+    app.state.focus_distance_enabled = app.state.config.camera.focus.type == "distance"
     app.state.aspect_ratio = app.state.config.webapp.resolution.width / app.state.config.webapp.resolution.height
     app.state.rec_durations = {
         "default": convert_duration(app.state.config.recording.duration.default),
@@ -290,21 +284,24 @@ def create_ui_components():
     create_video_stream_container()
     create_control_elements()
 
-    # Card element containing all configuration settings
-    with ui.card().props("flat bordered").classes("w-full"):
-        create_camera_settings()
-        ui.separator()
-        create_detection_settings()
-        ui.separator()
-        create_recording_settings()
-        ui.separator()
-        create_processing_settings()
-        ui.separator()
-        create_system_settings()
-        ui.separator()
-        create_webapp_settings()
-        ui.separator()
+    with ui.card().tight().classes("w-full"):
         create_deployment_section()
+
+    with ui.card().tight().classes("w-full"):
+        with ui.expansion("Configuration", icon="settings").classes("w-full font-bold"):
+            create_camera_settings()
+            ui.separator()
+            create_detection_settings()
+            ui.separator()
+            create_recording_settings()
+            ui.separator()
+            create_processing_settings()
+            ui.separator()
+            create_system_settings()
+            ui.separator()
+            create_network_settings()
+            ui.separator()
+            create_webapp_settings()
 
 
 def create_video_stream_container():
@@ -374,13 +371,22 @@ def create_control_elements():
         (ui.range(min=0, max=255, step=1, on_change=preview_focus_range).props("label")
          .bind_value(app.state.config_updates["camera"]["focus"]["lens_position"], "range"))
 
-    # Switches to toggle dark mode and model/tracker overlay
     with ui.row(align_items="center").classes("w-full gap-4"):
-        (ui.switch("Dark Mode", value=True).props("color=green").classes("font-bold")
+        # Switches to toggle dark mode and model/tracker overlay
+        (ui.switch("Dark", value=True).props("color=green").classes("font-bold")
          .bind_value_to(ui.dark_mode()))
         ui.separator().props("vertical")
-        (ui.switch("Model/Tracker Overlay").props("color=green").classes("font-bold")
+        (ui.switch("Overlay").props("color=green").classes("font-bold")
          .bind_value(app.state, "show_overlay"))
+
+        # WiFi/Hotspot status icons
+        ui.separator().props("vertical")
+        if app.state.config.network.mode == "wifi":
+            ui.icon("wifi", color="green").classes("text-2xl")
+            ui.icon("wifi_tethering_off", color="gray").classes("text-2xl")
+        elif app.state.config.network.mode == "hotspot":
+            ui.icon("wifi_off", color="gray").classes("text-2xl")
+            ui.icon("wifi_tethering", color="green").classes("text-2xl")
 
     # Config file selector
     with ui.row(align_items="center").classes("w-full gap-2 mt-0"):
@@ -388,6 +394,99 @@ def create_control_elements():
          .tooltip("Activate config file that will be used by the web app and recording script"))
         (ui.select(app.state.configs, value=app.state.config_active, on_change=on_config_change)
          .classes("flex-1 truncate"))
+
+
+async def get_location():
+    """Get current location using the Geolocation API and save to config."""
+    try:
+        response = await ui.run_javascript('''
+            return await new Promise((resolve, reject) => {
+                if ("geolocation" in navigator) {
+                    const options = {
+                        enableHighAccuracy: true,
+                        timeout: 20000,
+                        maximumAge: 0
+                    };
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const result = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            };
+                            if (position.coords.accuracy != null) {
+                                result.accuracy = position.coords.accuracy;
+                            }
+                            resolve(result);
+                        },
+                        error => reject(error),
+                        options
+                    );
+                } else {
+                    reject("Geolocation is not supported by this browser.");
+                }
+            });
+        ''', timeout=25)
+
+        if response is None:
+            ui.notification("Location request failed. Please try again", type="warning", timeout=3)
+            return None
+
+        app.state.config_updates["deployment"]["location"]["latitude"] = response["latitude"]
+        app.state.config_updates["deployment"]["location"]["longitude"] = response["longitude"]
+        if "accuracy" in response:
+            app.state.config_updates["deployment"]["location"]["accuracy"] = round(response["accuracy"])
+
+    except TimeoutError:
+        ui.notification("Location request timed out. Please try again", type="warning", timeout=3)
+        return None
+
+
+def create_deployment_section():
+    """Create deployment metadata expansion panel."""
+    with ui.expansion("Deployment Metadata", icon="location_on").classes("w-full font-bold"):
+        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
+            (ui.label("Start Time").classes("font-bold")
+             .tooltip("Start date + time of the camera deployment (ISO 8601 format)"))
+            with ui.row(align_items="center").classes("w-full gap-2"):
+                time_label = (ui.label()
+                              .classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                              .bind_text(app.state.config_updates["deployment"], "start"))
+                ui.button("Get Time", icon="event",
+                          on_click=lambda: time_label.set_text(str(datetime.now().isoformat())))
+
+            grid_separator()
+            (ui.label("Location").classes("font-bold")
+             .tooltip("Location of the camera deployment (latitude + longitude)"))
+            with ui.column().classes("w-full gap-2"):
+                with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+                    ui.label("Latitude:").classes("font-bold")
+                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                     .bind_text(app.state.config_updates["deployment"]["location"], "latitude"))
+                    ui.label("Longitude:").classes("font-bold")
+                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                     .bind_text(app.state.config_updates["deployment"]["location"], "longitude"))
+                    ui.label("Accuracy (m):").classes("font-bold")
+                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                     .bind_text(app.state.config_updates["deployment"]["location"], "accuracy"))
+                loc_button = ui.button("Get Location", icon="my_location", on_click=get_location)
+                if not app.state.config.webapp.https.enabled:
+                    loc_button.disable()
+                    loc_button.tooltip("HTTPS must be enabled for Geolocation API to work")
+
+            grid_separator()
+            (ui.label("Setting").classes("font-bold")
+             .tooltip("Background setting of the camera (e.g. platform type/flower species)"))
+            (ui.input(placeholder="Enter background setting").props("clearable")
+             .bind_value(app.state.config_updates["deployment"], "setting",
+                         forward=lambda v: str(v) if v is not None else None))
+
+            grid_separator()
+            (ui.label("Notes").classes("font-bold")
+             .tooltip("Additional notes about the deployment"))
+            (ui.textarea(placeholder="Enter deployment notes").props("clearable")
+             .bind_value(app.state.config_updates["deployment"], "notes",
+                         forward=lambda v: str(v) if v is not None else None))
 
 
 async def on_focus_mode_change(e):
@@ -398,8 +497,17 @@ async def on_focus_mode_change(e):
         af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
         app.state.q_ctrl.send(af_ctrl)
     else:
-        app.state.config_updates["camera"]["focus"]["distance"]["enabled"] = False
-        app.state.config_updates["camera"]["focus"]["lens_position"]["enabled"] = True
+        app.state.focus_initialized = False
+        app.state.focus_distance_enabled = False
+        app.state.config_updates["camera"]["focus"]["type"] = "lens_position"
+
+
+async def on_focus_type_change(e):
+    """Update focus distance visibility when focus type changes."""
+    app.state.focus_distance_enabled = e.value == "distance"
+    if e.value == "distance":
+        ui.notification("Focus control slider will still use lens position for finer adjustment!",
+                        type="warning", timeout=3)
 
 
 def create_camera_settings():
@@ -408,8 +516,37 @@ def create_camera_settings():
         with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
             ui.label("Focus Mode").classes("font-bold")
-            (ui.select(["continuous", "manual", "range"], label="Focus", on_change=on_focus_mode_change)
+            (ui.select(["continuous", "manual", "range"], label="Mode", on_change=on_focus_mode_change)
              .bind_value(app.state.config_updates["camera"]["focus"], "mode"))
+
+            grid_separator()
+            ui.label("Focus Type").classes("font-bold")
+            with ui.column().classes("w-full gap-1"):
+                (ui.select(["distance", "lens_position"], label="Type", on_change=on_focus_type_change)
+                 .classes("w-full")
+                 .bind_value(app.state.config_updates["camera"]["focus"], "type"))
+
+                with (ui.column().classes("w-full gap-1")
+                      .bind_visibility_from(app.state, "focus_distance_enabled")):
+                    with ui.row(align_items="center").classes("w-full gap-2"):
+                        (ui.number(label="Manual (cm)",
+                                   placeholder=app.state.config.camera.focus.distance.manual,
+                                   min=8, max=80, precision=0, step=1).classes("flex-1")
+                         .bind_value(app.state.config_updates["camera"]["focus"]["distance"], "manual",
+                                     forward=lambda v: int(v) if v is not None else None))
+                    with ui.row(align_items="center").classes("w-full gap-2"):
+                        (ui.number(label="Range Min (cm)",
+                                   placeholder=app.state.config.camera.focus.distance.range.min,
+                                   min=8, max=75, precision=0, step=1).classes("flex-1")
+                         .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "min",
+                                     forward=lambda v: int(v) if v is not None else None))
+                        (ui.number(label="Range Max (cm)",
+                                   placeholder=app.state.config.camera.focus.distance.range.max,
+                                   min=9, max=80, precision=0, step=1).classes("flex-1")
+                         .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "max",
+                                     forward=lambda v: int(v) if v is not None else None))
+                    (ui.label("Focus control slider will still use lens position for finer adjustment!")
+                     .classes("text-xs text-gray-500"))
 
             grid_separator()
             (ui.label("Frame Rate").classes("font-bold")
@@ -543,21 +680,21 @@ def create_recording_settings():
              .tooltip("Duration per recording session"))
             with ui.column().classes("w-full"):
                 with ui.tabs().classes("w-full") as tabs:
-                    ui.tab("No Battery", icon="timer")
                     ui.tab("Battery", icon="battery_charging_full")
-                with ui.tab_panels(tabs, value="No Battery").classes("w-full"):
+                    ui.tab("No Battery", icon="timer")
+                with ui.tab_panels(tabs, value="Battery").classes("w-full"):
+                    with ui.tab_panel("Battery"):
+                        create_duration_inputs("high", "High (> 70% or USB connected)",
+                            "Duration if battery charge level is > 70% or USB power is connected")
+                        create_duration_inputs("medium", "Medium (50-70%)",
+                            "Duration if battery charge level is between 50-70%")
+                        create_duration_inputs("low", "Low (30-50%)",
+                            "Duration if battery charge level is between 30-50%")
+                        create_duration_inputs("minimal", "Minimal (< 30%)",
+                            "Duration if battery charge level is < 30%",)
                     with ui.tab_panel("No Battery"):
                         create_duration_inputs("default", "Default",
                             "Duration if powermanager is disabled")
-                    with ui.tab_panel("Battery"):
-                        create_duration_inputs("high", "High",
-                            "Duration if battery charge level is > 70% or USB power is connected")
-                        create_duration_inputs("medium", "Medium",
-                            "Duration if battery charge level is between 50-70%")
-                        create_duration_inputs("low", "Low",
-                            "Duration if battery charge level is between 30-50%")
-                        create_duration_inputs("minimal", "Minimal",
-                            "Duration if battery charge level is < 30%",)
 
             grid_separator()
             ui.label("Capture Interval").classes("font-bold")
@@ -729,6 +866,82 @@ def create_system_settings():
                              forward=lambda v: int(v) if v is not None else None))
 
 
+def create_network_settings():
+    """Create network settings expansion panel."""
+    app.state.wifi_networks_ui = []
+
+    def remove_wifi_network(network_row):
+        """Remove a specific network row from UI and config"""
+        if network_row in app.state.wifi_networks_ui:
+            if len(app.state.wifi_networks_ui) > 1:
+                idx = app.state.wifi_networks_ui.index(network_row)
+
+                if idx < len(app.state.config_updates["network"]["wifi"]):
+                    app.state.config_updates["network"]["wifi"].pop(idx)
+
+                network_row.delete()
+                app.state.wifi_networks_ui.pop(idx)
+            else:
+                ui.notification("At least one Wi-Fi network must be configured!",
+                                type="warning", timeout=2)
+
+    def add_wifi_network(networks_column, ssid="", password=""):
+        """Add a new Wi-Fi network input field."""
+        with networks_column:
+            new_network = {"ssid": ssid, "password": password}
+            app.state.config_updates["network"]["wifi"].append(new_network)
+            idx = len(app.state.config_updates["network"]["wifi"]) - 1
+
+            with ui.row(align_items="baseline").classes("w-full gap-2") as network_row:
+                (ui.input(label="SSID").props("clearable").classes("flex-1")
+                 .bind_value(app.state.config_updates["network"]["wifi"][idx], "ssid",
+                             forward=lambda v: str(v) if v is not None else None))
+                (ui.input(label="Password", validation={
+                    "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
+                 .props("clearable").classes("flex-1")
+                 .bind_value(app.state.config_updates["network"]["wifi"][idx], "password",
+                             forward=lambda v: str(v) if v is not None else None))
+                ui.button(color="red", icon="delete",
+                          on_click=lambda: remove_wifi_network(network_row)).props("round")
+
+        app.state.wifi_networks_ui.append(network_row)
+
+    with ui.expansion("Network Settings", icon="network_wifi").classes("w-full font-bold"):
+        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
+            (ui.label("Mode").classes("font-bold")
+             .tooltip("Network mode of the Raspberry Pi"))
+            (ui.select(["wifi", "hotspot"], label="Network Mode").classes("w-full")
+             .bind_value(app.state.config_updates["network"], "mode"))
+
+            grid_separator()
+            (ui.label("Wi-Fi Networks").classes("font-bold")
+             .tooltip("List of Wi-Fi networks that the RPi should connect to (ordered by priority)"))
+            wifi_column = ui.column().classes("w-full gap-2")
+
+            with wifi_column:
+                app.state.config_updates["network"]["wifi"].clear()
+                networks_column = ui.column().classes("w-full gap-2")
+                for network in app.state.config.network.wifi:
+                    add_wifi_network(networks_column, network["ssid"], network["password"])
+                ui.button("Add Wi-Fi", color="green", icon="add",
+                          on_click=lambda: add_wifi_network(networks_column))
+
+            grid_separator()
+            ui.label("RPi Hotspot").classes("font-bold")
+            with ui.column().classes("w-full"):
+                with ui.row(align_items="baseline").classes("w-full gap-2"):
+                    (ui.input(label="SSID", placeholder=HOSTNAME)
+                     .props("clearable").classes("flex-1")
+                     .bind_value(app.state.config_updates["network"]["hotspot"], "ssid",
+                                 forward=lambda v: str(v) if v is not None else None))
+                    (ui.input(label="Password", validation={
+                        "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
+                     .props("clearable").classes("flex-1")
+                     .bind_value(app.state.config_updates["network"]["hotspot"], "password",
+                                 forward=lambda v: str(v) if v is not None else None))
+
+
 def create_webapp_settings():
     """Create web app settings expansion panel."""
     with ui.expansion("Web App Settings", icon="video_settings").classes("w-full font-bold"):
@@ -781,122 +994,116 @@ def create_webapp_settings():
              .bind_value(app.state.config_updates["webapp"]["https"], "enabled"))
 
 
-async def get_location():
-    """Get current location using the Geolocation API and save to config."""
-    try:
-        response = await ui.run_javascript('''
-            return await new Promise((resolve, reject) => {
-                if ("geolocation" in navigator) {
-                    const options = {
-                        enableHighAccuracy: true,
-                        timeout: 20000,
-                        maximumAge: 0
-                    };
-                    navigator.geolocation.getCurrentPosition(
-                        position => {
-                            const result = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude
-                            };
-                            if (position.coords.accuracy != null) {
-                                result.accuracy = position.coords.accuracy;
-                            }
-                            resolve(result);
-                        },
-                        error => reject(error),
-                        options
-                    );
-                } else {
-                    reject("Geolocation is not supported by this browser.");
-                }
-            });
-        ''', timeout=25)
+async def apply_config_changes(config_name):
+    """Update config selector, set as active config, apply network changes and restart the camera."""
+    has_network_changes = check_config_changes(app.state.config, app.state.config_updates, "network")
 
-        if response is None:
-            ui.notification("Location request failed. Please try again", type="warning", timeout=3)
-            return None
+    if has_network_changes:
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Network Configuration Change").classes("text-h6 font-bold")
+            ui.label("Applying network configuration changes will interrupt your connection.")
+            ui.label("You will probably need to connect to a different network afterwards.")
+            ui.label("Do you want to continue?")
 
-        app.state.config_updates["deployment"]["location"]["latitude"] = response["latitude"]
-        app.state.config_updates["deployment"]["location"]["longitude"] = response["longitude"]
-        if "accuracy" in response:
-            app.state.config_updates["deployment"]["location"]["accuracy"] = round(response["accuracy"])
+            with ui.row().classes("w-full justify-center gap-4 mt-4"):
+                ui.button("Cancel", on_click=lambda: dialog.submit(False))
+                ui.button("Apply Network Changes", on_click=lambda: dialog.submit(True),
+                          color="orange", icon="warning")
 
-    except TimeoutError:
-        ui.notification("Location request timed out. Please try again", type="warning", timeout=3)
-        return None
+        apply_network_changes = await dialog
+        if not apply_network_changes:
+            ui.notification("Configuration not applied!", type="warning", timeout=2)
+            return
+
+        ui.notification("Applying network changes in 3 seconds...",
+                        position="top", type="info", spinner=True, timeout=3)
+        await asyncio.sleep(3)
+
+        try:
+            set_up_network(app.state.config_updates)
+        except Exception as e:
+            ui.notification(f"Network settings failed to apply: {str(e)}", type="negative", timeout=5)
+            return
+
+    ui.notification(f"Activating configuration '{config_name}'...",
+                    position="top", type="info", spinner=True, timeout=2)
+    await asyncio.sleep(0.5)
+    update_config_selector(BASE_PATH, config_name)
+    app.state.config_active = config_name
+    await restart_camera()
 
 
-def create_deployment_section():
-    """Create deployment metadata expansion panel."""
-    with ui.expansion("Deployment Metadata", icon="location_on").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-
-            (ui.label("Start Time").classes("font-bold")
-             .tooltip("Start date + time of the camera deployment (ISO 8601 format)"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                time_label = (ui.label()
-                              .classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                              .bind_text(app.state.config_updates["deployment"], "start"))
-                ui.button("Get Time", icon="event",
-                          on_click=lambda: time_label.set_text(str(datetime.now().isoformat())))
-
-            grid_separator()
-            (ui.label("Location").classes("font-bold")
-             .tooltip("Location of the camera deployment (latitude + longitude)"))
-            with ui.column().classes("w-full gap-2"):
-                with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-                    ui.label("Latitude:").classes("font-bold")
-                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                     .bind_text(app.state.config_updates["deployment"]["location"], "latitude"))
-                    ui.label("Longitude:").classes("font-bold")
-                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                     .bind_text(app.state.config_updates["deployment"]["location"], "longitude"))
-                    ui.label("Accuracy (m):").classes("font-bold")
-                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                     .bind_text(app.state.config_updates["deployment"]["location"], "accuracy"))
-                loc_button = ui.button("Get Location", icon="my_location", on_click=get_location)
-                if not app.state.config.webapp.https.enabled:
-                    loc_button.disable()
-                    loc_button.tooltip("HTTPS must be enabled for Geolocation API to work")
-
-            grid_separator()
-            (ui.label("Setting").classes("font-bold")
-             .tooltip("Background setting of the camera (e.g. platform type/flower species)"))
-            (ui.input(placeholder="Enter background setting").props("clearable")
-             .bind_value(app.state.config_updates["deployment"], "setting",
-                         forward=lambda v: str(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("Notes").classes("font-bold")
-             .tooltip("Additional notes about the deployment"))
-            (ui.textarea(placeholder="Enter deployment notes").props("clearable")
-             .bind_value(app.state.config_updates["deployment"], "notes",
-                         forward=lambda v: str(v) if v is not None else None))
-
-
-async def save_config():
-    """Save configuration while preserving comments and structure."""
-    if app.state.config_active == "config_default.yaml":
-        ui.notification("Cannot save changes to default configuration!", type="warning", timeout=2)
-        await create_new_config()
-        return
-
-    current_file_path = BASE_PATH / "configs" / app.state.config_active
+async def show_apply_dialog(config_name):
+    """Show dialog to apply changes to current config."""
+    has_network_changes = check_config_changes(app.state.config, app.state.config_updates, "network")
 
     with ui.dialog() as dialog, ui.card():
-        ui.label(f"Save changes to '{app.state.config_active}'?")
-        with ui.row().classes("w-full justify-center gap-4 mt-4"):
-            ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
-            ui.button("Create New", on_click=lambda: dialog.submit("new"), color="green")
-            ui.button("Overwrite", on_click=lambda: dialog.submit("overwrite"), color="orange")
+        ui.label(f"Configuration '{config_name}' has been updated.")
+        ui.label("Do you want to apply the changes now?")
 
-    action = await dialog
-    if action == "cancel":
-        ui.notification("Changes not saved!", type="warning", timeout=2)
-    elif action == "new":
-        await create_new_config()
-    elif action == "overwrite":
-        await save_to_file(current_file_path)
+        with ui.row().classes("w-full justify-center gap-4 mt-4"):
+            ui.button("Cancel", on_click=lambda: dialog.submit(False))
+            ui.button("Apply Changes", on_click=lambda: dialog.submit(True), color="green")
+
+    apply_changes = await dialog
+    if apply_changes:
+        await apply_config_changes(config_name)
+    else:
+        if has_network_changes:
+            ui.notification(
+                "Configuration saved but not applied yet! Please apply it to activate your network changes.",
+                type="warning", timeout=3)
+        else:
+            ui.notification(
+                "Configuration saved but not applied yet! Will be used for next web app or recording start.",
+                type="info", timeout=3)
+
+
+async def show_activate_dialog(config_name):
+    """Show dialog to activate another config."""
+    with ui.dialog() as dialog, ui.card():
+        ui.label(f"Configuration saved to '{config_name}'")
+        ui.label("Do you want to activate this configuration now?")
+
+        with ui.row().classes("w-full justify-center gap-4 mt-4"):
+            ui.button("Cancel", on_click=lambda: dialog.submit(False))
+            ui.button("Activate Config", on_click=lambda: dialog.submit(True), color="green")
+
+    activate_config = await dialog
+    if activate_config:
+        await apply_config_changes(config_name)
+    else:
+        ui.notification("Configuration not activated!", type="warning", timeout=2)
+
+
+async def save_to_file(config_path):
+    """Save configuration to specified file path."""
+    config_template_path = BASE_PATH / "configs" / app.state.config_active
+
+    with open(config_template_path, "r", encoding="utf-8") as file:
+        config_text = file.read()
+
+    ruamel_yaml = ruamel.yaml.YAML()
+    ruamel_yaml.indent(mapping=2, sequence=4, offset=2)  # indentation for nested structures
+    ruamel_yaml.width = 150  # maximum line width before wrapping
+    ruamel_yaml.preserve_quotes = True  # preserve all comments
+    ruamel_yaml.boolean_representation = ["false", "true"]  # ensure lowercase representation
+
+    config_template = ruamel_yaml.load(config_text)
+    update_nested_dict(config_template, app.state.config_updates, dict(app.state.config))
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        ruamel_yaml.dump(config_template, file)
+
+    ui.notification(f"Configuration saved to '{config_path.name}'!", type="positive", timeout=2)
+
+    app.state.configs = sorted([file.name for file in (BASE_PATH / "configs").glob("*.yaml")
+                                if file.name != "config_selector.yaml"])
+
+    if config_path.name == app.state.config_active:
+        await show_apply_dialog(config_path.name)
+    else:
+        await show_activate_dialog(config_path.name)
 
 
 async def create_new_config():
@@ -953,85 +1160,29 @@ async def create_new_config():
     await save_to_file(config_new_path)
 
 
-async def save_to_file(config_path):
-    """Save configuration to specified file path."""
-    config_default_path = BASE_PATH / "configs" / "config_default.yaml"
+async def save_config():
+    """Save configuration while preserving comments and structure."""
+    if app.state.config_active == "config_default.yaml":
+        ui.notification("Cannot save changes to default configuration!", type="warning", timeout=2)
+        await create_new_config()
+        return
 
-    with open(config_default_path, "r", encoding="utf-8") as file:
-        config_text = file.read()
+    current_file_path = BASE_PATH / "configs" / app.state.config_active
 
-    config_text = config_text.replace(
-        "# Insect Detect - Default Configuration Settings",
-        "# Insect Detect - Custom Configuration Settings"
-    ).replace(
-        "# DO NOT MODIFY THIS DEFAULT CONFIG FILE - use \"config_custom.yaml\" for modifications",
-        "# Use this custom config file for modifications (copy and create multiple configurations if needed)"
-    )
-
-    ruamel_yaml = ruamel.yaml.YAML()
-    ruamel_yaml.width = 150  # maximum line width before wrapping
-    ruamel_yaml.preserve_quotes = True  # preserve all comments
-    ruamel_yaml.boolean_representation = ["false", "true"]  # ensure lowercase representation
-
-    config_template = ruamel_yaml.load(config_text)
-    update_nested_dict(config_template, app.state.config_updates, dict(app.state.config))
-
-    with open(config_path, "w", encoding="utf-8") as file:
-        ruamel_yaml.dump(config_template, file)
-
-    ui.notification(f"Configuration saved to '{config_path.name}'!", type="positive", timeout=2)
-
-    app.state.configs = sorted([file.name for file in (BASE_PATH / "configs").glob("*.yaml")
-                                if file.name != "config_selector.yaml"])
-
-    if config_path.name == app.state.config_active:
-        await show_apply_dialog(config_path.name)
-    else:
-        await show_activate_dialog(config_path.name)
-
-
-async def show_apply_dialog(config_name):
-    """Show dialog to apply changes to current config."""
     with ui.dialog() as dialog, ui.card():
-        ui.label(f"Configuration '{config_name}' has been updated.")
-        ui.label("Do you want to apply the changes now?")
-
+        ui.label(f"Save changes to '{app.state.config_active}'?")
         with ui.row().classes("w-full justify-center gap-4 mt-4"):
-            ui.button("Cancel", on_click=lambda: dialog.submit(False))
-            ui.button("Apply Changes", on_click=lambda: dialog.submit(True), color="green")
+            ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
+            ui.button("Create New", on_click=lambda: dialog.submit("new"), color="green")
+            ui.button("Overwrite", on_click=lambda: dialog.submit("overwrite"), color="orange")
 
-    apply_changes = await dialog
-    if apply_changes:
-        await apply_config_changes(config_name)
-    else:
-        ui.notification("Changes not applied!", type="warning", timeout=2)
-
-
-async def show_activate_dialog(config_name):
-    """Show dialog to activate another config."""
-    with ui.dialog() as dialog, ui.card():
-        ui.label(f"Configuration saved to '{config_name}'")
-        ui.label("Do you want to activate this configuration now?")
-
-        with ui.row().classes("w-full justify-center gap-4 mt-4"):
-            ui.button("Cancel", on_click=lambda: dialog.submit(False))
-            ui.button("Activate Config", on_click=lambda: dialog.submit(True), color="green")
-
-    activate_config = await dialog
-    if activate_config:
-        await apply_config_changes(config_name)
-    else:
-        ui.notification("Configuration not activated!", type="warning", timeout=2)
-
-
-async def apply_config_changes(config_name):
-    """Update config selector, set as active config and restart the camera."""
-    ui.notification(f"Activating configuration '{config_name}'...",
-                    position="top", type="info", spinner=True, timeout=2)
-    await asyncio.sleep(0.5)
-    update_config_selector(BASE_PATH, config_name)
-    app.state.config_active = config_name
-    await restart_camera()
+    action = await dialog
+    if action == "cancel":
+        ui.notification("Changes not saved!", type="warning", timeout=2)
+    elif action == "new":
+        await create_new_config()
+    elif action == "overwrite":
+        await save_to_file(current_file_path)
 
 
 async def start_recording():

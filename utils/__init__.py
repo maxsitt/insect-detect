@@ -10,6 +10,7 @@ Modules:
     config: Utility functions for configuration file management.
     data: Utility functions for data management.
     log: Utility functions for information logging.
+    network: Utility functions for network management.
     oak: Utility functions for Luxonis OAK camera control.
     post: Utility functions for image post-processing.
     power: Utility functions for power management.

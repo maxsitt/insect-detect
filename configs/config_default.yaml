@@ -1,4 +1,4 @@
-# Insect Detect - Default Configuration Settings
+# Insect Detect - Default Configuration File
 
 # Source:   https://github.com/maxsitt/insect-detect
 # License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
@@ -7,62 +7,40 @@
 
 # DO NOT MODIFY THIS DEFAULT CONFIG FILE - use "config_custom.yaml" for modifications
 
-# System settings
-powermanager:
-  enabled: true     # Disable if no power management board is connected
-  model: wittypi    # Power management board model (options: wittypi, pijuice)
-  charge_min: 20    # Minimum required battery charge level (%) to start/continue a recording
-  charge_check: 30  # Time interval (seconds) for checking battery charge level during recording
-oak:
-  temp_max: 100     # Maximum allowed OAK chip temperature (°C) to continue a recording (< 105°C)
-  temp_check: 30    # Time interval (seconds) for checking OAK chip temperature during recording
-storage:
-  disk_min: 1000    # Minimum required free disk space (MB) to start/continue a recording
-  disk_check: 60    # Time interval (seconds) for checking free disk space during recording
-logging:
-  enabled: false    # Log system information (temperature, memory, CPU utilization, battery info)
-  interval: 30      # Time interval (seconds) for saving logs during recording
+# Deployment metadata (use web app for editing - Geolocation API requires 'https' enabled)
+deployment:
+  start:        # Start date + time of the camera deployment (ISO 8601 format)
+  location:
+    latitude:   # Latitude (decimal degrees)
+    longitude:  # Longitude (decimal degrees)
+    accuracy:   # GPS accuracy (meters)
+  setting:      # Background setting (e.g. platform type/flower species)
+  notes:        # Additional fieldnotes
 
 # Camera settings
 camera:
-  fps: 20              # Camera frame rate (range: 1-30) -> higher fps increases power consumption
-  resolution:          # Resolution of captured images (HQ frames)
-    width: 3840        # Frame width (max. 3840) -> must be multiple of 32, e.g. 2176 for ~square
-    height: 2160       # Frame height (max. 2160) -> must be multiple of 2
-  jpeg_quality: 80     # JPEG quality of captured images (range: 0-100, recommended: 60-90)
+  fps: 20                # Camera frame rate (range: 1-30) -> higher fps increases power consumption
+  resolution:            # Resolution of captured images (HQ frames)
+    width: 3840          # Frame width (max. 3840) -> must be multiple of 32, e.g. 2176 for ~square
+    height: 2160         # Frame height (max. 2160) -> must be multiple of 2
+  jpeg_quality: 80       # JPEG quality of captured images (range: 0-100, recommended: 60-90)
   focus:
-    mode: continuous   # Options: continuous, manual, range
+    mode: continuous     # Options: continuous, manual, range
+    type: lens_position  # Options: distance, lens_position (focus type for 'manual' or 'range' mode)
     distance:
-      enabled: true    # Use distance-based focus (in cm)
-      manual: 19       # Manual focus position (distance to camera in cm)
+      manual: 19         # Manual focus position (distance to camera in cm)
       range:
-        min: 15        # Minimum auto focus position (distance to camera in cm)
-        max: 20        # Maximum auto focus position (distance to camera in cm)
+        min: 15          # Minimum auto focus position (distance to camera in cm)
+        max: 20          # Maximum auto focus position (distance to camera in cm)
     lens_position:
-      enabled: false   # Use lens position-based focus (0-255)
-      manual: 156      # Manual lens position (range: 0-255)
+      manual: 156        # Manual lens position (range: 0-255)
       range:
-        min: 154       # Minimum lens position (range: 0-255) - greater distance to camera
-        max: 165       # Maximum lens position (range: 0-255) - shorter distance to camera
+        min: 154         # Minimum lens position (range: 0-255) - greater distance to camera
+        max: 165         # Maximum lens position (range: 0-255) - shorter distance to camera
   isp:
-    sharpness: 1       # Image sharpness (range: 0-4) - setting to 0 can reduce artifacts
-    luma_denoise: 1    # Luminance noise reduction (range: 0-4) - setting to 0 can reduce artifacts
-    chroma_denoise: 1  # Chrominance noise reduction (range: 0-4)
-
-# Recording settings
-recording:
-  duration:
-    default: 60     # Duration (minutes) per recording session if powermanager is disabled
-    battery:
-      high: 60      # Duration (minutes) if battery charge level is > 70% or USB power is connected
-      medium: 40    # Duration (minutes) if battery charge level is between 50-70%
-      low: 20       # Duration (minutes) if battery charge level is between 30-50%
-      minimal: 10   # Duration (minutes) if battery charge level is < 30%
-  capture_interval:
-    detection: 1.0  # Time interval (seconds) for saving HQ frame + metadata while object is detected
-    timelapse: 600  # Time interval (seconds) for saving HQ frame (independent of detected objects)
-  shutdown:
-    enabled: true   # Shut down Raspberry Pi after recording session is finished or interrupted
+    sharpness: 1         # Image sharpness (range: 0-4) - setting to 0 can reduce artifacts
+    luma_denoise: 1      # Luminance noise reduction (range: 0-4) - setting to 0 can reduce artifacts
+    chroma_denoise: 1    # Chrominance noise reduction (range: 0-4)
 
 # Detection settings
 detection:
@@ -77,21 +55,62 @@ detection:
   exposure_region:
     enabled: false     # Use bounding box coordinates from detections to set auto exposure region
 
+# Recording settings
+recording:
+  duration:
+    battery:
+      high: 60      # Duration (minutes) if battery charge level is > 70% or USB power is connected
+      medium: 40    # Duration (minutes) if battery charge level is between 50-70%
+      low: 20       # Duration (minutes) if battery charge level is between 30-50%
+      minimal: 10   # Duration (minutes) if battery charge level is < 30%
+    default: 60     # Duration (minutes) per recording session if powermanager is disabled
+  capture_interval:
+    detection: 1.0  # Time interval (seconds) between saving HQ frame + metadata while object is detected
+    timelapse: 600  # Time interval (seconds) between saving HQ frame (independent of detected objects)
+  shutdown:
+    enabled: true   # Shut down Raspberry Pi after recording session is finished or interrupted
+
 # Post-processing settings
-post_processing:    # Select post-processing methods (delete requires crop or overlay)
+post_processing:    # Select post-processing methods ('delete' requires 'crop' or 'overlay')
   crop:
-    enabled: true   # Crop detections (= bounding boxes) from HQ frames
-    method: square  # Crop method for detections/bounding boxes (options: square, original)
+    enabled: true   # Crop detections (= bounding boxes) from HQ frames and save as individual .jpg files
+    method: square  # Options: square, original (crop method for detections/bounding boxes)
   overlay:
     enabled: false  # Draw overlays on HQ frame copies (bounding box, label, confidence, track ID)
   delete:
-    enabled: false  # Delete original HQ frames with detections after processing
+    enabled: false  # Delete original HQ frames with detections after processing (requires 'crop' or 'overlay')
 archive:
-  enabled: false    # Archive (zip) all captured data + logs/configs and manage disk space
+  enabled: false    # Archive all captured data + logs/configs (uncompressed zip) and manage disk space
   disk_low: 5000    # Minimum required free disk space (MB) for unarchived data retention
 upload:
-  enabled: false    # Upload archived data to cloud storage provider (runs archive even if disabled)
-  content: crop     # Select content for upload, always including metadata (options: all, full, crop, metadata)
+  enabled: false    # Upload archived data to cloud storage provider (runs 'archive' even if disabled)
+  content: crop     # Options: all, full, crop, metadata (content for upload, always including metadata)
+
+# System settings
+powermanager:
+  enabled: true     # Disable if no power management board is connected
+  model: wittypi    # Options: wittypi, pijuice
+  charge_min: 20    # Minimum required battery charge level (%) to start/continue a recording
+  charge_check: 30  # Time interval (seconds) between checking battery charge level during recording
+oak:
+  temp_max: 100     # Maximum allowed OAK chip temperature (°C) to continue a recording (< 105°C)
+  temp_check: 30    # Time interval (seconds) between checking OAK chip temperature during recording
+storage:
+  disk_min: 1000    # Minimum required free disk space (MB) to start/continue a recording
+  disk_check: 60    # Time interval (seconds) between checking free disk space during recording
+logging:
+  enabled: false    # Log system information (temperature, memory, CPU utilization, battery info)
+  interval: 30      # Time interval (seconds) between saving logs during recording
+
+# Network settings
+network:
+  mode: wifi     # Options: wifi, hotspot
+  wifi:          # List of Wi-Fi networks (ordered by autoconnect priority)
+    - ssid:      # SSID of the Wi-Fi network with the highest priority
+      password:  # Password of the Wi-Fi network -> must be at least 8 characters long
+  hotspot:
+    ssid:        # SSID of the RPi hotspot (recommended: RPi hostname)
+    password:    # Password of the RPi hotspot -> must be at least 8 characters long
 
 # Web app settings
 webapp:
@@ -102,13 +121,3 @@ webapp:
   jpeg_quality: 70  # JPEG quality of streamed HQ frames (range: 0-100, recommended: 50-80)
   https:
     enabled: false  # Use HTTPS protocol (required for browser Geolocation API to get GPS coordinates)
-
-# Deployment metadata (recommended to use web app for editing - Geolocation API requires https)
-deployment:
-  start:        # Start date + time of the camera deployment (ISO 8601 format)
-  location:
-    latitude:   # Latitude (decimal degrees)
-    longitude:  # Longitude (decimal degrees)
-    accuracy:   # GPS accuracy (meters)
-  setting:      # Background setting (e.g. platform type/flower species)
-  notes:        # Additional notes

@@ -41,9 +41,10 @@ def get_current_connection():
 
     if current_connection and current_connection != "--":
         connection_info = nmcli.connection.show(current_connection)
+        connection_ssid = connection_info.get("802-11-wireless.ssid")
         if connection_info.get("802-11-wireless.mode") == "ap":
-            return {"mode": "hotspot", "ssid": current_connection}
-        return {"mode": "wifi", "ssid": current_connection}
+            return {"mode": "hotspot", "ssid": connection_ssid}
+        return {"mode": "wifi", "ssid": connection_ssid}
     return {"mode": "disconnected", "ssid": None}
 
 

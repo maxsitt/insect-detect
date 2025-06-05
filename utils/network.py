@@ -74,7 +74,7 @@ def create_hotspot(hotspot_config):
             conn_type="wifi",
             ifname="wlan0",
             name=str(hotspot_config["ssid"]),
-            autoconnect=False,
+            autoconnect=True,
             options={
                 "wifi.mode": "ap",
                 "wifi.band": "bg",
@@ -92,7 +92,8 @@ def create_hotspot(hotspot_config):
                 "wifi.band": "bg",
                 "ipv4.method": "shared",
                 "wifi-sec.key-mgmt": "wpa-psk",
-                "wifi-sec.psk": str(hotspot_config["password"])
+                "wifi-sec.psk": str(hotspot_config["password"]),
+                "connection.autoconnect": "yes"
             }
         )
 
@@ -131,6 +132,7 @@ def create_wifi(wifi_configs):
                 options={
                     "wifi-sec.key-mgmt": "wpa-psk",
                     "wifi-sec.psk": str(wifi_config["password"]),
-                    "connection.autoconnect-priority": str(100 - (i * 10))
+                    "connection.autoconnect-priority": str(100 - (i * 10)),
+                    "connection.autoconnect": "yes"
                 }
             )

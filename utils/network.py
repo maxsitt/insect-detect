@@ -7,6 +7,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
     get_ip_address(): Get the IPv4 address assigned to the wlan0 wireless interface.
+    get_current_connection(): Get mode and SSID of the current wifi connection.
     set_up_network(): Set up and activate network connections based on current configuration.
     create_hotspot(): Create or update hotspot connection.
     create_wifi(): Create or update Wi-Fi connections.
@@ -30,6 +31,20 @@ def get_ip_address():
         return socket.inet_ntoa(packed_addr[20:24])  # extract IP address
     except Exception:
         return "127.0.0.1"  # fallback to localhost if wlan0 is not available
+
+
+def get_current_connection():
+    """Get mode and SSID of the current wifi connection."""
+    devices = nmcli.device()
+    device_wlan0 = next(dev for dev in devices if dev.device == "wlan0")
+    current_connection = device_wlan0.connection
+
+    if current_connection and current_connection != "--":
+        connection_info = nmcli.connection.show(current_connection)
+        if connection_info.get("802-11-wireless.mode") == "ap":
+            return {"mode": "hotspot", "ssid": current_connection}
+        return {"mode": "wifi", "ssid": current_connection}
+    return {"mode": "disconnected", "ssid": None}
 
 
 def set_up_network(config):

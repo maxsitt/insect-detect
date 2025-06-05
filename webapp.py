@@ -39,7 +39,7 @@ from nicegui import Client, app, core, ui
 
 from utils.app import create_duration_inputs, convert_duration, grid_separator, validate_number
 from utils.config import check_config_changes, parse_json, parse_yaml, update_config_selector, update_nested_dict
-from utils.network import get_ip_address, set_up_network
+from utils.network import get_current_connection, get_ip_address, set_up_network
 from utils.oak import convert_bbox_roi, create_pipeline
 
 # Set base path and get hostname + IP address
@@ -63,6 +63,7 @@ async def start_camera(base_path):
                                 if file.name != "config_selector.yaml"])
 
     # Initialize relevant app.state variables
+    app.state.connection = get_current_connection()
     app.state.start_recording_after_shutdown = False
     app.state.exposure_region_active = False
     app.state.show_overlay = False
@@ -371,7 +372,7 @@ def create_control_elements():
         (ui.range(min=0, max=255, step=1, on_change=preview_focus_range).props("label")
          .bind_value(app.state.config_updates["camera"]["focus"]["lens_position"], "range"))
 
-    with ui.row(align_items="center").classes("w-full gap-4"):
+    with ui.row(align_items="center").classes("w-full gap-2"):
         # Switches to toggle dark mode and model/tracker overlay
         (ui.switch("Dark", value=True).props("color=green").classes("font-bold")
          .bind_value_to(ui.dark_mode()))
@@ -381,12 +382,13 @@ def create_control_elements():
 
         # WiFi/Hotspot status icons
         ui.separator().props("vertical")
-        if app.state.config.network.mode == "wifi":
-            ui.icon("wifi", color="green").classes("text-2xl")
-            ui.icon("wifi_tethering_off", color="gray").classes("text-2xl")
-        elif app.state.config.network.mode == "hotspot":
-            ui.icon("wifi_off", color="gray").classes("text-2xl")
-            ui.icon("wifi_tethering", color="green").classes("text-2xl")
+        if app.state.connection["mode"] == "wifi":
+            ui.icon("wifi", color="green")
+            ui.icon("wifi_tethering_off", color="gray")
+        elif app.state.connection["mode"] == "hotspot":
+            ui.icon("wifi_off", color="gray")
+            ui.icon("wifi_tethering", color="green")
+        ui.label(f"{app.state.connection['ssid']}").classes("text-xs")
 
     # Config file selector
     with ui.row(align_items="center").classes("w-full gap-2 mt-0"):

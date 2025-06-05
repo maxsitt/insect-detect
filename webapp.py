@@ -1080,18 +1080,17 @@ async def show_activate_dialog(config_name):
 
 async def save_to_file(config_path):
     """Save configuration to specified file path."""
-    config_template_path = BASE_PATH / "configs" / app.state.config_active
-
-    with open(config_template_path, "r", encoding="utf-8") as file:
-        config_text = file.read()
-
     ruamel_yaml = ruamel.yaml.YAML()
     ruamel_yaml.indent(mapping=2, sequence=4, offset=2)  # indentation for nested structures
     ruamel_yaml.width = 150  # maximum line width before wrapping
     ruamel_yaml.preserve_quotes = True  # preserve all comments
     ruamel_yaml.boolean_representation = ["false", "true"]  # ensure lowercase representation
 
-    config_template = ruamel_yaml.load(config_text)
+    config_template_path = BASE_PATH / "configs" / app.state.config_active
+
+    with open(config_template_path, "r", encoding="utf-8") as file:
+        config_template = ruamel_yaml.load(file)
+
     update_nested_dict(config_template, app.state.config_updates, dict(app.state.config))
 
     with open(config_path, "w", encoding="utf-8") as file:
@@ -1278,7 +1277,7 @@ if __name__ == "__main__":
     ssl_key_path = Path.home() / "ssl_certificates" / "key.pem"
     use_https = https_enabled and ssl_cert_path.exists() and ssl_key_path.exists()
     if https_enabled and not use_https:
-        print("\nHTTPS is enabled but no SSL certificates were found. Using HTTP instead.\n")
+        print("\nHTTPS is enabled but no SSL certificates were found. Using HTTP instead.")
 
     # Set parameters based on HTTPS setting
     protocol = "https" if use_https else "http"

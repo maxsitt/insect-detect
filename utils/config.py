@@ -13,8 +13,10 @@ Functions:
     check_config_changes(): Check if an updated config section has any changes to the original.
     update_config_selector(): Update the config selector file to point to the active configuration.
     update_nested_dict(): Update nested dictionary recursively. Replace 'None' with default value.
+    sanitize_config(): Mask sensitive information in config (e.g. passwords).
 """
 
+import copy
 import json
 
 import ruamel.yaml
@@ -71,3 +73,18 @@ def update_nested_dict(template, updates, defaults):
             update_nested_dict(template[key], value, defaults[key])
         else:
             template[key] = value if value is not None else defaults[key]
+
+
+def sanitize_config(config):
+    """Mask sensitive information in config (e.g. passwords)."""
+    sanitized = copy.deepcopy(dict(config))
+
+    if "network" in sanitized:
+        if "wifi" in sanitized["network"]:
+            for wifi in sanitized["network"]["wifi"]:
+                if "password" in wifi:
+                    wifi["password"] = "[REDACTED]"
+        if "hotspot" in sanitized["network"] and "password" in sanitized["network"]["hotspot"]:
+            sanitized["network"]["hotspot"]["password"] = "[REDACTED]"
+
+    return sanitized

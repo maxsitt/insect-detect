@@ -65,7 +65,7 @@ import depthai as dai
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from utils.config import parse_json, parse_yaml
+from utils.config import parse_json, parse_yaml, sanitize_config
 from utils.data import archive_data, save_encoded_frame, upload_data
 from utils.log import record_log, save_logs
 from utils.oak import convert_bbox_roi, create_get_temp_oak, create_pipeline
@@ -155,7 +155,7 @@ save_path.mkdir(parents=True, exist_ok=True)
 # Save configurations of the current recording session as JSON files
 config_path = save_path / f"{timestamp_dir}_{Path(config_active).stem}.json"
 config_model_path = save_path / f"{timestamp_dir}_{config.detection.model.config}"
-json.dump(config, config_path.open("w", encoding="utf-8"), indent=2)
+json.dump(sanitize_config(config), config_path.open("w", encoding="utf-8"), indent=2)
 json.dump(config_model, config_model_path.open("w", encoding="utf-8"), indent=2)
 
 # Create depthai pipeline and set path to metadata .csv file

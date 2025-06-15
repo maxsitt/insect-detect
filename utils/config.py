@@ -10,7 +10,7 @@ Class:
 Functions:
     parse_json(): Load JSON configuration file and return dot notation accessible dictionary.
     parse_yaml(): Load YAML configuration file and return dot notation accessible dictionary.
-    check_config_changes(): Check if an updated config section has any changes to the original.
+    check_config_changes(): Check if an updated config has any changes to the original.
     update_config_selector(): Update the config selector file to point to the active configuration.
     update_nested_dict(): Update nested dictionary recursively. Replace 'None' with default value.
     sanitize_config(): Mask sensitive information in config (e.g. passwords).
@@ -42,9 +42,9 @@ def parse_yaml(config_path):
         return DotDict(yaml.safe_load(config))
 
 
-def check_config_changes(original, updates, section):
-    """Check if an updated config section has any changes to the original."""
-    return json.dumps(dict(original[section]), sort_keys=True) != json.dumps(updates[section], sort_keys=True)
+def check_config_changes(original, updates):
+    """Check if an updated config has any changes to the original."""
+    return json.dumps(dict(original), sort_keys=True) != json.dumps(dict(updates), sort_keys=True)
 
 
 def update_config_selector(base_path, config_active):

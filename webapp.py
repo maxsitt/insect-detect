@@ -350,12 +350,36 @@ async def preview_focus_range(e):
 
 
 async def on_config_change(e):
-    """Update active configuration file, reload configurations, and start new pipeline."""
-    if e.value != app.state.config_active:
-        ui.notification("Restarting camera with new configuration!", position="top", type="info", timeout=2)
-        await asyncio.sleep(0.5)
-        update_config_selector(BASE_PATH, e.value)
-        await restart_camera()
+    """Switch to selected config file and apply new configuration parameters."""
+    config_selected_name = e.value
+    if config_selected_name == app.state.config_active:
+        return
+
+    has_unsaved_changes = check_config_changes(app.state.config, app.state.config_updates)
+    if has_unsaved_changes:
+        with ui.dialog() as dialog, ui.card():
+            ui.label("You have unsaved configuration changes!").classes("text-h6 font-bold")
+            ui.label("Do you want to save them before switching to a different config?")
+            with ui.row().classes("w-full justify-center gap-4 mt-4"):
+                ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
+                ui.button("Save Config", on_click=lambda: dialog.submit("save"), color="green", icon="save")
+                ui.button("Switch Without Saving", on_click=lambda: dialog.submit("proceed"), color="orange")
+
+        action = await dialog
+        if action == "cancel":
+            app.state.config_select_ui.set_value(app.state.config_active)
+            ui.notification("Configuration switch cancelled!", type="warning", timeout=2)
+            return
+        elif action == "save":
+            app.state.config_select_ui.set_value(app.state.config_active)
+            await save_config()
+            return
+
+    config_selected = parse_yaml(BASE_PATH / "configs" / config_selected_name)
+    has_network_changes = check_config_changes(app.state.config.network,
+                                               config_selected.network)
+
+    await apply_config_changes(config_selected_name, has_network_changes, config_selected)
 
 
 def create_control_elements():
@@ -394,8 +418,8 @@ def create_control_elements():
     with ui.row(align_items="center").classes("w-full gap-2 mt-0"):
         (ui.label("Active Config:").classes("font-bold whitespace-nowrap")
          .tooltip("Activate config file that will be used by the web app and recording script"))
-        (ui.select(app.state.configs, value=app.state.config_active, on_change=on_config_change)
-         .classes("flex-1 truncate"))
+        app.state.config_select_ui = ui.select(app.state.configs, value=app.state.config_active,
+                                               on_change=on_config_change).classes("flex-1 truncate")
 
 
 async def get_location():
@@ -991,15 +1015,13 @@ def create_webapp_settings():
              .tooltip("Use HTTPS protocol (required for browser Geolocation API to get GPS location)"))
             (ui.switch("Enable", on_change=lambda e: ui.notification(
                 "Protocol changes require a full web app restart to take effect.",
-                type="warning", timeout=2) if e.value != app.state.config.webapp.https.enabled else None)
+                type="warning", timeout=3) if e.value != app.state.config.webapp.https.enabled else None)
              .props("color=green").classes("font-bold")
              .bind_value(app.state.config_updates["webapp"]["https"], "enabled"))
 
 
-async def apply_config_changes(config_name):
-    """Update config selector, set as active config, apply network changes and restart the camera."""
-    has_network_changes = check_config_changes(app.state.config, app.state.config_updates, "network")
-
+async def apply_config_changes(config_name, has_network_changes, config_selected=None):
+    """Apply network changes, update config selector and restart the camera with new config."""
     if has_network_changes:
         with ui.dialog() as dialog, ui.card():
             ui.label("Network Configuration Change").classes("text-h6 font-bold")
@@ -1014,7 +1036,11 @@ async def apply_config_changes(config_name):
 
         apply_network_changes = await dialog
         if not apply_network_changes:
-            ui.notification("Configuration not applied!", type="warning", timeout=2)
+            if config_selected is not None:
+                app.state.config_select_ui.set_value(app.state.config_active)
+                ui.notification("Configuration not switched!", type="warning", timeout=2)
+            else:
+                ui.notification("Configuration not applied!", type="warning", timeout=2)
             return
 
         ui.notification("Applying network changes in 3 seconds...",
@@ -1022,7 +1048,10 @@ async def apply_config_changes(config_name):
         await asyncio.sleep(3)
 
         try:
-            set_up_network(app.state.config_updates)
+            if config_selected is not None:
+                set_up_network(dict(config_selected))
+            else:
+                set_up_network(app.state.config_updates)
         except Exception as e:
             ui.notification(f"Network settings failed to apply: {str(e)}", type="negative", timeout=5)
             return
@@ -1035,10 +1064,8 @@ async def apply_config_changes(config_name):
     await restart_camera()
 
 
-async def show_apply_dialog(config_name):
+async def show_apply_dialog(config_name, has_network_changes):
     """Show dialog to apply changes to current config."""
-    has_network_changes = check_config_changes(app.state.config, app.state.config_updates, "network")
-
     with ui.dialog() as dialog, ui.card():
         ui.label(f"Configuration '{config_name}' has been updated.")
         ui.label("Do you want to apply the changes now?")
@@ -1049,7 +1076,7 @@ async def show_apply_dialog(config_name):
 
     apply_changes = await dialog
     if apply_changes:
-        await apply_config_changes(config_name)
+        await apply_config_changes(config_name, has_network_changes)
     else:
         if has_network_changes:
             ui.notification(
@@ -1061,7 +1088,7 @@ async def show_apply_dialog(config_name):
                 type="info", timeout=3)
 
 
-async def show_activate_dialog(config_name):
+async def show_activate_dialog(config_name, has_network_changes):
     """Show dialog to activate another config."""
     with ui.dialog() as dialog, ui.card():
         ui.label(f"Configuration saved to '{config_name}'")
@@ -1073,13 +1100,18 @@ async def show_activate_dialog(config_name):
 
     activate_config = await dialog
     if activate_config:
-        await apply_config_changes(config_name)
+        await apply_config_changes(config_name, has_network_changes)
     else:
+        # Refresh UI components to reflect the still active config (reset config_updates)
+        create_ui_components.refresh()
         ui.notification("Configuration not activated!", type="warning", timeout=2)
 
 
 async def save_to_file(config_path):
     """Save configuration to specified file path."""
+    has_network_changes = check_config_changes(app.state.config.network,
+                                               app.state.config_updates["network"])
+
     ruamel_yaml = ruamel.yaml.YAML()
     ruamel_yaml.indent(mapping=2, sequence=4, offset=2)  # indentation for nested structures
     ruamel_yaml.width = 150  # maximum line width before wrapping
@@ -1102,9 +1134,13 @@ async def save_to_file(config_path):
                                 if file.name != "config_selector.yaml"])
 
     if config_path.name == app.state.config_active:
-        await show_apply_dialog(config_path.name)
+        # Update currently loaded config if saving to same config file
+        app.state.config = parse_yaml(config_path)
+        await show_apply_dialog(config_path.name, has_network_changes)
     else:
-        await show_activate_dialog(config_path.name)
+        # Reset config updates if saving to a different config file
+        app.state.config_updates = copy.deepcopy(dict(app.state.config))
+        await show_activate_dialog(config_path.name, has_network_changes)
 
 
 async def create_new_config():
@@ -1168,7 +1204,7 @@ async def save_config():
         await create_new_config()
         return
 
-    current_file_path = BASE_PATH / "configs" / app.state.config_active
+    config_current_path = BASE_PATH / "configs" / app.state.config_active
 
     with ui.dialog() as dialog, ui.card():
         ui.label(f"Save changes to '{app.state.config_active}'?")
@@ -1183,11 +1219,29 @@ async def save_config():
     elif action == "new":
         await create_new_config()
     elif action == "overwrite":
-        await save_to_file(current_file_path)
+        await save_to_file(config_current_path)
 
 
 async def start_recording():
     """Launch the recording script after shutting down the web app."""
+    has_unsaved_changes = check_config_changes(app.state.config, app.state.config_updates)
+    if has_unsaved_changes:
+        with ui.dialog() as dialog, ui.card():
+            ui.label("You have unsaved configuration changes!").classes("text-h6 font-bold")
+            ui.label("Do you want to save them before starting the recording?")
+            with ui.row().classes("w-full justify-center gap-4 mt-4"):
+                ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
+                ui.button("Save Config", on_click=lambda: dialog.submit("save"), color="green", icon="save")
+                ui.button("Start Without Saving", on_click=lambda: dialog.submit("proceed"), color="orange")
+
+        action = await dialog
+        if action == "cancel":
+            ui.notification("Recording start cancelled!", type="warning", timeout=2)
+            return
+        elif action == "save":
+            await save_config()
+            return
+
     with ui.dialog() as dialog, ui.card():
         ui.label("Are you sure you want to stop the web app and start the recording script?")
         with ui.row().classes("w-full justify-center gap-4 mt-4"):
@@ -1205,6 +1259,24 @@ async def start_recording():
 
 async def confirm_shutdown():
     """Confirm or cancel shutdown of the web app."""
+    has_unsaved_changes = check_config_changes(app.state.config, app.state.config_updates)
+    if has_unsaved_changes:
+        with ui.dialog() as dialog, ui.card():
+            ui.label("You have unsaved configuration changes!").classes("text-h6 font-bold")
+            ui.label("Do you want to save them before stopping the web app?")
+            with ui.row().classes("w-full justify-center gap-4 mt-4"):
+                ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
+                ui.button("Save Config", on_click=lambda: dialog.submit("save"), color="green", icon="save")
+                ui.button("Stop Without Saving", on_click=lambda: dialog.submit("proceed"), color="orange")
+
+        action = await dialog
+        if action == "cancel":
+            ui.notification("Web App Shutdown cancelled!", type="warning", timeout=2)
+            return
+        elif action == "save":
+            await save_config()
+            return
+
     with ui.dialog() as dialog, ui.card():
         ui.label("Are you sure you want to stop the web app?")
         with ui.row().classes("w-full justify-center gap-4 mt-4"):

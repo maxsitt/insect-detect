@@ -8,4 +8,4 @@
 # Select a configuration file that will be used by the recording script and the web app
 
 # Active configuration
-config_active: config_default.yaml  # Config file in "configs" directory
+config_active: config_custom.yaml  # Config file in "configs" directory

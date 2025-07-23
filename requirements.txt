@@ -40,9 +40,9 @@
 depthai==2.30.0.0
 opencv-python==4.7.0.72
 numpy==1.26.4
-nicegui==2.20.0
+nicegui==2.21.1
 pyyaml==6.0.2
-ruamel.yaml==0.18.10
+ruamel.yaml==0.18.14
 nmcli==1.5.0
 pandas==2.2.3
 psutil==7.0.0

@@ -14,14 +14,14 @@ that will be used to load all configuration parameters.
 Modify the 'configs/config_custom.yaml' file to change the settings that are used in
 this Python script. Refer to the 'configs/config_default.yaml' for the default settings.
 
-- load YAML file with configuration parameters and JSON file with detection model parameters
 - write info, warning and error (+ traceback) messages to log file
+- load YAML file with configuration parameters and JSON file with detection model parameters
 - initialize power manager if enabled in config (Witty Pi 4 L3V7 or PiJuice Zero)
 - shut down Raspberry Pi without recording if free disk space or
   battery charge level is lower than the configured threshold
 - duration of each recording session conditional on current battery charge level (if enabled)
   -> increases efficiency of battery usage and can prevent gaps in recordings
-- create a directory for each day and recording session to store images, metadata, logs and configs
+- create a directory for each day and recording session to store images, metadata and configs
 - run a custom YOLO object detection model (.blob format) on device (Luxonis OAK)
   -> inference on downscaled + cropped/stretched LQ frames
 - use an object tracker to track detected objects and assign unique tracking IDs
@@ -35,12 +35,13 @@ this Python script. Refer to the 'configs/config_default.yaml' for the default s
   if object is detected (triggered capture) and independent of detections (timelapse capture)
 - save corresponding metadata from tracker and model output to metadata .csv file
   (time, label, confidence, tracking ID, tracking status, relative bbox coordinates)
-- stop recording session and shut down Raspberry Pi if either:
+- stop recording session (and shut down Raspberry Pi if enabled) if either:
   - configured recording duration is reached
-  - free disk space drops below configured threshold
-  - battery charge level drops below configured threshold for three times (if enabled)
   - recording is stopped by external trigger (e.g. button press)
-  - error occurs during recording
+  - free disk space drops below configured threshold
+  - OAK chip temperature exceeds configured threshold
+  - battery charge level drops below configured threshold for three times (if enabled)
+  - error occurs during recording session
 - write info about recording session to record log .csv file (rec ID, start/end time,
   duration, number of unique tracking IDs, free disk space, battery charge level)
 - post-process saved HQ frames based on configured methods (if enabled)
@@ -72,19 +73,23 @@ from utils.oak import convert_bbox_roi, create_get_temp_oak, create_pipeline
 from utils.post import process_images
 from utils.power import init_power_manager
 
-# Set camera trap ID (default: hostname) and base path (default: "insect-detect" directory)
-CAM_ID = socket.gethostname()
+# Set base path and get camera trap ID (default: hostname)
 BASE_PATH = Path.home() / "insect-detect"
+CAM_ID = socket.gethostname()
 
-# Create directory where all data will be stored (images, metadata, logs, configs)
+# Create directory where data will be stored (images, metadata, configs)
 DATA_PATH = BASE_PATH / "data"
 DATA_PATH.mkdir(parents=True, exist_ok=True)
 
+# Create directory where logs will be stored
+LOGS_PATH = BASE_PATH / "logs"
+LOGS_PATH.mkdir(parents=True, exist_ok=True)
+
 # Set logging levels and format, write logs to file
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s",
-                    filename=f"{DATA_PATH}/yolo_tracker_save_hqsync.log", encoding="utf-8")
+                    filename=f"{LOGS_PATH}/{Path(__file__).stem}.log", encoding="utf-8")
 logger = logging.getLogger()
-logger.info("-------- Logger initialized --------")
+logger.info("-------- Recording Logger initialized --------")
 logging.getLogger("apscheduler").setLevel(logging.WARNING)  # decrease apscheduler logging level
 logging.getLogger("tzlocal").setLevel(logging.ERROR)        # suppress timezone warning
 
@@ -123,11 +128,11 @@ except Exception:
 disk_free = round(psutil.disk_usage("/").free / 1048576)
 if disk_free < DISK_MIN:
     logger.warning("Shut down without recording due to low disk space: %s MB", disk_free)
-    subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+    subprocess.run(["sudo", "shutdown", "-h", "now"], check=False)
 if PWR_MGMT:
     if (chargelevel_start != "USB_C_IN" and chargelevel_start < CHARGE_MIN) or chargelevel_start == "NA":
         logger.warning("Shut down without recording due to low charge level: %s%%", chargelevel_start)
-        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+        subprocess.run(["sudo", "shutdown", "-h", "now"], check=False)
 
 # Set duration of recording session (*60 to convert from min to s)
 if PWR_MGMT:
@@ -220,6 +225,7 @@ try:
         try:
             # Run recording session until either:
             while (time.monotonic() < start_time + REC_TIME and  # configured recording duration is reached
+                   not external_shutdown.is_set() and            # recording is stopped by external trigger
                    disk_free > DISK_MIN and                      # free disk space drops below threshold
                    temp_oak < TEMP_OAK_MAX and                   # OAK chip temperature exceeds threshold
                    len(chargelevels) < 3):                       # charge level drops below threshold for three times
@@ -324,10 +330,13 @@ try:
                 time.sleep(0.02)
 
             # Write info on end of recording to log file
+            rec_stop_shutdown = external_shutdown.is_set()
             rec_stop_disk = disk_free < DISK_MIN
             rec_stop_temp_oak = temp_oak >= TEMP_OAK_MAX
             rec_stop_charge = PWR_MGMT and len(chargelevels) >= 3
-            if rec_stop_disk:
+            if rec_stop_shutdown:
+                logger.warning("Recording %s stopped early by external trigger", rec_id)
+            elif rec_stop_disk:
                 logger.warning("Recording %s stopped early due to low disk space: %s MB", rec_id, disk_free)
             elif rec_stop_temp_oak:
                 logger.warning("Recording %s stopped early due to high OAK chip temperature: %s °C", rec_id, temp_oak)
@@ -352,7 +361,7 @@ try:
                 scheduler.shutdown()
 
     if config.post_processing.crop.enabled or config.post_processing.overlay.enabled:
-        if not rec_stop_disk and not rec_stop_charge:
+        if not rec_stop_shutdown and not rec_stop_disk and not rec_stop_charge:
             power_ok = not PWR_MGMT or (chargelevel == "USB_C_IN" or chargelevel > CHARGE_MIN + 5)
             if power_ok:
                 try:
@@ -366,13 +375,15 @@ try:
                     logger.exception("Error during post-processing of saved HQ frames")
             else:
                 logger.warning("Skipped post-processing due to low charge level: %s%%", chargelevel)
+        elif rec_stop_shutdown:
+            logger.warning("Skipped post-processing as recording was stopped by external trigger")
         elif rec_stop_disk:
             logger.warning("Skipped post-processing as recording was stopped due to low disk space: %s MB", disk_free)
         elif rec_stop_charge:
             logger.warning("Skipped post-processing as recording was stopped due to low charge level: %s%%", chargelevel)
 
     if config.archive.enabled or config.upload.enabled:
-        if not rec_stop_disk and not rec_stop_charge:
+        if not rec_stop_shutdown and not rec_stop_disk and not rec_stop_charge:
             power_ok = not PWR_MGMT or (chargelevel == "USB_C_IN" or chargelevel > CHARGE_MIN + 10)
             if power_ok:
                 try:
@@ -387,6 +398,8 @@ try:
                     logger.exception("Error during archiving/uploading of data")
             else:
                 logger.warning("Skipped archiving/uploading due to low charge level: %s%%", chargelevel)
+        elif rec_stop_shutdown:
+            logger.warning("Skipped archiving/uploading as recording was stopped by external trigger")
         elif rec_stop_disk:
             logger.warning("Skipped archiving/uploading as recording was stopped due to low disk space: %s MB", disk_free)
         elif rec_stop_charge:
@@ -394,12 +407,10 @@ try:
 
 except KeyboardInterrupt:
     logger.warning("Recording %s stopped by Ctrl+C", rec_id)
-except SystemExit:
-    logger.warning("Recording %s stopped by external trigger", rec_id)
 except Exception:
     logger.exception("Error during initialization of recording %s", rec_id)
 finally:
     if not external_shutdown.is_set():
         if config.recording.shutdown.enabled:
             # Shut down Raspberry Pi
-            subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+            subprocess.run(["sudo", "shutdown", "-h", "now"], check=False)

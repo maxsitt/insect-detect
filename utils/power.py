@@ -19,9 +19,8 @@ def create_signal_handler(external_shutdown):
     """Create signal handler for a received signal."""
 
     def signal_handler(sig, frame):
-        """Handle a received signal by raising a SystemExit exception."""
+        """Handle a received signal by setting an external shutdown event."""
         external_shutdown.set()
-        raise SystemExit
 
     return signal_handler
 
@@ -55,7 +54,7 @@ def init_power_manager(power_manager_model):
                 "power_input": wittypi.get_power_mode(),
                 "charge_level": get_chargelevel(),
                 "voltage_in_V": wittypi.get_input_voltage(),
-                "voltage_out_V": wittypi.get_output_voltage(), 
+                "voltage_out_V": wittypi.get_output_voltage(),
                 "current_out_A": wittypi.get_output_current(),
                 "temp_wittypi": round(wittypi.get_temperature())
             }

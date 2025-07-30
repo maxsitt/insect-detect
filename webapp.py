@@ -123,6 +123,11 @@ def create_ui_layout():
             with ui.expansion("Network Settings", icon="network_wifi").classes("w-full font-bold"):
                 create_network_settings()
 
+    with ui.card().tight().classes("w-full"):
+        with ui.expansion("Advanced", icon="build").classes("w-full font-bold"):
+            with ui.expansion("View Logs", icon="article").classes("w-full font-bold"):
+                create_logs_section()
+
     with ui.row().classes("w-full justify-end mt-2 mb-4"):
         ui.button("Save Config", on_click=save_config, color="green", icon="save")
         ui.button("Start Recording", on_click=start_recording, color="teal", icon="play_circle")
@@ -143,6 +148,7 @@ async def start_camera():
     app.state.configs = sorted([file.name for file in (BASE_PATH / "configs").glob("*.yaml")
                                 if file.name != "config_selector.yaml"])
     app.state.scripts = sorted([file.name for file in BASE_PATH.glob("*.py")])
+    app.state.logs = sorted([file.name for file in LOGS_PATH.glob("*.log")])
 
     # Initialize relevant app.state variables
     app.state.connection = get_current_connection()
@@ -843,10 +849,10 @@ def create_startup_settings():
 
             with (ui.column().classes("w-full")
                   .bind_visibility_from(app.state.config_updates["startup"]["auto_run"], "enabled")):
-                (ui.select(app.state.scripts, label="Primary Script").classes("truncate w-full")
+                (ui.select(app.state.scripts, label="Primary Script").classes("w-full truncate")
                  .tooltip("Primary Python script in 'insect-detect' directory that is run first")
                  .bind_value(app.state.config_updates["startup"]["auto_run"], "primary"))
-                (ui.select(["None"] + app.state.scripts, label="Fallback Script").classes("truncate w-full")
+                (ui.select(["None"] + app.state.scripts, label="Fallback Script").classes("w-full truncate")
                  .tooltip("Fallback Python script in 'insect-detect' directory (can be None)")
                  .bind_value(app.state.config_updates["startup"]["auto_run"], "fallback",
                              forward=lambda v: None if v == "None" else v,
@@ -1052,6 +1058,50 @@ def create_network_settings():
                 add_wifi_network(networks_column, network["ssid"], network["password"])
             ui.button("Add Wi-Fi", color="green", icon="add",
                       on_click=lambda: add_wifi_network(networks_column))
+
+
+async def update_log_content(selected_log, log_display):
+    """Update content of log element based on selected log file."""
+    log_display.clear()
+
+    if not selected_log:
+        return
+
+    try:
+        with open(LOGS_PATH / selected_log, "r", encoding="utf-8") as log_file:
+            content = log_file.read()
+    except Exception as e:
+        log_display.push(f"Error reading log file: {str(e)}", classes="text-red")
+        return
+
+    if content.strip():
+        for line in content.strip().split("\n"):
+            if "INFO" in line:
+                log_display.push(line, classes="text-green")
+            elif "WARNING" in line:
+                log_display.push(line, classes="text-orange")
+            elif "ERROR" in line:
+                log_display.push(line, classes="text-red")
+            else:
+                log_display.push(line)
+    else:
+        log_display.push("Log file is empty", classes="text-gray")
+
+
+def create_logs_section():
+    """Create UI elements for selecting and viewing log files."""
+    with ui.column().classes("w-full gap-2"):
+        if not app.state.logs:
+            ui.label(f"No .log files found in '{LOGS_PATH}'").classes("text-gray")
+            return
+
+        log_select_ui = (ui.select(app.state.logs, label="Log File", value=None,
+                                   on_change=lambda e: update_log_content(e.value, log_display))
+                         .classes("w-full truncate"))
+
+        log_display = (ui.log(max_lines=500).classes("w-full h-96 font-mono text-xs")
+                       .bind_visibility_from(log_select_ui, "value",
+                                             backward=lambda v: v is not None and v != ""))
 
 
 async def apply_config_changes(config_name, has_network_changes, config_selected=None):

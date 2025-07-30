@@ -34,12 +34,6 @@ Install all required dependencies for RPi + OAK:
 wget -qO- https://raw.githubusercontent.com/maxsitt/insect-detect/main/install_dependencies_oak.sh | sudo bash
 ```
 
-Install and configure [Rclone](https://rclone.org/docs/) if you want to use the upload feature:
-
-``` bash
-wget -qO- https://rclone.org/install.sh | sudo bash
-```
-
 Clone the `insect-detect` GitHub repo:
 
 ``` bash
@@ -62,6 +56,36 @@ Install all required packages in the virtual environment:
 
 ``` bash
 env_insdet/bin/python3 -m pip install -r insect-detect/requirements.txt
+```
+
+Generate self-signed SSL certificates to optionally enable HTTPS for the web app:
+
+``` bash
+bash insect-detect/generate_ssl_certificates.sh
+```
+
+To enable the `insect-detect-startup.service` at boot, copy it to the systemd directory:
+
+``` bash
+sudo cp insect-detect/insect-detect-startup.service /etc/systemd/system/
+```
+
+...reload the systemd daemon:
+
+``` bash
+sudo systemctl daemon-reload
+```
+
+...and enable the service to start at boot:
+
+``` bash
+sudo systemctl enable insect-detect-startup.service
+```
+
+**Optional:** Install and configure [Rclone](https://rclone.org/docs/) if you want to use the upload feature:
+
+``` bash
+wget -qO- https://rclone.org/install.sh | sudo bash
 ```
 
 Run the scripts with the Python interpreter from the virtual environment:

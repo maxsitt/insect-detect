@@ -33,12 +33,12 @@ from datetime import datetime
 from pathlib import Path
 
 import depthai as dai
-import ruamel.yaml
 from fastapi import Response
-from nicegui import Client, app, core, ui
+from nicegui import Client, app, binding, core, ui
 
 from utils.app import create_duration_inputs, convert_duration, grid_separator, validate_number
-from utils.config import check_config_changes, parse_json, parse_yaml, update_config_selector, update_nested_dict
+from utils.config import check_config_changes, parse_json, parse_yaml, update_config_file, update_config_selector
+from utils.log import subprocess_log
 from utils.network import get_current_connection, get_ip_address, set_up_network
 from utils.oak import convert_bbox_roi, create_pipeline
 
@@ -47,26 +47,108 @@ BASE_PATH = Path.home() / "insect-detect"
 HOSTNAME = socket.gethostname()
 IP_ADDRESS = get_ip_address()
 
+# Create directory where logs will be stored
+LOGS_PATH = BASE_PATH / "logs"
+LOGS_PATH.mkdir(parents=True, exist_ok=True)
 
-async def start_camera(base_path):
+# Set paths for marker files to indicate web app auto-run and streaming mode
+AUTO_RUN_MARKER = BASE_PATH / ".auto_run_active"
+STREAMING_MARKER = BASE_PATH / ".streaming_active"  # indicates user interaction with web app
+
+# Increase threshold for max. binding propagation time to avoid early warning messages
+binding.MAX_PROPAGATION_TIME = 0.05  # default: 0.01 seconds
+
+# Set fields that are allowed to be empty in the config file (won't be replaced with default value)
+# For hotspot and Wi-Fi connections 'ssid' and 'password' are always allowed to be empty
+OPTIONAL_CONFIG_FIELDS = {
+    "deployment.start",
+    "deployment.location.latitude",
+    "deployment.location.longitude",
+    "deployment.location.accuracy",
+    "deployment.setting",
+    "deployment.notes",
+    "startup.auto_run.fallback"
+}
+
+
+@ui.page("/")
+async def main_page():
+    """Main entry point for the web app."""
+    # Start camera if not already running and set up video stream
+    if not hasattr(app.state, "device") or app.state.device is None:
+        await start_camera()
+    await setup_video_stream()
+
+    # Create timer to update frame (and overlay if enabled) depending on camera frame rate
+    app.state.frame_timer = ui.timer(round(1 / app.state.config.webapp.fps, 3), update_frame_and_overlay)
+
+    # Create main content container for UI elements (single column layout for responsive width and centering)
+    with ui.column(align_items="center").classes("w-full max-w-3xl mx-auto"):
+        create_ui_layout()
+
+
+@ui.refreshable
+def create_ui_layout():
+    """Define layout for all UI elements."""
+    create_video_stream_container()
+    create_control_elements()
+
+    with ui.card().tight().classes("w-full"):
+        with ui.expansion("Deployment", icon="location_on").classes("w-full font-bold"):
+            create_deployment_section()
+
+    with ui.card().tight().classes("w-full"):
+        with ui.expansion("Configuration", icon="settings").classes("w-full font-bold"):
+            with ui.expansion("Camera Settings", icon="photo_camera").classes("w-full font-bold"):
+                create_camera_settings()
+            ui.separator()
+            with ui.expansion("Detection Settings", icon="radar").classes("w-full font-bold"):
+                create_detection_settings()
+            ui.separator()
+            with ui.expansion("Recording Settings", icon="videocam").classes("w-full font-bold"):
+                create_recording_settings()
+            ui.separator()
+            with ui.expansion("Post-Processing Settings", icon="tune").classes("w-full font-bold"):
+                create_processing_settings()
+            ui.separator()
+            with ui.expansion("Startup Settings", icon="rocket_launch").classes("w-full font-bold"):
+                create_startup_settings()
+            ui.separator()
+            with ui.expansion("Web App Settings", icon="video_settings").classes("w-full font-bold"):
+                create_webapp_settings()
+            ui.separator()
+            with ui.expansion("System Settings", icon="settings_applications").classes("w-full font-bold"):
+                create_system_settings()
+            ui.separator()
+            with ui.expansion("Network Settings", icon="network_wifi").classes("w-full font-bold"):
+                create_network_settings()
+
+    with ui.row().classes("w-full justify-end mt-2 mb-4"):
+        ui.button("Save Config", on_click=save_config, color="green", icon="save")
+        ui.button("Start Recording", on_click=start_recording, color="teal", icon="play_circle")
+        ui.button("Stop App", on_click=confirm_shutdown, color="red", icon="power_settings_new")
+
+
+async def start_camera():
     """Connect to OAK device and start camera with selected configuration."""
 
     # Parse active config file and load configuration parameters
-    app.state.config_selector = parse_yaml(base_path / "configs" / "config_selector.yaml")
+    app.state.config_selector = parse_yaml(BASE_PATH / "configs" / "config_selector.yaml")
     app.state.config_active = app.state.config_selector.config_active
-    app.state.config = parse_yaml(base_path / "configs" / app.state.config_active)
+    app.state.config = parse_yaml(BASE_PATH / "configs" / app.state.config_active)
     app.state.config_updates = copy.deepcopy(dict(app.state.config))
     app.state.model_active = app.state.config.detection.model.weights
-    app.state.config_model = parse_json(base_path / "models" / app.state.config.detection.model.config)
-    app.state.models = sorted([file.name for file in (base_path / "models").glob("*.blob")])
-    app.state.configs = sorted([file.name for file in (base_path / "configs").glob("*.yaml")
+    app.state.config_model = parse_json(BASE_PATH / "models" / app.state.config.detection.model.config)
+    app.state.models = sorted([file.name for file in (BASE_PATH / "models").glob("*.blob")])
+    app.state.configs = sorted([file.name for file in (BASE_PATH / "configs").glob("*.yaml")
                                 if file.name != "config_selector.yaml"])
+    app.state.scripts = sorted([file.name for file in BASE_PATH.glob("*.py")])
 
     # Initialize relevant app.state variables
     app.state.connection = get_current_connection()
-    app.state.start_recording_after_shutdown = False
+    app.state.start_recording = False
     app.state.exposure_region_active = False
-    app.state.show_overlay = False
+    app.state.show_overlay = True
     app.state.tracker_data = []
     app.state.labels = app.state.config_model.mappings.labels
     app.state.focus_initialized = False
@@ -87,7 +169,7 @@ async def start_camera(base_path):
     app.state.prev_time = time.monotonic()
 
     # Create OAK camera pipeline and start device in USB2 mode
-    pipeline, app.state.sensor_res = create_pipeline(base_path, app.state.config, app.state.config_model,
+    pipeline, app.state.sensor_res = create_pipeline(BASE_PATH, app.state.config, app.state.config_model,
                                                      use_webapp_config=True, create_xin=True)
     app.state.device = dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH)
 
@@ -129,6 +211,10 @@ async def setup_video_stream():
     @app.get("/video/frame")
     async def serve_frame():
         """Serve MJPEG-encoded frame from OAK camera over HTTP and update camera parameters."""
+        if AUTO_RUN_MARKER.exists():
+            # Create marker file to indicate user interaction (active streaming) if in auto-run mode
+            STREAMING_MARKER.touch()
+
         if hasattr(app.state, "q_frame") and app.state.q_frame and app.state.q_frame.has():
             # Get MJPEG-encoded HQ frame and associated data (synced with tracker output)
             frame_dai = app.state.q_frame.get()          # depthai.ImgFrame (type: BITSTREAM)
@@ -257,54 +343,6 @@ async def update_frame_and_overlay():
         app.state.frame_ii.set_content("")
 
 
-@ui.page("/")
-async def main_page():
-    """Main entry point for the web app."""
-    if not hasattr(app.state, "device") or app.state.device is None:
-        await start_camera(BASE_PATH)
-
-    await setup_video_stream()
-
-    # Create timer to update frame (and overlay if enabled) depending on camera frame rate
-    app.state.frame_timer = ui.timer(round(1 / app.state.config.webapp.fps, 3), update_frame_and_overlay)
-
-    # Main content container (single column layout for responsive width and centering)
-    with ui.column(align_items="center").classes("w-full max-w-3xl mx-auto"):
-        create_ui_components()
-
-        # Buttons to save config, start recording and stop web app
-        with ui.row().classes("w-full justify-end mt-2 mb-4"):
-            ui.button("Save Config", on_click=save_config, color="green", icon="save")
-            ui.button("Start Recording", on_click=start_recording, color="teal", icon="play_circle")
-            ui.button("Stop App", on_click=confirm_shutdown, color="red", icon="power_settings_new")
-
-
-@ui.refreshable
-def create_ui_components():
-    """Create UI components and define layout."""
-    create_video_stream_container()
-    create_control_elements()
-
-    with ui.card().tight().classes("w-full"):
-        create_deployment_section()
-
-    with ui.card().tight().classes("w-full"):
-        with ui.expansion("Configuration", icon="settings").classes("w-full font-bold"):
-            create_camera_settings()
-            ui.separator()
-            create_detection_settings()
-            ui.separator()
-            create_recording_settings()
-            ui.separator()
-            create_processing_settings()
-            ui.separator()
-            create_system_settings()
-            ui.separator()
-            create_network_settings()
-            ui.separator()
-            create_webapp_settings()
-
-
 def create_video_stream_container():
     """Create video stream container with responsive aspect ratio and row with camera parameters."""
     with ui.element("div").classes("w-full p-0 overflow-hidden bg-black border border-gray-700"):
@@ -383,7 +421,7 @@ async def on_config_change(e):
 
 
 def create_control_elements():
-    """Create elements for camera, web app and config control."""
+    """Create UI elements and config binding for camera, web app and config control."""
     # Slider for manual focus control (only visible if focus mode is set to "manual")
     with ui.column().classes("w-full gap-0 mb-0").bind_visibility_from(app.state, "manual_focus_enabled"):
         ui.label("Manual Focus:").classes("font-bold")
@@ -468,51 +506,48 @@ async def get_location():
 
 
 def create_deployment_section():
-    """Create deployment metadata expansion panel."""
-    with ui.expansion("Deployment Metadata", icon="location_on").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+    """Create UI elements and config binding for deployment metadata."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        (ui.label("Start Time").classes("font-bold")
+         .tooltip("Start date + time of the camera deployment (ISO 8601 format)"))
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            time_label = (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                          .bind_text(app.state.config_updates["deployment"], "start"))
+            ui.button("Get Time", icon="event",
+                      on_click=lambda: time_label.set_text(str(datetime.now().isoformat())))
 
-            (ui.label("Start Time").classes("font-bold")
-             .tooltip("Start date + time of the camera deployment (ISO 8601 format)"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                time_label = (ui.label()
-                              .classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                              .bind_text(app.state.config_updates["deployment"], "start"))
-                ui.button("Get Time", icon="event",
-                          on_click=lambda: time_label.set_text(str(datetime.now().isoformat())))
+        grid_separator()
+        (ui.label("Location").classes("font-bold")
+         .tooltip("Location of the camera deployment (latitude + longitude)"))
+        with ui.column().classes("w-full gap-2"):
+            with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+                ui.label("Latitude:").classes("font-bold")
+                (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                 .bind_text(app.state.config_updates["deployment"]["location"], "latitude"))
+                ui.label("Longitude:").classes("font-bold")
+                (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                 .bind_text(app.state.config_updates["deployment"]["location"], "longitude"))
+                ui.label("Accuracy (m):").classes("font-bold")
+                (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
+                 .bind_text(app.state.config_updates["deployment"]["location"], "accuracy"))
+            loc_button = ui.button("Get Location", icon="my_location", on_click=get_location)
+            if not app.state.config.webapp.https.enabled:
+                loc_button.disable()
+                loc_button.tooltip("HTTPS must be enabled for Geolocation API to work")
 
-            grid_separator()
-            (ui.label("Location").classes("font-bold")
-             .tooltip("Location of the camera deployment (latitude + longitude)"))
-            with ui.column().classes("w-full gap-2"):
-                with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-                    ui.label("Latitude:").classes("font-bold")
-                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                     .bind_text(app.state.config_updates["deployment"]["location"], "latitude"))
-                    ui.label("Longitude:").classes("font-bold")
-                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                     .bind_text(app.state.config_updates["deployment"]["location"], "longitude"))
-                    ui.label("Accuracy (m):").classes("font-bold")
-                    (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                     .bind_text(app.state.config_updates["deployment"]["location"], "accuracy"))
-                loc_button = ui.button("Get Location", icon="my_location", on_click=get_location)
-                if not app.state.config.webapp.https.enabled:
-                    loc_button.disable()
-                    loc_button.tooltip("HTTPS must be enabled for Geolocation API to work")
+        grid_separator()
+        (ui.label("Setting").classes("font-bold")
+         .tooltip("Background setting of the camera (e.g. platform type/flower species)"))
+        (ui.input(placeholder="Enter background setting").props("clearable")
+         .bind_value(app.state.config_updates["deployment"], "setting",
+                     forward=lambda v: str(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Setting").classes("font-bold")
-             .tooltip("Background setting of the camera (e.g. platform type/flower species)"))
-            (ui.input(placeholder="Enter background setting").props("clearable")
-             .bind_value(app.state.config_updates["deployment"], "setting",
-                         forward=lambda v: str(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("Notes").classes("font-bold")
-             .tooltip("Additional notes about the deployment"))
-            (ui.textarea(placeholder="Enter deployment notes").props("clearable")
-             .bind_value(app.state.config_updates["deployment"], "notes",
-                         forward=lambda v: str(v) if v is not None else None))
+        grid_separator()
+        (ui.label("Notes").classes("font-bold")
+         .tooltip("Additional notes about the deployment"))
+        (ui.textarea(placeholder="Enter deployment notes").props("clearable")
+         .bind_value(app.state.config_updates["deployment"], "notes",
+                     forward=lambda v: str(v) if v is not None else None))
 
 
 async def on_focus_mode_change(e):
@@ -537,102 +572,95 @@ async def on_focus_type_change(e):
 
 
 def create_camera_settings():
-    """Create camera settings expansion panel."""
-    with ui.expansion("Camera Settings", icon="photo_camera").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+    """Create UI elements and config binding for camera settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        ui.label("Focus Mode").classes("font-bold")
+        (ui.select(["continuous", "manual", "range"], label="Mode", on_change=on_focus_mode_change)
+         .bind_value(app.state.config_updates["camera"]["focus"], "mode"))
 
-            ui.label("Focus Mode").classes("font-bold")
-            (ui.select(["continuous", "manual", "range"], label="Mode", on_change=on_focus_mode_change)
-             .bind_value(app.state.config_updates["camera"]["focus"], "mode"))
+        grid_separator()
+        ui.label("Focus Type").classes("font-bold")
+        with ui.column().classes("w-full gap-1"):
+            (ui.select(["distance", "lens_position"], label="Type", on_change=on_focus_type_change)
+             .classes("w-full")
+             .bind_value(app.state.config_updates["camera"]["focus"], "type"))
 
-            grid_separator()
-            ui.label("Focus Type").classes("font-bold")
-            with ui.column().classes("w-full gap-1"):
-                (ui.select(["distance", "lens_position"], label="Type", on_change=on_focus_type_change)
-                 .classes("w-full")
-                 .bind_value(app.state.config_updates["camera"]["focus"], "type"))
+            with (ui.column().classes("w-full gap-1")
+                  .bind_visibility_from(app.state, "focus_distance_enabled")):
+                with ui.row(align_items="center").classes("w-full gap-2"):
+                    (ui.number(label="Manual (cm)",
+                               placeholder=app.state.config.camera.focus.distance.manual,
+                               min=8, max=80, precision=0, step=1).classes("flex-1")
+                     .bind_value(app.state.config_updates["camera"]["focus"]["distance"], "manual",
+                                 forward=lambda v: int(v) if v is not None else None))
+                with ui.row(align_items="center").classes("w-full gap-2"):
+                    (ui.number(label="Range Min (cm)",
+                               placeholder=app.state.config.camera.focus.distance.range.min,
+                               min=8, max=75, precision=0, step=1).classes("flex-1")
+                     .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "min",
+                                 forward=lambda v: int(v) if v is not None else None))
+                    (ui.number(label="Range Max (cm)",
+                               placeholder=app.state.config.camera.focus.distance.range.max,
+                               min=9, max=80, precision=0, step=1).classes("flex-1")
+                     .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "max",
+                                 forward=lambda v: int(v) if v is not None else None))
+                (ui.label("Focus control slider will still use lens position for finer adjustment!")
+                 .classes("text-xs text-gray-500"))
 
-                with (ui.column().classes("w-full gap-1")
-                      .bind_visibility_from(app.state, "focus_distance_enabled")):
-                    with ui.row(align_items="center").classes("w-full gap-2"):
-                        (ui.number(label="Manual (cm)",
-                                   placeholder=app.state.config.camera.focus.distance.manual,
-                                   min=8, max=80, precision=0, step=1).classes("flex-1")
-                         .bind_value(app.state.config_updates["camera"]["focus"]["distance"], "manual",
-                                     forward=lambda v: int(v) if v is not None else None))
-                    with ui.row(align_items="center").classes("w-full gap-2"):
-                        (ui.number(label="Range Min (cm)",
-                                   placeholder=app.state.config.camera.focus.distance.range.min,
-                                   min=8, max=75, precision=0, step=1).classes("flex-1")
-                         .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "min",
-                                     forward=lambda v: int(v) if v is not None else None))
-                        (ui.number(label="Range Max (cm)",
-                                   placeholder=app.state.config.camera.focus.distance.range.max,
-                                   min=9, max=80, precision=0, step=1).classes("flex-1")
-                         .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "max",
-                                     forward=lambda v: int(v) if v is not None else None))
-                    (ui.label("Focus control slider will still use lens position for finer adjustment!")
-                     .classes("text-xs text-gray-500"))
+        grid_separator()
+        ui.label("Frame Rate").classes("font-bold").tooltip("Higher FPS increases power consumption")
+        (ui.number(label="FPS", placeholder=app.state.config.camera.fps,
+                   min=1, max=30, precision=0, step=1,
+                   validation={"Required value between 1-30": lambda v: validate_number(v, 1, 30)})
+         .bind_value(app.state.config_updates["camera"], "fps",
+                     forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Frame Rate").classes("font-bold")
-             .tooltip("Higher FPS increases power consumption"))
-            (ui.number(label="FPS", placeholder=app.state.config.camera.fps,
-                       min=1, max=30, precision=0, step=1,
-                       validation={"Required value between 1-30": lambda v: validate_number(v, 1, 30)})
-             .bind_value(app.state.config_updates["camera"], "fps",
+        grid_separator()
+        ui.label("Resolution").classes("font-bold").tooltip("Resolution of captured images (HQ frames)")
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            (ui.number(label="Width", placeholder=app.state.config.camera.resolution.width,
+                       min=320, max=3840, precision=0, step=32,
+                       validation={"Required value between 320-3840 (multiple of 32)":
+                                   lambda v: validate_number(v, 320, 3840, 32)}).classes("flex-1")
+             .bind_value(app.state.config_updates["camera"]["resolution"], "width",
+                         forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Height", placeholder=app.state.config.camera.resolution.height,
+                       min=320, max=2160, precision=0, step=2,
+                       validation={"Required value between 320-2160 (multiple of 2)":
+                                   lambda v: validate_number(v, 320, 2160, 2)}).classes("flex-1")
+             .bind_value(app.state.config_updates["camera"]["resolution"], "height",
                          forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Resolution").classes("font-bold")
-             .tooltip("Resolution of captured images (HQ frames)"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                (ui.number(label="Width", placeholder=app.state.config.camera.resolution.width,
-                           min=320, max=3840, precision=0, step=32,
-                           validation={"Required value between 320-3840 (multiple of 32)":
-                                       lambda v: validate_number(v, 320, 3840, 32)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["camera"]["resolution"], "width",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Height", placeholder=app.state.config.camera.resolution.height,
-                           min=320, max=2160, precision=0, step=2,
-                           validation={"Required value between 320-2160 (multiple of 2)":
-                                       lambda v: validate_number(v, 320, 2160, 2)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["camera"]["resolution"], "height",
-                             forward=lambda v: int(v) if v is not None else None))
+        grid_separator()
+        ui.label("JPEG Quality").classes("font-bold").tooltip("JPEG quality of captured images")
+        (ui.number(label="JPEG", placeholder=app.state.config.camera.jpeg_quality,
+                   min=10, max=100, precision=0, step=1,
+                   validation={"Required value between 10-100": lambda v: validate_number(v, 10, 100)})
+         .bind_value(app.state.config_updates["camera"], "jpeg_quality",
+                     forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("JPEG Quality").classes("font-bold")
-             .tooltip("JPEG quality of captured images"))
-            (ui.number(label="JPEG", placeholder=app.state.config.camera.jpeg_quality,
-                       min=10, max=100, precision=0, step=1,
-                       validation={"Required value between 10-100": lambda v: validate_number(v, 10, 100)})
-             .bind_value(app.state.config_updates["camera"], "jpeg_quality",
+        grid_separator()
+        (ui.label("ISP Settings").classes("font-bold")
+         .tooltip("Setting Sharpness and Luma Denoise to 0 can reduce artifacts"))
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            (ui.number(label="Sharpness", placeholder=app.state.config.camera.isp.sharpness,
+                       min=0, max=4, precision=0, step=1,
+                       validation={"Required value between 0-4": lambda v: validate_number(v, 0, 4)})
+             .classes("flex-1")
+             .bind_value(app.state.config_updates["camera"]["isp"], "sharpness",
                          forward=lambda v: int(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("ISP Settings").classes("font-bold")
-             .tooltip("Setting Sharpness and Luma Denoise to 0 can reduce artifacts"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                (ui.number(label="Sharpness", placeholder=app.state.config.camera.isp.sharpness,
-                           min=0, max=4, precision=0, step=1,
-                           validation={"Required value between 0-4": lambda v: validate_number(v, 0, 4)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["camera"]["isp"], "sharpness",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Luma Denoise", placeholder=app.state.config.camera.isp.luma_denoise,
-                           min=0, max=4, precision=1, step=1,
-                           validation={"Required value between 0-4": lambda v: validate_number(v, 0, 4)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["camera"]["isp"], "luma_denoise",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Chroma Denoise", placeholder=app.state.config.camera.isp.chroma_denoise,
-                           min=0, max=4, precision=1, step=1,
-                           validation={"Required value between 0-4": lambda v: validate_number(v, 0, 4)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["camera"]["isp"], "chroma_denoise",
-                             forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Luma Denoise", placeholder=app.state.config.camera.isp.luma_denoise,
+                       min=0, max=4, precision=1, step=1,
+                       validation={"Required value between 0-4": lambda v: validate_number(v, 0, 4)})
+             .classes("flex-1")
+             .bind_value(app.state.config_updates["camera"]["isp"], "luma_denoise",
+                         forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Chroma Denoise", placeholder=app.state.config.camera.isp.chroma_denoise,
+                       min=0, max=4, precision=1, step=1,
+                       validation={"Required value between 0-4": lambda v: validate_number(v, 0, 4)})
+             .classes("flex-1")
+             .bind_value(app.state.config_updates["camera"]["isp"], "chroma_denoise",
+                         forward=lambda v: int(v) if v is not None else None))
 
 
 async def on_exposure_region_change(e):
@@ -645,255 +673,318 @@ async def on_exposure_region_change(e):
 
 
 def create_detection_settings():
-    """Create detection settings expansion panel."""
-    with ui.expansion("Detection Settings", icon="radar").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+    """Create UI elements and config binding for detection settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        (ui.label("Detection-based Exposure").classes("font-bold")
+         .tooltip("Use bounding box from most recent tracking ID to set auto exposure region"))
+        (ui.switch("Enable", on_change=on_exposure_region_change).props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["detection"]["exposure_region"], "enabled"))
 
-            (ui.label("Detection-based Exposure").classes("font-bold")
-             .tooltip("Use bounding box from most recent tracking ID to set auto exposure region"))
-            (ui.switch("Enable", on_change=on_exposure_region_change).props("color=green").classes("font-bold")
-             .bind_value(app.state.config_updates["detection"]["exposure_region"], "enabled"))
+        grid_separator()
+        ui.label("Detection Model").classes("font-bold")
+        (ui.select(app.state.models, label="Model", value=app.state.model_active).classes("truncate")
+         .bind_value(app.state.config_updates["detection"]["model"], "weights")
+         .bind_value_to(app.state.config_updates["detection"]["model"], "config",
+                        forward=lambda v: f"{Path(v).stem}.json" if v else None))
 
-            grid_separator()
-            ui.label("Detection Model").classes("font-bold")
-            (ui.select(app.state.models, label="Model", value=app.state.model_active).classes("truncate")
-             .bind_value(app.state.config_updates["detection"]["model"], "weights")
-             .bind_value_to(app.state.config_updates["detection"]["model"], "config",
-                            forward=lambda v: f"{Path(v).stem}.json" if v else None))
+        grid_separator()
+        (ui.label("Input Resolution").classes("font-bold")
+         .tooltip("Resolution of downscaled + stretched/cropped LQ frames for model input"))
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            (ui.number(label="Width", placeholder=app.state.config.detection.resolution.width,
+                       min=128, max=640, precision=0, step=1,
+                       validation={"Required value between 128-640":
+                                   lambda v: validate_number(v, 128, 640)}).classes("flex-1")
+             .bind_value(app.state.config_updates["detection"]["resolution"], "width",
+                         forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Height", placeholder=app.state.config.detection.resolution.height,
+                       min=128, max=640, precision=0, step=1,
+                       validation={"Required value between 128-640":
+                                   lambda v: validate_number(v, 128, 640)}).classes("flex-1")
+             .bind_value(app.state.config_updates["detection"]["resolution"], "height",
+                         forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Input Resolution").classes("font-bold")
-             .tooltip("Resolution of downscaled + stretched/cropped LQ frames for model input"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                (ui.number(label="Width", placeholder=app.state.config.detection.resolution.width,
-                           min=128, max=640, precision=0, step=1,
-                           validation={"Required value between 128-640":
-                                       lambda v: validate_number(v, 128, 640)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["detection"]["resolution"], "width",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Height", placeholder=app.state.config.detection.resolution.height,
-                           min=128, max=640, precision=0, step=1,
-                           validation={"Required value between 128-640":
-                                       lambda v: validate_number(v, 128, 640)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["detection"]["resolution"], "height",
-                             forward=lambda v: int(v) if v is not None else None))
+        grid_separator()
+        ui.label("Confidence Threshold").classes("font-bold").tooltip("Overrides model config file")
+        (ui.number(label="Confidence", placeholder=app.state.config.detection.conf_threshold,
+                   min=0, max=1, precision=2, step=0.01,
+                   validation={"Required value between 0-1": lambda v: validate_number(v, 0, 1)})
+         .bind_value(app.state.config_updates["detection"], "conf_threshold"))
 
-            grid_separator()
-            (ui.label("Confidence Threshold").classes("font-bold")
-             .tooltip("Overrides model config file"))
-            (ui.number(label="Confidence", placeholder=app.state.config.detection.conf_threshold,
-                       min=0, max=1, precision=2, step=0.01,
-                       validation={"Required value between 0-1": lambda v: validate_number(v, 0, 1)})
-             .bind_value(app.state.config_updates["detection"], "conf_threshold"))
-
-            grid_separator()
-            (ui.label("IoU Threshold").classes("font-bold")
-             .tooltip("Overrides model config file"))
-            (ui.number(label="IoU", placeholder=app.state.config.detection.iou_threshold,
-                       min=0, max=1, precision=2, step=0.01,
-                       validation={"Required value between 0-1": lambda v: validate_number(v, 0, 1)})
-             .bind_value(app.state.config_updates["detection"], "iou_threshold"))
+        grid_separator()
+        ui.label("IoU Threshold").classes("font-bold").tooltip("Overrides model config file")
+        (ui.number(label="IoU", placeholder=app.state.config.detection.iou_threshold,
+                   min=0, max=1, precision=2, step=0.01,
+                   validation={"Required value between 0-1": lambda v: validate_number(v, 0, 1)})
+         .bind_value(app.state.config_updates["detection"], "iou_threshold"))
 
 
 def create_recording_settings():
-    """Create recording settings expansion panel."""
-    with ui.expansion("Recording Settings", icon="videocam").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+    """Create UI elements and config binding for recording settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        ui.label("Duration").classes("font-bold").tooltip("Duration per recording session")
+        with ui.column().classes("w-full"):
+            with ui.tabs().classes("w-full") as tabs:
+                ui.tab("Battery", icon="battery_charging_full")
+                ui.tab("No Battery", icon="timer")
+            with ui.tab_panels(tabs, value="Battery").classes("w-full"):
+                with ui.tab_panel("Battery"):
+                    create_duration_inputs("high", "High (> 70% or USB connected)",
+                        "Duration if battery charge level is > 70% or USB power is connected")
+                    create_duration_inputs("medium", "Medium (50-70%)",
+                        "Duration if battery charge level is between 50-70%")
+                    create_duration_inputs("low", "Low (30-50%)",
+                        "Duration if battery charge level is between 30-50%")
+                    create_duration_inputs("minimal", "Minimal (< 30%)",
+                        "Duration if battery charge level is < 30%",)
+                with ui.tab_panel("No Battery"):
+                    create_duration_inputs("default", "Default",
+                        "Duration if powermanager is disabled")
 
-            (ui.label("Duration").classes("font-bold")
-             .tooltip("Duration per recording session"))
-            with ui.column().classes("w-full"):
-                with ui.tabs().classes("w-full") as tabs:
-                    ui.tab("Battery", icon="battery_charging_full")
-                    ui.tab("No Battery", icon="timer")
-                with ui.tab_panels(tabs, value="Battery").classes("w-full"):
-                    with ui.tab_panel("Battery"):
-                        create_duration_inputs("high", "High (> 70% or USB connected)",
-                            "Duration if battery charge level is > 70% or USB power is connected")
-                        create_duration_inputs("medium", "Medium (50-70%)",
-                            "Duration if battery charge level is between 50-70%")
-                        create_duration_inputs("low", "Low (30-50%)",
-                            "Duration if battery charge level is between 30-50%")
-                        create_duration_inputs("minimal", "Minimal (< 30%)",
-                            "Duration if battery charge level is < 30%",)
-                    with ui.tab_panel("No Battery"):
-                        create_duration_inputs("default", "Default",
-                            "Duration if powermanager is disabled")
+        grid_separator()
+        ui.label("Capture Interval").classes("font-bold")
+        with ui.column().classes("w-full"):
+            with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+                (ui.label("Detection").classes("font-bold")
+                 .tooltip("Interval for saving HQ frame + metadata while object is detected"))
+                (ui.number(label="Seconds",
+                           placeholder=app.state.config.recording.capture_interval.detection,
+                           min=0, max=3600, precision=1, step=0.1,
+                           validation={"Required value between 0-3600":
+                                       lambda v: validate_number(v, 0, 3600)})
+                 .bind_value(app.state.config_updates["recording"]["capture_interval"], "detection"))
+                (ui.label("Timelapse").classes("font-bold")
+                 .tooltip("Interval for saving HQ frame (independent of detected objects)"))
+                (ui.number(label="Seconds",
+                           placeholder=app.state.config.recording.capture_interval.timelapse,
+                           min=0, max=3600, precision=1, step=0.1,
+                           validation={"Required value between 0-3600":
+                                       lambda v: validate_number(v, 0, 3600)})
+                 .bind_value(app.state.config_updates["recording"]["capture_interval"], "timelapse"))
 
-            grid_separator()
-            ui.label("Capture Interval").classes("font-bold")
-            with ui.column().classes("w-full"):
-                with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-                    (ui.label("Detection").classes("font-bold")
-                     .tooltip("Interval for saving HQ frame + metadata while object is detected"))
-                    (ui.number(label="Seconds",
-                               placeholder=app.state.config.recording.capture_interval.detection,
-                               min=0, max=60, precision=1, step=0.1,
-                               validation={"Required value between 0-60":
-                                           lambda v: validate_number(v, 0, 60)})
-                     .bind_value(app.state.config_updates["recording"]["capture_interval"], "detection"))
-                    (ui.label("Timelapse").classes("font-bold")
-                     .tooltip("Interval for saving HQ frame (independent of detected objects)"))
-                    (ui.number(label="Seconds",
-                               placeholder=app.state.config.recording.capture_interval.timelapse,
-                               min=0, max=3600, precision=1, step=0.1,
-                               validation={"Required value between 0-3600":
-                                           lambda v: validate_number(v, 0, 3600)})
-                     .bind_value(app.state.config_updates["recording"]["capture_interval"], "timelapse"))
-
-            grid_separator()
-            (ui.label("Shutdown After Recording").classes("font-bold")
-             .tooltip("Shut down Raspberry Pi after recording session is finished or interrupted"))
-            (ui.switch("Enable").props("color=green").classes("font-bold")
-             .bind_value(app.state.config_updates["recording"]["shutdown"], "enabled"))
+        grid_separator()
+        (ui.label("Shutdown After Recording").classes("font-bold")
+         .tooltip("Shut down Raspberry Pi after recording session is finished or interrupted"))
+        (ui.switch("Enable").props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["recording"]["shutdown"], "enabled"))
 
 
 def create_processing_settings():
-    """Create post-processing settings expansion panel."""
-    with ui.expansion("Post-Processing Settings", icon="tune").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-
-            (ui.label("Crop Detections").classes("font-bold")
-             .tooltip("Crop detections from HQ frames and save as individual .jpg images"))
-            with ui.column().classes("w-full gap-1"):
-                (ui.switch("Enable").props("color=green").classes("font-bold")
-                 .bind_value(app.state.config_updates["post_processing"]["crop"], "enabled"))
-                (ui.select(["square", "original"], label="Crop Method").classes("w-full")
-                 .bind_visibility_from(app.state.config_updates["post_processing"]["crop"], "enabled")
-                 .bind_value(app.state.config_updates["post_processing"]["crop"], "method"))
-
-            grid_separator()
-            (ui.label("Draw Overlays").classes("font-bold")
-             .tooltip("Draw overlays on HQ frame copies (bounding box, label, confidence, track ID)"))
+    """Create UI elements and config binding for post-processing settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        (ui.label("Crop Detections").classes("font-bold")
+         .tooltip("Crop detections from HQ frames and save as individual .jpg images"))
+        with ui.column().classes("w-full gap-1"):
             (ui.switch("Enable").props("color=green").classes("font-bold")
-             .bind_value(app.state.config_updates["post_processing"]["overlay"], "enabled"))
+             .bind_value(app.state.config_updates["post_processing"]["crop"], "enabled"))
+            (ui.select(["square", "original"], label="Crop Method").classes("w-full")
+             .bind_visibility_from(app.state.config_updates["post_processing"]["crop"], "enabled")
+             .bind_value(app.state.config_updates["post_processing"]["crop"], "method"))
 
-            grid_separator()
-            (ui.label("Delete Originals").classes("font-bold")
-             .tooltip("Delete original HQ frames with detections after processing"))
+        grid_separator()
+        (ui.label("Draw Overlays").classes("font-bold")
+         .tooltip("Draw overlays on HQ frame copies (bounding box, label, confidence, track ID)"))
+        (ui.switch("Enable").props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["post_processing"]["overlay"], "enabled"))
+
+        grid_separator()
+        (ui.label("Delete Originals").classes("font-bold")
+         .tooltip("Delete original HQ frames with detections after processing"))
+        (ui.switch("Enable").props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["post_processing"]["delete"], "enabled"))
+
+        grid_separator()
+        (ui.label("Archive Data").classes("font-bold")
+         .tooltip("Archive (zip) all captured data + logs/configs and manage disk space"))
+        with ui.column().classes("w-full gap-1"):
             (ui.switch("Enable").props("color=green").classes("font-bold")
-             .bind_value(app.state.config_updates["post_processing"]["delete"], "enabled"))
+             .bind_value(app.state.config_updates["archive"], "enabled"))
+            (ui.number(label="Low Free Space", placeholder=app.state.config.archive.disk_low,
+                       min=100, max=50000, precision=0, step=100, suffix="MB",
+                       validation={"Required value between 100-50000 MB":
+                                   lambda v: validate_number(v, 100, 50000)}).classes("w-full")
+             .tooltip("Minimum required free disk space for unarchived data retention")
+             .bind_visibility_from(app.state.config_updates["archive"], "enabled")
+             .bind_value(app.state.config_updates["archive"], "disk_low",
+                         forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Archive Data").classes("font-bold")
-             .tooltip("Archive (zip) all captured data + logs/configs and manage disk space"))
-            with ui.column().classes("w-full gap-1"):
-                (ui.switch("Enable").props("color=green").classes("font-bold")
-                 .bind_value(app.state.config_updates["archive"], "enabled"))
-                (ui.number(label="Low Free Space", placeholder=app.state.config.archive.disk_low,
-                           min=100, max=50000, precision=0, step=100, suffix="MB",
-                           validation={"Required value between 100-50000 MB":
-                                       lambda v: validate_number(v, 100, 50000)})
-                 .classes("w-full")
-                 .tooltip("Minimum required free disk space for unarchived data retention")
-                 .bind_visibility_from(app.state.config_updates["archive"], "enabled")
-                 .bind_value(app.state.config_updates["archive"], "disk_low",
+        grid_separator()
+        (ui.label("Upload to Cloud").classes("font-bold")
+         .tooltip("Upload archived data to cloud storage provider (always runs archive)"))
+        with ui.column().classes("w-full gap-1"):
+            (ui.switch("Enable").props("color=green").classes("font-bold")
+             .bind_value(app.state.config_updates["upload"], "enabled"))
+            (ui.select(["all", "full", "crop", "metadata"], label="Content").classes("w-full")
+             .tooltip("Select content for upload, always including metadata")
+             .bind_visibility_from(app.state.config_updates["upload"], "enabled")
+             .bind_value(app.state.config_updates["upload"], "content"))
+
+
+def create_startup_settings():
+    """Create UI elements and config binding for startup settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        (ui.label("Hotspot Setup").classes("font-bold")
+         .tooltip("Create RPi Wi-Fi hotspot if it doesn't exist (uses hostname for SSID and password)"))
+        (ui.switch("Enable").props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["startup"]["hotspot_setup"], "enabled"))
+
+        grid_separator()
+        (ui.label("Network Setup").classes("font-bold")
+         .tooltip("Create/update all configured Wi-Fi profiles in NetworkManager (including hotspot)"))
+        (ui.switch("Enable").props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["startup"]["network_setup"], "enabled"))
+
+        grid_separator()
+        (ui.label("Auto Run").classes("font-bold")
+         .tooltip("Automatically run configured Python script(s) after boot"))
+        with ui.column().classes("w-full gap-1"):
+            (ui.switch("Enable").props("color=green").classes("font-bold")
+             .bind_value(app.state.config_updates["startup"]["auto_run"], "enabled"))
+
+            with (ui.column().classes("w-full")
+                  .bind_visibility_from(app.state.config_updates["startup"]["auto_run"], "enabled")):
+                (ui.select(app.state.scripts, label="Primary Script").classes("truncate w-full")
+                 .tooltip("Primary Python script in 'insect-detect' directory that is run first")
+                 .bind_value(app.state.config_updates["startup"]["auto_run"], "primary"))
+                (ui.select(["None"] + app.state.scripts, label="Fallback Script").classes("truncate w-full")
+                 .tooltip("Fallback Python script in 'insect-detect' directory (can be None)")
+                 .bind_value(app.state.config_updates["startup"]["auto_run"], "fallback",
+                             forward=lambda v: None if v == "None" else v,
+                             backward=lambda v: "None" if v is None or v == "" else v))
+                (ui.number(label="Delay", placeholder=app.state.config.startup.auto_run.delay,
+                           min=1, max=1800, precision=0, step=1, suffix="seconds",
+                           validation={"Required value between 1-1800":
+                                       lambda v: validate_number(v, 1, 1800)}).classes("w-full")
+                 .tooltip("Wait time before stopping primary script and running fallback script")
+                 .bind_value(app.state.config_updates["startup"]["auto_run"], "delay",
                              forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Upload to Cloud").classes("font-bold")
-             .tooltip("Upload archived data to cloud storage provider (always runs archive)"))
-            with ui.column().classes("w-full gap-1"):
-                (ui.switch("Enable").props("color=green").classes("font-bold")
-                 .bind_value(app.state.config_updates["upload"], "enabled"))
-                (ui.select(["all", "full", "crop", "metadata"], label="Content").classes("w-full")
-                 .tooltip("Select content for upload, always including metadata")
-                 .bind_visibility_from(app.state.config_updates["upload"], "enabled")
-                 .bind_value(app.state.config_updates["upload"], "content"))
+
+def create_webapp_settings():
+    """Create UI elements and config binding for web app settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        (ui.label("Frame Rate").classes("font-bold")
+         .tooltip("Max. possible streamed FPS depends on resolution"))
+        (ui.number(label="FPS", placeholder=app.state.config.webapp.fps,
+                   min=1, max=30, precision=0, step=1,
+                   validation={"Required value between 1-30": lambda v: validate_number(v, 1, 30)})
+         .bind_value(app.state.config_updates["webapp"], "fps",
+                     forward=lambda v: int(v) if v is not None else None))
+
+        grid_separator()
+        ui.label("Resolution").classes("font-bold").tooltip("Resolution of streamed HQ frames")
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            (ui.number(label="Width", placeholder=app.state.config.webapp.resolution.width,
+                       min=320, max=1920, precision=0, step=32,
+                       validation={"Required value between 320-1920 (multiple of 32)":
+                                   lambda v: validate_number(v, 320, 1920, 32)}).classes("flex-1")
+             .bind_value(app.state.config_updates["webapp"]["resolution"], "width",
+                         forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Height", placeholder=app.state.config.webapp.resolution.height,
+                       min=320, max=1080, precision=0, step=2,
+                       validation={"Required value between 320-1080 (multiple of 2)":
+                                   lambda v: validate_number(v, 320, 1080, 2)}).classes("flex-1")
+             .bind_value(app.state.config_updates["webapp"]["resolution"], "height",
+                         forward=lambda v: int(v) if v is not None else None))
+
+        grid_separator()
+        ui.label("JPEG Quality").classes("font-bold").tooltip("JPEG quality of streamed HQ frames")
+        (ui.number(label="JPEG", placeholder=app.state.config.webapp.jpeg_quality,
+                   min=10, max=100, precision=0, step=1,
+                   validation={"Required value between 10-100":
+                               lambda v: validate_number(v, 10, 100)})
+         .bind_value(app.state.config_updates["webapp"], "jpeg_quality",
+                     forward=lambda v: int(v) if v is not None else None))
+
+        grid_separator()
+        (ui.label("Use HTTPS").classes("font-bold")
+         .tooltip("Use HTTPS protocol (required for browser Geolocation API to get GPS location)"))
+        (ui.switch("Enable", on_change=lambda e: ui.notification(
+            "Protocol changes require a full web app restart to take effect.", type="warning", timeout=3)
+            if e.value != app.state.config.webapp.https.enabled else None)
+         .props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["webapp"]["https"], "enabled"))
 
 
 def create_system_settings():
-    """Create system settings expansion panel."""
-    with ui.expansion("System Settings", icon="settings").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+    """Create UI elements and config binding for system settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        (ui.label("Power Management").classes("font-bold")
+         .tooltip("Disable if no power management board is connected"))
+        with ui.column().classes("w-full gap-1"):
+            (ui.switch("Enable").props("color=green").classes("font-bold")
+             .bind_value(app.state.config_updates["powermanager"], "enabled"))
 
-            (ui.label("Power Management").classes("font-bold")
-             .tooltip("Disable if no power management board is connected"))
-            with ui.column().classes("w-full gap-1"):
-                (ui.switch("Enable").props("color=green").classes("font-bold")
-                 .bind_value(app.state.config_updates["powermanager"], "enabled"))
+            with (ui.column().classes("w-full")
+                  .bind_visibility_from(app.state.config_updates["powermanager"], "enabled")):
+                (ui.select(["wittypi", "pijuice"], label="Board Model").classes("w-full")
+                 .bind_value(app.state.config_updates["powermanager"], "model"))
+                with ui.row(align_items="center").classes("w-full gap-2"):
+                    (ui.number(label="Min. Charge", placeholder=app.state.config.powermanager.charge_min,
+                               min=10, max=90, precision=0, step=5, suffix="%",
+                               validation={"Required value between 10-90":
+                                           lambda v: validate_number(v, 10, 90)}).classes("flex-1")
+                     .tooltip("Minimum required charge level to start/continue a recording")
+                     .bind_value(app.state.config_updates["powermanager"], "charge_min",
+                                 forward=lambda v: int(v) if v is not None else None))
+                    (ui.number(label="Check Interval", placeholder=app.state.config.powermanager.charge_check,
+                               min=5, max=300, precision=0, step=5, suffix="seconds",
+                               validation={"Required value between 5-300":
+                                           lambda v: validate_number(v, 5, 300)}).classes("flex-1")
+                     .bind_value(app.state.config_updates["powermanager"], "charge_check",
+                                 forward=lambda v: int(v) if v is not None else None))
 
-                with (ui.column().classes("w-full")
-                      .bind_visibility_from(app.state.config_updates["powermanager"], "enabled")):
-                    (ui.select(["wittypi", "pijuice"], label="Board Model").classes("w-full")
-                     .bind_value(app.state.config_updates["powermanager"], "model"))
-                    with ui.row(align_items="center").classes("w-full gap-2"):
-                        (ui.number(label="Min. Charge",
-                                   placeholder=app.state.config.powermanager.charge_min,
-                                   min=10, max=90, precision=0, step=5, suffix="%",
-                                   validation={"Required value between 10-90":
-                                               lambda v: validate_number(v, 10, 90)})
-                         .classes("flex-1")
-                         .tooltip("Minimum required charge level to start/continue a recording")
-                         .bind_value(app.state.config_updates["powermanager"], "charge_min",
-                                     forward=lambda v: int(v) if v is not None else None))
-                        (ui.number(label="Check Interval",
-                                   placeholder=app.state.config.powermanager.charge_check,
-                                   min=5, max=300, precision=0, step=5, suffix="seconds",
-                                   validation={"Required value between 5-300":
-                                               lambda v: validate_number(v, 5, 300)})
-                         .classes("flex-1")
-                         .bind_value(app.state.config_updates["powermanager"], "charge_check",
-                                     forward=lambda v: int(v) if v is not None else None))
+        grid_separator()
+        (ui.label("OAK Temperature").classes("font-bold")
+         .tooltip("Maximum allowed OAK chip temperature to continue a recording"))
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            (ui.number(label="Max. Temperature", placeholder=app.state.config.oak.temp_max,
+                       min=70, max=100, precision=0, step=1, suffix="°C",
+                       validation={"Required value between 70-100":
+                                   lambda v: validate_number(v, 70, 100)}).classes("flex-1")
+             .bind_value(app.state.config_updates["oak"], "temp_max",
+                         forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Check Interval", placeholder=app.state.config.oak.temp_check,
+                       min=5, max=300, precision=0, step=5, suffix="seconds",
+                       validation={"Required value between 5-300":
+                                   lambda v: validate_number(v, 5, 300)}).classes("flex-1")
+             .bind_value(app.state.config_updates["oak"], "temp_check",
+                         forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("OAK Temperature").classes("font-bold")
-             .tooltip("Maximum allowed OAK chip temperature to continue a recording"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                (ui.number(label="Max. Temperature", placeholder=app.state.config.oak.temp_max,
-                           min=70, max=100, precision=0, step=1, suffix="°C",
-                           validation={"Required value between 70-100":
-                                       lambda v: validate_number(v, 70, 100)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["oak"], "temp_max",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Check Interval", placeholder=app.state.config.oak.temp_check,
-                           min=5, max=300, precision=0, step=5, suffix="seconds",
-                           validation={"Required value between 5-300":
-                                       lambda v: validate_number(v, 5, 300)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["oak"], "temp_check",
-                             forward=lambda v: int(v) if v is not None else None))
+        grid_separator()
+        ui.label("Storage Management").classes("font-bold")
+        with ui.row(align_items="center").classes("w-full gap-2"):
+            (ui.number(label="Min. Free Space", placeholder=app.state.config.storage.disk_min,
+                       min=100, max=10000, precision=0, step=100, suffix="MB",
+                       validation={"Required value between 100-10000 MB":
+                                   lambda v: validate_number(v, 100, 10000)}).classes("flex-1")
+             .tooltip("Minimum required free disk space to start/continue a recording")
+             .bind_value(app.state.config_updates["storage"], "disk_min",
+                         forward=lambda v: int(v) if v is not None else None))
+            (ui.number(label="Check Interval", placeholder=app.state.config.storage.disk_check,
+                       min=5, max=300, precision=0, step=5, suffix="seconds",
+                       validation={"Required value between 5-300":
+                                   lambda v: validate_number(v, 5, 300)}).classes("flex-1")
+             .bind_value(app.state.config_updates["storage"], "disk_check",
+                         forward=lambda v: int(v) if v is not None else None))
 
-            grid_separator()
-            ui.label("Storage Management").classes("font-bold")
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                (ui.number(label="Min. Free Space", placeholder=app.state.config.storage.disk_min,
-                           min=100, max=10000, precision=0, step=100, suffix="MB",
-                           validation={"Required value between 100-10000 MB":
-                                       lambda v: validate_number(v, 100, 10000)})
-                 .classes("flex-1")
-                 .tooltip("Minimum required free disk space to start/continue a recording")
-                 .bind_value(app.state.config_updates["storage"], "disk_min",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Check Interval", placeholder=app.state.config.storage.disk_check,
-                           min=5, max=300, precision=0, step=5, suffix="seconds",
-                           validation={"Required value between 5-300":
-                                       lambda v: validate_number(v, 5, 300)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["storage"], "disk_check",
-                             forward=lambda v: int(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("System Logging").classes("font-bold")
-             .tooltip("Log system information (temperature, memory, CPU utilization, battery info)"))
-            with ui.column().classes("w-full gap-1"):
-                (ui.switch("Enable").props("color=green").classes("font-bold")
-                 .bind_value(app.state.config_updates["logging"], "enabled"))
-                (ui.number(label="Log Interval", placeholder=app.state.config.logging.interval,
-                           min=1, max=600, precision=0, step=1, suffix="seconds",
-                           validation={"Required value between 1-600":
-                                       lambda v: validate_number(v, 1, 600)})
-                 .classes("w-full")
-                 .bind_visibility_from(app.state.config_updates["logging"], "enabled")
-                 .bind_value(app.state.config_updates["logging"], "interval",
-                             forward=lambda v: int(v) if v is not None else None))
+        grid_separator()
+        (ui.label("System Logging").classes("font-bold")
+         .tooltip("Log system information (temperature, memory, CPU utilization, battery info)"))
+        with ui.column().classes("w-full gap-1"):
+            (ui.switch("Enable").props("color=green").classes("font-bold")
+             .bind_value(app.state.config_updates["logging"], "enabled"))
+            (ui.number(label="Log Interval", placeholder=app.state.config.logging.interval,
+                       min=1, max=600, precision=0, step=1, suffix="seconds",
+                       validation={"Required value between 1-600":
+                                   lambda v: validate_number(v, 1, 600)}).classes("w-full")
+             .bind_visibility_from(app.state.config_updates["logging"], "enabled")
+             .bind_value(app.state.config_updates["logging"], "interval",
+                         forward=lambda v: int(v) if v is not None else None))
 
 
 def create_network_settings():
-    """Create network settings expansion panel."""
+    """Create UI elements and config binding for network settings."""
     app.state.wifi_networks_ui = []
 
     def remove_wifi_network(network_row):
@@ -908,8 +999,7 @@ def create_network_settings():
                 network_row.delete()
                 app.state.wifi_networks_ui.pop(idx)
             else:
-                ui.notification("At least one Wi-Fi network must be configured!",
-                                type="warning", timeout=2)
+                ui.notification("At least one Wi-Fi network must be configured!", type="warning", timeout=2)
 
     def add_wifi_network(networks_column, ssid="", password=""):
         """Add a new Wi-Fi network input field."""
@@ -932,92 +1022,36 @@ def create_network_settings():
 
         app.state.wifi_networks_ui.append(network_row)
 
-    with ui.expansion("Network Settings", icon="network_wifi").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+        ui.label("Mode").classes("font-bold").tooltip("Network mode of the Raspberry Pi")
+        (ui.select(["hotspot", "wifi"], label="Network Mode").classes("w-full")
+         .bind_value(app.state.config_updates["network"], "mode"))
 
-            (ui.label("Mode").classes("font-bold")
-             .tooltip("Network mode of the Raspberry Pi"))
-            (ui.select(["wifi", "hotspot"], label="Network Mode").classes("w-full")
-             .bind_value(app.state.config_updates["network"], "mode"))
+        grid_separator()
+        ui.label("RPi Hotspot").classes("font-bold")
+        with ui.column().classes("w-full"):
+            with ui.row(align_items="baseline").classes("w-full gap-2"):
+                (ui.input(label="SSID", placeholder=HOSTNAME).props("clearable").classes("flex-1")
+                 .bind_value(app.state.config_updates["network"]["hotspot"], "ssid",
+                             forward=lambda v: str(v) if v is not None else None))
+                (ui.input(label="Password", validation={
+                    "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
+                 .props("clearable").classes("flex-1")
+                 .bind_value(app.state.config_updates["network"]["hotspot"], "password",
+                             forward=lambda v: str(v) if v is not None else None))
 
-            grid_separator()
-            (ui.label("Wi-Fi Networks").classes("font-bold")
-             .tooltip("List of Wi-Fi networks that the RPi should connect to (ordered by priority)"))
-            wifi_column = ui.column().classes("w-full gap-2")
+        grid_separator()
+        (ui.label("Wi-Fi Networks").classes("font-bold")
+         .tooltip("List of Wi-Fi networks that the RPi should connect to (ordered by priority)"))
+        wifi_column = ui.column().classes("w-full gap-2")
 
-            with wifi_column:
-                app.state.config_updates["network"]["wifi"].clear()
-                networks_column = ui.column().classes("w-full gap-2")
-                for network in app.state.config.network.wifi:
-                    add_wifi_network(networks_column, network["ssid"], network["password"])
-                ui.button("Add Wi-Fi", color="green", icon="add",
-                          on_click=lambda: add_wifi_network(networks_column))
-
-            grid_separator()
-            ui.label("RPi Hotspot").classes("font-bold")
-            with ui.column().classes("w-full"):
-                with ui.row(align_items="baseline").classes("w-full gap-2"):
-                    (ui.input(label="SSID", placeholder=HOSTNAME)
-                     .props("clearable").classes("flex-1")
-                     .bind_value(app.state.config_updates["network"]["hotspot"], "ssid",
-                                 forward=lambda v: str(v) if v is not None else None))
-                    (ui.input(label="Password", validation={
-                        "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
-                     .props("clearable").classes("flex-1")
-                     .bind_value(app.state.config_updates["network"]["hotspot"], "password",
-                                 forward=lambda v: str(v) if v is not None else None))
-
-
-def create_webapp_settings():
-    """Create web app settings expansion panel."""
-    with ui.expansion("Web App Settings", icon="video_settings").classes("w-full font-bold"):
-        with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
-
-            (ui.label("Frame Rate").classes("font-bold")
-             .tooltip("Max. possible streamed FPS depends on resolution"))
-            (ui.number(label="FPS", placeholder=app.state.config.webapp.fps,
-                       min=1, max=30, precision=0, step=1,
-                       validation={"Required value between 1-30": lambda v: validate_number(v, 1, 30)})
-             .bind_value(app.state.config_updates["webapp"], "fps",
-                         forward=lambda v: int(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("Resolution").classes("font-bold")
-             .tooltip("Resolution of streamed HQ frames"))
-            with ui.row(align_items="center").classes("w-full gap-2"):
-                (ui.number(label="Width", placeholder=app.state.config.webapp.resolution.width,
-                           min=320, max=1920, precision=0, step=32,
-                           validation={"Required value between 320-1920 (multiple of 32)":
-                                       lambda v: validate_number(v, 320, 1920, 32)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["webapp"]["resolution"], "width",
-                             forward=lambda v: int(v) if v is not None else None))
-                (ui.number(label="Height", placeholder=app.state.config.webapp.resolution.height,
-                           min=320, max=1080, precision=0, step=2,
-                           validation={"Required value between 320-1080 (multiple of 2)":
-                                       lambda v: validate_number(v, 320, 1080, 2)})
-                 .classes("flex-1")
-                 .bind_value(app.state.config_updates["webapp"]["resolution"], "height",
-                             forward=lambda v: int(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("JPEG Quality").classes("font-bold")
-             .tooltip("JPEG quality of streamed HQ frames"))
-            (ui.number(label="JPEG", placeholder=app.state.config.webapp.jpeg_quality,
-                       min=10, max=100, precision=0, step=1,
-                       validation={"Required value between 10-100":
-                                   lambda v: validate_number(v, 10, 100)})
-             .bind_value(app.state.config_updates["webapp"], "jpeg_quality",
-                         forward=lambda v: int(v) if v is not None else None))
-
-            grid_separator()
-            (ui.label("Use HTTPS").classes("font-bold")
-             .tooltip("Use HTTPS protocol (required for browser Geolocation API to get GPS location)"))
-            (ui.switch("Enable", on_change=lambda e: ui.notification(
-                "Protocol changes require a full web app restart to take effect.",
-                type="warning", timeout=3) if e.value != app.state.config.webapp.https.enabled else None)
-             .props("color=green").classes("font-bold")
-             .bind_value(app.state.config_updates["webapp"]["https"], "enabled"))
+        with wifi_column:
+            app.state.config_updates["network"]["wifi"].clear()
+            networks_column = ui.column().classes("w-full gap-2")
+            for network in app.state.config.network.wifi:
+                add_wifi_network(networks_column, network["ssid"], network["password"])
+            ui.button("Add Wi-Fi", color="green", icon="add",
+                      on_click=lambda: add_wifi_network(networks_column))
 
 
 async def apply_config_changes(config_name, has_network_changes, config_selected=None):
@@ -1049,9 +1083,9 @@ async def apply_config_changes(config_name, has_network_changes, config_selected
 
         try:
             if config_selected is not None:
-                set_up_network(dict(config_selected))
+                set_up_network(dict(config_selected), activate_network=True)
             else:
-                set_up_network(app.state.config_updates)
+                set_up_network(app.state.config_updates, activate_network=True)
         except Exception as e:
             ui.notification(f"Network settings failed to apply: {str(e)}", type="negative", timeout=5)
             return
@@ -1102,8 +1136,8 @@ async def show_activate_dialog(config_name, has_network_changes):
     if activate_config:
         await apply_config_changes(config_name, has_network_changes)
     else:
-        # Refresh UI components to reflect the still active config (reset config_updates)
-        create_ui_components.refresh()
+        # Refresh all UI elements to reflect the still active config (reset config_updates)
+        create_ui_layout.refresh()
         ui.notification("Configuration not activated!", type="warning", timeout=2)
 
 
@@ -1112,21 +1146,9 @@ async def save_to_file(config_path):
     has_network_changes = check_config_changes(app.state.config.network,
                                                app.state.config_updates["network"])
 
-    ruamel_yaml = ruamel.yaml.YAML()
-    ruamel_yaml.indent(mapping=2, sequence=4, offset=2)  # indentation for nested structures
-    ruamel_yaml.width = 150  # maximum line width before wrapping
-    ruamel_yaml.preserve_quotes = True  # preserve all comments
-    ruamel_yaml.boolean_representation = ["false", "true"]  # ensure lowercase representation
-
     config_template_path = BASE_PATH / "configs" / app.state.config_active
-
-    with open(config_template_path, "r", encoding="utf-8") as file:
-        config_template = ruamel_yaml.load(file)
-
-    update_nested_dict(config_template, app.state.config_updates, dict(app.state.config))
-
-    with open(config_path, "w", encoding="utf-8") as file:
-        ruamel_yaml.dump(config_template, file)
+    update_config_file(config_path, config_template_path, app.state.config_updates,
+                       dict(app.state.config), OPTIONAL_CONFIG_FIELDS)
 
     ui.notification(f"Configuration saved to '{config_path.name}'!", type="positive", timeout=2)
 
@@ -1250,7 +1272,7 @@ async def start_recording():
 
     start_rec = await dialog
     if start_rec:
-        app.state.start_recording_after_shutdown = True
+        app.state.start_recording = True
         ui.notification("Stopping web app and start recording...",
                         position="top", type="ongoing", spinner=True, timeout=3)
         await asyncio.sleep(0.5)
@@ -1303,15 +1325,10 @@ async def cleanup():
     if hasattr(app.state, "device") and app.state.device is not None:
         app.state.device.close()
 
-    if hasattr(app.state, "start_recording_after_shutdown") and app.state.start_recording_after_shutdown:
-        log_file = BASE_PATH / "subprocess_log.log"
-        timestamp = datetime.now().strftime("%F %T")
-        log_entry = f"{timestamp} - Running yolo_tracker_save_hqsync.py\n"
+    if hasattr(app.state, "start_recording") and app.state.start_recording:
+        subprocess_log(LOGS_PATH, "yolo_tracker_save_hqsync.py")
 
-        with open(log_file, "a", encoding="utf-8") as f:
-            f.write(log_entry)
-
-        with open(log_file, "a", encoding="utf-8") as log_file_handle:
+        with open(LOGS_PATH / "subprocess.log", "a", encoding="utf-8") as log_file_handle:
             subprocess.Popen(
                 [sys.executable, str(BASE_PATH / "yolo_tracker_save_hqsync.py")],
                 stdout=log_file_handle,
@@ -1321,12 +1338,12 @@ async def cleanup():
 
     # Force exit web app after timeout
     loop = asyncio.get_event_loop()
-    loop.call_later(10, lambda: print("\nWeb app forced to exit after timeout.") or sys.exit(0))
+    loop.call_later(10, lambda: print("Web app forced to exit after timeout.") or sys.exit(0))
 
 
 def signal_handler(signum, frame):
     """Handle a received signal (e.g. keyboard interrupt) to gracefully shut down the app."""
-    print("\nSignal received, initiating graceful app shutdown...")
+    print("Signal received, initiating graceful app shutdown...")
     app.shutdown()
 
 
@@ -1349,7 +1366,7 @@ if __name__ == "__main__":
     ssl_key_path = Path.home() / "ssl_certificates" / "key.pem"
     use_https = https_enabled and ssl_cert_path.exists() and ssl_key_path.exists()
     if https_enabled and not use_https:
-        print("\nHTTPS is enabled but no SSL certificates were found. Using HTTP instead.")
+        print("HTTPS is enabled but no SSL certificates were found. Using HTTP instead.")
 
     # Set parameters based on HTTPS setting
     protocol = "https" if use_https else "http"
@@ -1360,12 +1377,11 @@ if __name__ == "__main__":
     # Start the web app with specified parameters
     def startup_message():
         """Print startup message with information about web app access."""
-        print("\nInsect Detect web app ready to go!")
+        print("Insect Detect web app ready to go!")
         print(f"Access via hostname:   {protocol}://{HOSTNAME}:{port}")
         print(f"Access via IP address: {protocol}://{IP_ADDRESS}:{port}")
         if use_https:
             print("Accept the self-signed SSL certificate in your browser when first connecting.")
-        print()
 
     app.on_startup(startup_message)
 
@@ -1374,6 +1390,7 @@ if __name__ == "__main__":
         port=port,
         title=f"{HOSTNAME} Web App",
         favicon=str(BASE_PATH / "static" / "favicon.ico"),
+        binding_refresh_interval=0.2,  # refresh interval for active links (default: 0.1 seconds)
         show=False,
         reload=False,
         show_welcome_message=False,

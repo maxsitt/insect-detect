@@ -12,7 +12,8 @@ Functions:
     parse_yaml(): Load YAML configuration file and return dot notation accessible dictionary.
     check_config_changes(): Check if an updated config has any changes to the original.
     update_config_selector(): Update the config selector file to point to the active configuration.
-    update_nested_dict(): Update nested dictionary recursively. Replace 'None' with default value.
+    update_config_file(): Update existing or create new config based on template and save to file.
+    update_nested_dict(): Update nested dictionary recursively. Replace 'None' with default value for required fields.
     sanitize_config(): Mask sensitive information in config (e.g. passwords).
 """
 
@@ -64,15 +65,41 @@ def update_config_selector(base_path, config_active):
         ruamel_yaml.dump(config_selector, file)
 
 
-def update_nested_dict(template, updates, defaults):
-    """Update nested dictionary recursively. Replace 'None' with default value."""
+def update_config_file(config_path, config_template_path, config_updates, config, optional_fields=None):
+    """Update existing or create new config based on template and save to file."""
+    ruamel_yaml = ruamel.yaml.YAML()
+    ruamel_yaml.width = 150  # maximum line width before wrapping
+    ruamel_yaml.preserve_quotes = True  # preserve all comments
+    ruamel_yaml.boolean_representation = ["false", "true"]  # ensure lowercase representation
+    ruamel_yaml.indent(mapping=2, sequence=4, offset=2)  # indentation for nested structures
+
+    with open(config_template_path, "r", encoding="utf-8") as file:
+        config_template = ruamel_yaml.load(file)
+
+    update_nested_dict(config_template, dict(config_updates), dict(config), optional_fields)
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        ruamel_yaml.dump(config_template, file)
+
+
+def update_nested_dict(template, updates, defaults, optional_fields=None, path=""):
+    """Update nested dictionary recursively. Replace 'None' with default value for required fields."""
+    if optional_fields is None:
+        optional_fields = set()
+    optional_field_names = {"ssid", "password"}  # not required (can always be empty/None)
+
     for key, value in updates.items():
+        current_path = f"{path}.{key}" if path else key
         if (isinstance(value, dict) and
             isinstance(template.get(key), dict) and
             isinstance(defaults.get(key), dict)):
-            update_nested_dict(template[key], value, defaults[key])
+            update_nested_dict(template[key], value, defaults[key], optional_fields, current_path)
         else:
-            template[key] = value if value is not None else defaults[key]
+            is_optional = current_path in optional_fields or key in optional_field_names
+            if value is None and not is_optional:
+                template[key] = defaults[key]
+            else:
+                template[key] = value
 
 
 def sanitize_config(config):

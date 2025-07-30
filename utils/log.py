@@ -8,6 +8,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 Functions:
     save_logs(): Write system information to .csv file during recording.
     record_log(): Write information to .csv file at the end of the recording interval.
+    subprocess_log(): Log information during start of a script executed via subprocess.
 """
 
 import csv
@@ -90,3 +91,10 @@ def record_log(save_path, cam_id, rec_id, rec_start, rec_end,
         if log_rec_file.tell() == 0:
             log_rec_writer.writeheader()
         log_rec_writer.writerow(logs_rec)
+
+
+def subprocess_log(logs_path, script_name):
+    """Log information during start of a script executed via subprocess."""
+    timestamp = datetime.now().strftime("%F %T")
+    with open(logs_path / "subprocess.log", "a", encoding="utf-8") as f:
+        f.write(f"{timestamp} - Running {script_name} via subprocess\n")

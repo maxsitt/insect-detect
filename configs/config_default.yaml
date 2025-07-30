@@ -7,7 +7,7 @@
 
 # DO NOT MODIFY THIS DEFAULT CONFIG FILE - use "config_custom.yaml" for modifications
 
-# Deployment metadata (use web app for editing - Geolocation API requires 'https' enabled)
+# Deployment metadata (use web app for editing - Geolocation API requires 'webapp.https' enabled)
 deployment:
   start:        # Start date + time of the camera deployment (ISO 8601 format)
   location:
@@ -73,7 +73,7 @@ recording:
 # Post-processing settings
 post_processing:    # Select post-processing methods ('delete' requires 'crop' or 'overlay')
   crop:
-    enabled: true   # Crop detections (= bounding boxes) from HQ frames and save as individual .jpg files
+    enabled: false  # Crop detections (= bounding boxes) from HQ frames and save as individual .jpg files
     method: square  # Options: square, original (crop method for detections/bounding boxes)
   overlay:
     enabled: false  # Draw overlays on HQ frame copies (bounding box, label, confidence, track ID)
@@ -85,6 +85,28 @@ archive:
 upload:
   enabled: false    # Upload archived data to cloud storage provider (runs 'archive' even if disabled)
   content: crop     # Options: all, full, crop, metadata (content for upload, always including metadata)
+
+# Startup settings (automatically executed at boot by "startup.py" - requires enabled systemd service)
+startup:
+  hotspot_setup:
+    enabled: true  # Create RPi Wi-Fi hotspot if it doesn't exist (uses hostname for SSID and password)
+  network_setup:
+    enabled: true  # Create/update all configured Wi-Fi networks in NetworkManager (including hotspot)
+  auto_run:
+    enabled: false      # Automatically run configured Python script(s) after boot
+    primary: webapp.py  # Primary Python script in "insect-detect" directory that is run first
+    fallback:           # Fallback Python script in "insect-detect" directory (can be empty)
+    delay: 180          # Wait time (seconds) before stopping primary script and running fallback script
+
+# Web app settings
+webapp:
+  fps: 15           # Camera frame rate (range: 1-30) -> max. streamed fps depends on resolution
+  resolution:       # Resolution of streamed HQ frames
+    width: 1280     # Frame width (max. 1920) -> must be multiple of 32, e.g. 736 or 1088 for ~square
+    height: 720     # Frame height (max. 1080) -> must be multiple of 2
+  jpeg_quality: 70  # JPEG quality of streamed HQ frames (range: 0-100, recommended: 50-80)
+  https:
+    enabled: false  # Use HTTPS protocol (required for browser Geolocation API to get GPS coordinates)
 
 # System settings
 powermanager:
@@ -104,20 +126,10 @@ logging:
 
 # Network settings
 network:
-  mode: wifi     # Options: wifi, hotspot
-  wifi:          # List of Wi-Fi networks (ordered by autoconnect priority)
-    - ssid:      # SSID of the Wi-Fi network with the highest priority
-      password:  # Password of the Wi-Fi network -> must be at least 8 characters long
+  mode: wifi   # Options: hotspot, wifi (automatic fallback to hotspot if no Wi-Fi network is available)
   hotspot:
-    ssid:        # SSID of the RPi hotspot (recommended: RPi hostname)
-    password:    # Password of the RPi hotspot -> must be at least 8 characters long
-
-# Web app settings
-webapp:
-  fps: 20           # Camera frame rate (range: 1-30) -> max. streamed fps depends on resolution
-  resolution:       # Resolution of streamed HQ frames
-    width: 1280     # Frame width (max. 1920) -> must be multiple of 32, e.g. 736 or 1088 for ~square
-    height: 720     # Frame height (max. 1080) -> must be multiple of 2
-  jpeg_quality: 70  # JPEG quality of streamed HQ frames (range: 0-100, recommended: 50-80)
-  https:
-    enabled: false  # Use HTTPS protocol (required for browser Geolocation API to get GPS coordinates)
+    ssid:      # SSID of the RPi hotspot (recommended: RPi hostname)
+    password:  # Password of the RPi hotspot -> must be at least 8 characters long
+  wifi:        # List of Wi-Fi networks (ordered by autoconnect priority)
+    - ssid:
+      password:

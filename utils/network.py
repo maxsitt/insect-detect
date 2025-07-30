@@ -7,10 +7,10 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
     get_ip_address(): Get the IPv4 address assigned to the wlan0 wireless interface.
-    get_current_connection(): Get mode and SSID of the current wifi connection.
-    set_up_network(): Set up and activate network connections based on current configuration.
-    create_hotspot(): Create or update hotspot connection.
-    create_wifi(): Create or update Wi-Fi connections.
+    get_current_connection(): Get the mode and SSID of the current Wi-Fi connection.
+    set_up_network(): Create and optionally activate Wi-Fi network connections based on config.
+    create_hotspot(): Create or update Wi-Fi hotspot connection profile in NetworkManager.
+    create_wifi(): Create or update Wi-Fi connection profiles in NetworkManager.
 """
 
 import fcntl
@@ -34,58 +34,69 @@ def get_ip_address():
 
 
 def get_current_connection():
-    """Get mode and SSID of the current wifi connection."""
+    """Get the mode and SSID of the current Wi-Fi connection."""
     devices = nmcli.device()
     device_wlan0 = next(dev for dev in devices if dev.device == "wlan0")
     current_connection = device_wlan0.connection
 
     if current_connection and current_connection != "--":
-        connection_info = nmcli.connection.show(current_connection)
-        connection_ssid = connection_info.get("802-11-wireless.ssid")
-        if connection_info.get("802-11-wireless.mode") == "ap":
-            return {"mode": "hotspot", "ssid": connection_ssid}
-        return {"mode": "wifi", "ssid": connection_ssid}
+        conn_details = nmcli.connection.show(current_connection)
+        if conn_details.get("802-11-wireless.mode") == "ap":
+            return {"mode": "hotspot", "ssid": conn_details.get("802-11-wireless.ssid")}
+        return {"mode": "wifi", "ssid": conn_details.get("802-11-wireless.ssid")}
     return {"mode": "disconnected", "ssid": None}
 
 
-def set_up_network(config):
-    """Set up and activate network connections based on current configuration."""
-    devices = nmcli.device()
-    device_wlan0 = next(dev for dev in devices if dev.device == "wlan0")
-    current_connection = device_wlan0.connection
-
-    highest_priority_wifi = None
-    if config["network"]["wifi"]:
-        for wifi in config["network"]["wifi"]:
-            if wifi.get("ssid") and wifi.get("password"):
-                highest_priority_wifi = wifi
-                break
-        create_wifi(config["network"]["wifi"])
-
+def set_up_network(config, activate_network=False):
+    """Create and optionally activate Wi-Fi network connections based on config."""
     if config["network"]["hotspot"].get("ssid"):
         create_hotspot(config["network"]["hotspot"])
 
-    if config["network"]["mode"] == "wifi":
-        if highest_priority_wifi and current_connection != highest_priority_wifi["ssid"]:
-            nmcli.connection.up(str(highest_priority_wifi["ssid"]))
-    elif config["network"]["mode"] == "hotspot":
-        if current_connection != config["network"]["hotspot"]["ssid"]:
-            nmcli.device.disconnect("wlan0")
-            nmcli.connection.up(str(config["network"]["hotspot"]["ssid"]))
+    if config["network"]["wifi"]:
+        create_wifi(config["network"]["wifi"])
+
+    if activate_network:
+        current_connection = get_current_connection()
+        if config["network"]["mode"] == "hotspot":
+            if current_connection["ssid"] != config["network"]["hotspot"]["ssid"]:
+                nmcli.device.disconnect("wlan0")
+                nmcli.connection.up(str(config["network"]["hotspot"]["ssid"]))
+        elif config["network"]["mode"] == "wifi":
+            highest_priority_wifi = None
+            for wifi in config["network"]["wifi"]:
+                if wifi.get("ssid") and wifi.get("password"):
+                    highest_priority_wifi = wifi
+                    break
+            if highest_priority_wifi and current_connection["ssid"] != highest_priority_wifi["ssid"]:
+                if current_connection["mode"] == "hotspot":
+                    nmcli.device.disconnect("wlan0")
+                nmcli.connection.up(str(highest_priority_wifi["ssid"]))
 
 
 def create_hotspot(hotspot_config):
-    """Create or update hotspot connection."""
+    """Create or update Wi-Fi hotspot connection profile in NetworkManager."""
+    if not hotspot_config.get("ssid") or not hotspot_config.get("password"):
+        return
+
     if len(str(hotspot_config["password"])) < 8:
         raise ValueError("Hotspot password must be at least 8 characters long!")
 
-    try:
-        nmcli.connection.show(str(hotspot_config["ssid"]))
-        connection_exists = True
-    except Exception:
-        connection_exists = False
+    # Delete any existing hotspot profiles that don't match the configured hotspot SSID
+    connections = nmcli.connection()
+    for connection in connections:
+        if connection.conn_type == "wifi":
+            conn_name = connection.name
+            conn_details = nmcli.connection.show(conn_name)
+            if (conn_details.get("802-11-wireless.mode") == "ap" and
+                conn_details.get("802-11-wireless.ssid") != str(hotspot_config["ssid"])):
+                nmcli.connection.delete(conn_name)
 
-    if not connection_exists:
+    try:
+        conn_details = nmcli.connection.show(str(hotspot_config["ssid"]), show_secrets=True)
+    except Exception:
+        conn_details = None
+
+    if not conn_details:
         nmcli.connection.add(
             conn_type="wifi",
             ifname="wlan0",
@@ -101,21 +112,22 @@ def create_hotspot(hotspot_config):
             }
         )
     else:
-        nmcli.connection.modify(
-            name=str(hotspot_config["ssid"]),
-            options={
-                "wifi.mode": "ap",
-                "wifi.band": "bg",
-                "ipv4.method": "shared",
-                "wifi-sec.key-mgmt": "wpa-psk",
-                "wifi-sec.psk": str(hotspot_config["password"]),
-                "connection.autoconnect": "yes"
-            }
-        )
+        if conn_details.get("802-11-wireless-security.psk") != str(hotspot_config["password"]):
+            nmcli.connection.modify(
+                name=str(hotspot_config["ssid"]),
+                options={
+                    "wifi.mode": "ap",
+                    "wifi.band": "bg",
+                    "ipv4.method": "shared",
+                    "wifi-sec.key-mgmt": "wpa-psk",
+                    "wifi-sec.psk": str(hotspot_config["password"]),
+                    "connection.autoconnect": "yes"
+                }
+            )
 
 
 def create_wifi(wifi_configs):
-    """Create or update Wi-Fi connections."""
+    """Create or update Wi-Fi connection profiles in NetworkManager."""
     for i, wifi_config in enumerate(wifi_configs):
         if not wifi_config.get("ssid") or not wifi_config.get("password"):
             continue
@@ -123,13 +135,15 @@ def create_wifi(wifi_configs):
         if len(str(wifi_config["password"])) < 8:
             raise ValueError("Wi-Fi password must be at least 8 characters long!")
 
-        try:
-            nmcli.connection.show(str(wifi_config["ssid"]))
-            connection_exists = True
-        except Exception:
-            connection_exists = False
+        # Set priority based on index (= position in list)
+        priority = 100 - (i * 10)
 
-        if not connection_exists:
+        try:
+            conn_details = nmcli.connection.show(str(wifi_config["ssid"]), show_secrets=True)
+        except Exception:
+            conn_details = None
+
+        if not conn_details:
             nmcli.connection.add(
                 conn_type="wifi",
                 ifname="wlan0",
@@ -139,16 +153,18 @@ def create_wifi(wifi_configs):
                     "ssid": str(wifi_config["ssid"]),
                     "wifi-sec.key-mgmt": "wpa-psk",
                     "wifi-sec.psk": str(wifi_config["password"]),
-                    "connection.autoconnect-priority": str(100 - (i * 10))
+                    "connection.autoconnect-priority": str(priority)
                 }
             )
         else:
-            nmcli.connection.modify(
-                name=str(wifi_config["ssid"]),
-                options={
-                    "wifi-sec.key-mgmt": "wpa-psk",
-                    "wifi-sec.psk": str(wifi_config["password"]),
-                    "connection.autoconnect-priority": str(100 - (i * 10)),
-                    "connection.autoconnect": "yes"
-                }
-            )
+            if (conn_details.get("802-11-wireless-security.psk") != str(wifi_config["password"]) or
+                conn_details.get("connection.autoconnect-priority") != str(priority)):
+                nmcli.connection.modify(
+                    name=str(wifi_config["ssid"]),
+                    options={
+                        "wifi-sec.key-mgmt": "wpa-psk",
+                        "wifi-sec.psk": str(wifi_config["password"]),
+                        "connection.autoconnect-priority": str(priority),
+                        "connection.autoconnect": "yes"
+                    }
+                )

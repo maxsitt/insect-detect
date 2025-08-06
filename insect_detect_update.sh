@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Update the insect-detect repo while backing up all configuration files and handling local changes
+# Update the insect-detect software while backing up configuration files and handling local changes
 
 # Source:   https://github.com/maxsitt/insect-detect
 # License:  GNU GPLv3 (https://choosealicense.com/licenses/gpl-3.0/)
@@ -10,8 +10,11 @@
 # Immediately exit script on error, undefined variable, or pipe failure
 set -euo pipefail
 
+echo "==== Insect Detect Updater ===="
+echo
+
 # Check prerequisites
-cd ~/insect-detect || { echo "ERROR: Directory ~/insect-detect not found."; exit 1; }
+cd "$HOME/insect-detect" || { echo "ERROR: Directory $HOME/insect-detect not found."; exit 1; }
 command -v git >/dev/null 2>&1 || { echo "ERROR: Git is required but not installed."; exit 1; }
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "ERROR: Not in a git repository."; exit 1; }
 
@@ -137,6 +140,30 @@ if [[ "$confirm" =~ ^[Yy]$ ]]; then
         if [[ "$CONFIGS_WILL_BE_UPDATED" == true && -n "$BACKUP_DIR" ]]; then
             echo "Your previous config files are backed up in: $BACKUP_DIR"
             echo "Please review and merge any custom settings into the updated config files."
+        fi
+
+        if echo "$CHANGED_FILES" | grep -q "^requirements.txt$"; then
+            echo
+            echo "The 'requirements.txt' file was updated."
+            echo "Please install the new/updated Python packages to ensure software compatibility."
+            if [[ -d "$HOME/env_insdet" ]]; then
+                read -p "Do you want to install the new/updated Python packages now? (y/N): " confirm
+                if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                    echo "Installing/updating Python packages in 'env_insdet' environment..."
+                    if "$HOME/env_insdet/bin/python3" -m pip install --upgrade -r requirements.txt; then
+                        echo
+                        echo "Python packages updated successfully!"
+                    else
+                        echo
+                        echo "WARNING: Failed to install some Python packages. Please check pip output."
+                    fi
+                else
+                    echo "Skipped installing the new/updated Python packages."
+                fi
+            else
+                echo "WARNING: The 'env_insdet' environment was not found at '$HOME/env_insdet'."
+                echo "Please install the new/updated Python packages manually in your environment."
+            fi
         fi
 
     else

@@ -94,7 +94,7 @@ async def main_page():
         create_ui_layout()
 
     # Create timer to update tracker data and overlay (if enabled) depending on camera frame rate
-    app.state.overlay_timer = ui.timer(app.state.refresh_time, update_tracker_overlay)
+    app.state.overlay_timer = ui.timer(app.state.refresh_interval, update_tracker_overlay)
 
 
 @ui.refreshable
@@ -194,7 +194,7 @@ async def start_camera():
 
     # Initialize relevant app.state variables
     app.state.connection = get_current_connection()
-    app.state.refresh_time = round(1 / app.state.config.webapp.fps, 3)
+    app.state.refresh_interval = max(round(1 / app.state.config.webapp.fps, 3), 0.033)  # max. 30 FPS
     app.state.tracker_data = []
     app.state.labels = app.state.config_model.mappings.labels
     app.state.show_overlay = True
@@ -299,7 +299,7 @@ async def frame_generator():
                        + PLACEHOLDER_PNG_BYTES + b"\r\n")
 
             loop_duration = time.monotonic() - loop_start
-            await asyncio.sleep(max(getattr(app.state, "refresh_time", 0.05) - loop_duration, 0.02))
+            await asyncio.sleep(max(app.state.refresh_interval - loop_duration, 0))
     except asyncio.CancelledError:
         return
 

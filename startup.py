@@ -26,6 +26,7 @@ import socket
 import subprocess
 import sys
 import time
+from gpiozero import LED
 from pathlib import Path
 
 from utils.config import parse_yaml, update_config_file
@@ -57,6 +58,17 @@ config_active_path = BASE_PATH / "configs" / config_active
 config = parse_yaml(config_active_path)
 config_updates = copy.deepcopy(dict(config))
 logger.info("Configuration %s loaded successfully", config_active)
+
+# Fast-blink LED to indicate startup sequence is running
+led = None
+if config.led.enabled:
+    led_gpio_pin = config.led.gpio_pin
+    try:
+        led = LED(led_gpio_pin)
+    except Exception:
+        logger.exception("Error during initialization of LED")
+if led:
+    led.blink(on_time=0.2, off_time=0.2, background=True)
 
 # Run startup sequence based on active config
 if config.startup.hotspot_setup.enabled:

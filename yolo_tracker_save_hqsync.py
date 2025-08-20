@@ -60,6 +60,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from gpiozero import LED
 from pathlib import Path
 
 import depthai as dai
@@ -98,6 +99,19 @@ config_selector = parse_yaml(BASE_PATH / "configs" / "config_selector.yaml")
 config_active = config_selector.config_active
 config = parse_yaml(BASE_PATH / "configs" / config_active)
 config_model = parse_json(BASE_PATH / "models" / config.detection.model.config)
+
+# Constantly light LED to indicate recording is running
+led = None
+if config.led.enabled:
+    led_gpio_pin = config.led.gpio_pin
+    for _ in range(30):  # retry for 3 seconds as LED might still be used by other process
+        try:
+            led = LED(led_gpio_pin)
+            break
+        except Exception:
+            time.sleep(0.1)
+if led:
+    led.on()
 
 # Extract some frequently used configuration parameters
 PWR_MGMT = config.powermanager.enabled
@@ -224,11 +238,11 @@ try:
 
         try:
             # Run recording session until either:
-            while (time.monotonic() < start_time + REC_TIME and  # configured recording duration is reached
-                   not external_shutdown.is_set() and            # recording is stopped by external trigger
-                   disk_free > DISK_MIN and                      # free disk space drops below threshold
-                   temp_oak < TEMP_OAK_MAX and                   # OAK chip temperature exceeds threshold
-                   len(chargelevels) < 3):                       # charge level drops below threshold for three times
+            while (time.monotonic() < start_time + REC_TIME  # configured recording duration is reached
+                   and not external_shutdown.is_set()        # recording is stopped by external trigger
+                   and disk_free > DISK_MIN                  # free disk space drops below threshold
+                   and temp_oak < TEMP_OAK_MAX               # OAK chip temperature exceeds threshold
+                   and len(chargelevels) < 3):               # charge level drops below threshold for three times
 
                 # Initialize tracking variables
                 track_active = False

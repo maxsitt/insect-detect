@@ -32,6 +32,7 @@ import sys
 import time
 from collections import deque
 from datetime import datetime
+from gpiozero import LED
 from pathlib import Path
 
 import depthai as dai
@@ -61,6 +62,9 @@ STREAMING_MARKER = BASE_PATH / ".streaming_active"  # indicates user interaction
 PLACEHOLDER_PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
 PLACEHOLDER_PNG_BYTES_LENGTH = str(len(PLACEHOLDER_PNG_BYTES)).encode()
+
+# Set available GPIO pins (BCM numbering) for LED (excluding pins that are used by Witty Pi 4 L3V7)
+LED_GPIO_PINS = [18, 23, 24, 25, 8, 7, 12, 16, 20, 21, 27, 22, 10, 9, 11, 13, 19, 26]
 
 # Increase threshold for max. binding propagation time to avoid early warning messages
 binding.MAX_PROPAGATION_TIME = 0.05  # default: 0.01 seconds
@@ -95,6 +99,18 @@ async def main_page():
 
     # Create timer to update tracker data and overlay (if enabled) depending on camera frame rate
     app.state.overlay_timer = ui.timer(app.state.refresh_interval, update_tracker_overlay)
+
+    # Slow-blink LED to indicate web app is running and user is connected
+    if getattr(app.state, "config", None) and app.state.config.led.enabled:
+        led_gpio_pin = app.state.config.led.gpio_pin
+        for _ in range(30):  # retry for 3 seconds as LED might still be used by other process
+            try:
+                app.state.led = LED(led_gpio_pin)
+                break
+            except Exception:
+                await asyncio.sleep(0.1)
+    if getattr(app.state, "led", None):
+        app.state.led.blink(on_time=1, off_time=1, background=True)
 
 
 @ui.refreshable
@@ -548,6 +564,7 @@ async def get_location():
 def create_deployment_section():
     """Create UI elements and config binding for deployment metadata."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         (ui.label("Start Time").classes("font-bold")
          .tooltip("Start date + time of the camera deployment (ISO 8601 format)"))
         with ui.row(align_items="center").classes("w-full gap-2"):
@@ -614,6 +631,7 @@ async def on_focus_type_change(e):
 def create_camera_settings():
     """Create UI elements and config binding for camera settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         ui.label("Focus Mode").classes("font-bold")
         (ui.select(["continuous", "manual", "range"], label="Mode", on_change=on_focus_mode_change)
          .bind_value(app.state.config_updates["camera"]["focus"], "mode"))
@@ -715,6 +733,7 @@ async def on_exposure_region_change(e):
 def create_detection_settings():
     """Create UI elements and config binding for detection settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         (ui.label("Detection-based Exposure").classes("font-bold")
          .tooltip("Use bounding box from most recent tracking ID to set auto exposure region"))
         (ui.switch("Enable", on_change=on_exposure_region_change).props("color=green").classes("font-bold")
@@ -762,6 +781,7 @@ def create_detection_settings():
 def create_recording_settings():
     """Create UI elements and config binding for recording settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         ui.label("Duration").classes("font-bold").tooltip("Duration per recording session")
         with ui.column().classes("w-full"):
             with ui.tabs().classes("w-full") as tabs:
@@ -812,6 +832,7 @@ def create_recording_settings():
 def create_processing_settings():
     """Create UI elements and config binding for post-processing settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         (ui.label("Crop Detections").classes("font-bold")
          .tooltip("Crop detections from HQ frames and save as individual .jpg images"))
         with ui.column().classes("w-full gap-1"):
@@ -863,6 +884,7 @@ def create_processing_settings():
 def create_startup_settings():
     """Create UI elements and config binding for startup settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         (ui.label("Hotspot Setup").classes("font-bold")
          .tooltip("Create RPi Wi-Fi hotspot if it doesn't exist (uses hostname for SSID and password)"))
         (ui.switch("Enable").props("color=green").classes("font-bold")
@@ -903,6 +925,7 @@ def create_startup_settings():
 def create_webapp_settings():
     """Create UI elements and config binding for web app settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         (ui.label("Frame Rate").classes("font-bold")
          .tooltip("Max. possible streamed FPS depends on resolution"))
         (ui.number(label="FPS", placeholder=app.state.config.webapp.fps,
@@ -949,6 +972,7 @@ def create_webapp_settings():
 def create_system_settings():
     """Create UI elements and config binding for system settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         (ui.label("Power Management").classes("font-bold")
          .tooltip("Disable if no power management board is connected"))
         with ui.column().classes("w-full gap-1"):
@@ -1009,6 +1033,17 @@ def create_system_settings():
                          forward=lambda v: int(v) if v is not None else None))
 
         grid_separator()
+        (ui.label("Status LED").classes("font-bold")
+         .tooltip("Use LED (e.g. in button) to indicate system status"))
+        with ui.column().classes("w-full gap-1"):
+            (ui.switch("Enable").props("color=green").classes("font-bold")
+             .bind_value(app.state.config_updates["led"], "enabled"))
+            (ui.select(LED_GPIO_PINS, label="GPIO Pin (BCM)").classes("w-full")
+             .bind_visibility_from(app.state.config_updates["led"], "enabled")
+             .bind_value(app.state.config_updates["led"], "gpio_pin",
+                         forward=lambda v: int(v) if v is not None else None))
+
+        grid_separator()
         (ui.label("System Logging").classes("font-bold")
          .tooltip("Log system information (temperature, memory, CPU utilization, battery info)"))
         with ui.column().classes("w-full gap-1"):
@@ -1023,46 +1058,48 @@ def create_system_settings():
                          forward=lambda v: int(v) if v is not None else None))
 
 
+def remove_wifi_network(network_row):
+    """Remove a specific network row from UI and config"""
+    if network_row in app.state.wifi_networks_ui:
+        if len(app.state.wifi_networks_ui) > 1:
+            idx = app.state.wifi_networks_ui.index(network_row)
+
+            if idx < len(app.state.config_updates["network"]["wifi"]):
+                app.state.config_updates["network"]["wifi"].pop(idx)
+
+            network_row.delete()
+            app.state.wifi_networks_ui.pop(idx)
+        else:
+            ui.notification("At least one Wi-Fi network must be configured!", type="warning", timeout=2)
+
+
+def add_wifi_network(networks_column, ssid="", password=""):
+    """Add a new Wi-Fi network input field."""
+    with networks_column:
+        new_network = {"ssid": ssid, "password": password}
+        app.state.config_updates["network"]["wifi"].append(new_network)
+        idx = len(app.state.config_updates["network"]["wifi"]) - 1
+
+        with ui.row(align_items="baseline").classes("w-full gap-2") as network_row:
+            (ui.input(label="SSID").props("clearable").classes("flex-1")
+             .bind_value(app.state.config_updates["network"]["wifi"][idx], "ssid",
+                         forward=lambda v: str(v) if v is not None else None))
+            (ui.input(label="Password", validation={
+                "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
+             .props("clearable").classes("flex-1")
+             .bind_value(app.state.config_updates["network"]["wifi"][idx], "password",
+                         forward=lambda v: str(v) if v is not None else None))
+            ui.button(color="red", icon="delete",
+                      on_click=lambda: remove_wifi_network(network_row)).props("round")
+
+    app.state.wifi_networks_ui.append(network_row)
+
+
 def create_network_settings():
     """Create UI elements and config binding for network settings."""
     app.state.wifi_networks_ui = []
-
-    def remove_wifi_network(network_row):
-        """Remove a specific network row from UI and config"""
-        if network_row in app.state.wifi_networks_ui:
-            if len(app.state.wifi_networks_ui) > 1:
-                idx = app.state.wifi_networks_ui.index(network_row)
-
-                if idx < len(app.state.config_updates["network"]["wifi"]):
-                    app.state.config_updates["network"]["wifi"].pop(idx)
-
-                network_row.delete()
-                app.state.wifi_networks_ui.pop(idx)
-            else:
-                ui.notification("At least one Wi-Fi network must be configured!", type="warning", timeout=2)
-
-    def add_wifi_network(networks_column, ssid="", password=""):
-        """Add a new Wi-Fi network input field."""
-        with networks_column:
-            new_network = {"ssid": ssid, "password": password}
-            app.state.config_updates["network"]["wifi"].append(new_network)
-            idx = len(app.state.config_updates["network"]["wifi"]) - 1
-
-            with ui.row(align_items="baseline").classes("w-full gap-2") as network_row:
-                (ui.input(label="SSID").props("clearable").classes("flex-1")
-                 .bind_value(app.state.config_updates["network"]["wifi"][idx], "ssid",
-                             forward=lambda v: str(v) if v is not None else None))
-                (ui.input(label="Password", validation={
-                    "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
-                 .props("clearable").classes("flex-1")
-                 .bind_value(app.state.config_updates["network"]["wifi"][idx], "password",
-                             forward=lambda v: str(v) if v is not None else None))
-                ui.button(color="red", icon="delete",
-                          on_click=lambda: remove_wifi_network(network_row)).props("round")
-
-        app.state.wifi_networks_ui.append(network_row)
-
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
         ui.label("Mode").classes("font-bold").tooltip("Network mode of the Raspberry Pi")
         (ui.select(["hotspot", "wifi"], label="Network Mode").classes("w-full")
          .bind_value(app.state.config_updates["network"], "mode"))
@@ -1230,8 +1267,9 @@ async def show_activate_dialog(config_name, has_network_changes):
         await apply_config_changes(config_name, has_network_changes)
     else:
         # Refresh all UI elements to reflect the still active config (reset config_updates)
-        create_ui_layout.refresh()
         ui.notification("Configuration not activated!", type="warning", timeout=2)
+        await asyncio.sleep(0.5)
+        create_ui_layout.refresh()
 
 
 async def save_to_file(config_path):
@@ -1258,24 +1296,24 @@ async def save_to_file(config_path):
         await show_activate_dialog(config_path.name, has_network_changes)
 
 
+async def config_name_input():
+    """Show dialog to enter a name for the new configuration file."""
+    with ui.dialog() as dialog, ui.card():
+        ui.label("Name for new config file:")
+        i = (ui.input(placeholder="config_custom",
+                      validation={"Please enter a valid filename":
+                                  lambda v: v is not None and all(c.isalnum() or c in "_-" for c in v)})
+             .props("clearable autofocus suffix='.yaml'"))
+
+        with ui.row().classes("w-full justify-center gap-4 mt-4"):
+            ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
+            ui.button("Save", on_click=lambda: dialog.submit(i.value), color="green")
+
+    return await dialog
+
+
 async def create_new_config():
     """Create a new configuration file."""
-
-    async def config_name_input():
-        """Show dialog to enter a name for the new configuration file."""
-        with ui.dialog() as dialog, ui.card():
-            ui.label("Name for new config file:")
-            i = (ui.input(placeholder="config_custom",
-                          validation={"Please enter a valid filename":
-                                      lambda v: v is not None and all(c.isalnum() or c in "_-" for c in v)})
-                 .props("clearable autofocus suffix='.yaml'"))
-
-            with ui.row().classes("w-full justify-center gap-4 mt-4"):
-                ui.button("Cancel", on_click=lambda: dialog.submit("cancel"))
-                ui.button("Save", on_click=lambda: dialog.submit(i.value), color="green")
-
-        return await dialog
-
     filename = await config_name_input()
     if not filename:
         ui.notification("Please enter a valid filename!", type="warning", timeout=2)
@@ -1437,18 +1475,18 @@ async def on_app_shutdown():
         sys.exit(0)
 
 
+def signal_handler(loop, signum, frame):
+    """Handle a received signal to gracefully shut down the app."""
+    print("Signal received, initiating graceful app shutdown...")
+    loop.create_task(close_camera())
+    app.shutdown()
+
+
 def on_app_startup(protocol, port, use_https):
     """Register signal handler and print startup message."""
-
-    def signal_handler(signum, frame):
-        """Handle a received signal to gracefully shut down the app."""
-        print("Signal received, initiating graceful app shutdown...")
-        loop.create_task(close_camera())
-        app.shutdown()
-
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGINT, lambda: signal_handler(signal.SIGINT, None))
-    loop.add_signal_handler(signal.SIGTERM, lambda: signal_handler(signal.SIGTERM, None))
+    loop.add_signal_handler(signal.SIGINT, lambda: signal_handler(loop, signal.SIGINT, None))
+    loop.add_signal_handler(signal.SIGTERM, lambda: signal_handler(loop, signal.SIGTERM, None))
 
     print("Insect Detect web app ready to go!")
     print(f"Access via hostname:   {protocol}://{HOSTNAME}:{port}")

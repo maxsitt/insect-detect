@@ -120,6 +120,9 @@ oak:
 storage:
   disk_min: 1000    # Minimum required free disk space (MB) to start/continue a recording
   disk_check: 60    # Time interval (seconds) between checking free disk space during recording
+led:
+  enabled: false    # Use LED (e.g. in button) to indicate system status
+  gpio_pin: 18      # Options: 18, 23, 24, 25, 8, 7, 12, 16, 20, 21, 27, 22, 10, 9, 11, 13, 19, 26
 logging:
   enabled: false    # Log system information (temperature, memory, CPU utilization, battery info)
   interval: 30      # Time interval (seconds) between saving logs during recording

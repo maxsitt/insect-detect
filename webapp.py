@@ -30,13 +30,13 @@ import socket
 import subprocess
 import sys
 import time
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 
-import aiofiles
 import depthai as dai
 from fastapi.responses import StreamingResponse
-from nicegui import Client, app, binding, core, ui
+from nicegui import Client, app, binding, core, run, ui
 
 from utils.app import create_duration_inputs, convert_duration, grid_separator, validate_number
 from utils.config import check_config_changes, parse_json, parse_yaml, update_config_file, update_config_selector
@@ -271,7 +271,7 @@ async def frame_generator():
     try:
         while getattr(app.state, "q_frame", None):
             loop_start = time.monotonic()
-            frame_data = await asyncio.to_thread(get_frame, app.state.q_frame)
+            frame_data = await run.io_bound(get_frame, app.state.q_frame)
 
             if frame_data:
                 frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time = frame_data
@@ -1094,6 +1094,12 @@ def create_network_settings():
                       on_click=lambda: add_wifi_network(networks_column))
 
 
+def read_split_log(log_path, max_lines=1000):
+    """Read log file and return the last requested lines."""
+    with open(log_path, "r", encoding="utf-8") as log_file:
+        return list(deque(log_file, maxlen=max_lines))
+
+
 async def update_log_content(selected_log, log_display):
     """Update content of log element based on selected log file."""
     log_display.clear()
@@ -1102,24 +1108,25 @@ async def update_log_content(selected_log, log_display):
         return
 
     try:
-        async with aiofiles.open(LOGS_PATH / selected_log, "r", encoding="utf-8") as log_file:
-            content = await log_file.read()
+        log_lines = await run.io_bound(read_split_log, LOGS_PATH / selected_log, max_lines=1000)
     except Exception as e:
         log_display.push(f"Error reading log file: {str(e)}", classes="text-red")
         return
 
-    if content.strip():
-        for line in content.strip().split("\n"):
-            if "INFO" in line:
-                log_display.push(line, classes="text-green")
-            elif "WARNING" in line:
-                log_display.push(line, classes="text-orange")
-            elif "ERROR" in line:
-                log_display.push(line, classes="text-red")
-            else:
-                log_display.push(line)
-    else:
+    if not log_lines:
         log_display.push("Log file is empty", classes="text-gray")
+        return
+
+    for idx, line in enumerate(log_lines):
+        lower = line.lower()
+        if "error" in lower or "exception" in lower:
+            log_display.push(line, classes="text-red")
+        elif "warning" in lower:
+            log_display.push(line, classes="text-orange")
+        else:
+            log_display.push(line)
+        if (idx + 1) % 50 == 0:
+            await asyncio.sleep(0)  # yield control back to the event loop to avoid blocking of UI
 
 
 def create_logs_section():
@@ -1130,10 +1137,10 @@ def create_logs_section():
             return
 
         log_select_ui = (ui.select(app.state.logs, label="Log File", value=None,
-                                   on_change=lambda e: asyncio.create_task(update_log_content(e.value, log_display)))
+                                   on_change=lambda e: update_log_content(e.value, log_display))
                          .classes("w-full truncate"))
 
-        log_display = (ui.log(max_lines=500).classes("w-full h-96 font-mono text-xs")
+        log_display = (ui.log(max_lines=1000).classes("w-full h-96 font-mono text-xs")
                        .bind_visibility_from(log_select_ui, "value",
                                              backward=lambda v: v is not None and v != ""))
 

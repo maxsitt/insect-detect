@@ -15,6 +15,7 @@ deployment:
     longitude:  # Longitude (decimal degrees)
     accuracy:   # GPS accuracy (meters)
   setting:      # Background setting (e.g. platform type/flower species)
+  distance:     # Distance in cm from camera to background (e.g. platform/flower)
   notes:        # Additional fieldnotes
 
 # Camera settings

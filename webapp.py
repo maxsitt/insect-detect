@@ -77,6 +77,7 @@ OPTIONAL_CONFIG_FIELDS = {
     "deployment.location.longitude",
     "deployment.location.accuracy",
     "deployment.setting",
+    "deployment.distance",
     "deployment.notes",
     "startup.auto_run.fallback"
 }
@@ -600,6 +601,15 @@ def create_deployment_section():
                      forward=lambda v: str(v) if v is not None else None))
 
         grid_separator()
+        (ui.label("Distance").classes("font-bold")
+         .tooltip("Distance from camera to background (e.g. platform/flower)"))
+        (ui.number(label="Distance", min=8, max=100, precision=0, step=1, suffix="cm",
+                   validation={"Optional value between 8-100":
+                               lambda v: v in (None, "") or validate_number(v, 8, 100)})
+         .bind_value(app.state.config_updates["deployment"], "distance",
+                     forward=lambda v: int(v) if v not in (None, "") else None))
+
+        grid_separator()
         (ui.label("Notes").classes("font-bold")
          .tooltip("Additional notes about the deployment"))
         (ui.textarea(placeholder="Enter deployment notes").props("clearable")
@@ -646,20 +656,20 @@ def create_camera_settings():
             with (ui.column().classes("w-full gap-1")
                   .bind_visibility_from(app.state, "focus_distance_enabled")):
                 with ui.row(align_items="center").classes("w-full gap-2"):
-                    (ui.number(label="Manual (cm)",
+                    (ui.number(label="Manual Focus",
                                placeholder=app.state.config.camera.focus.distance.manual,
-                               min=8, max=80, precision=0, step=1).classes("flex-1")
+                               min=8, max=80, precision=0, step=1, suffix="cm").classes("flex-1")
                      .bind_value(app.state.config_updates["camera"]["focus"]["distance"], "manual",
                                  forward=lambda v: int(v) if v is not None else None))
                 with ui.row(align_items="center").classes("w-full gap-2"):
-                    (ui.number(label="Range Min (cm)",
+                    (ui.number(label="Range Min",
                                placeholder=app.state.config.camera.focus.distance.range.min,
-                               min=8, max=75, precision=0, step=1).classes("flex-1")
+                               min=8, max=75, precision=0, step=1, suffix="cm").classes("flex-1")
                      .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "min",
                                  forward=lambda v: int(v) if v is not None else None))
-                    (ui.number(label="Range Max (cm)",
+                    (ui.number(label="Range Max",
                                placeholder=app.state.config.camera.focus.distance.range.max,
-                               min=9, max=80, precision=0, step=1).classes("flex-1")
+                               min=9, max=80, precision=0, step=1, suffix="cm").classes("flex-1")
                      .bind_value(app.state.config_updates["camera"]["focus"]["distance"]["range"], "max",
                                  forward=lambda v: int(v) if v is not None else None))
                 (ui.label("Focus control slider will still use lens position for finer adjustment!")
@@ -807,17 +817,17 @@ def create_recording_settings():
             with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
                 (ui.label("Detection").classes("font-bold")
                  .tooltip("Interval for saving HQ frame + metadata while object is detected"))
-                (ui.number(label="Seconds",
+                (ui.number(label="Capture Interval",
                            placeholder=app.state.config.recording.capture_interval.detection,
-                           min=0, max=3600, precision=1, step=0.1,
+                           min=0, max=3600, precision=1, step=0.1, suffix="seconds",
                            validation={"Required value between 0-3600":
                                        lambda v: validate_number(v, 0, 3600)})
                  .bind_value(app.state.config_updates["recording"]["capture_interval"], "detection"))
                 (ui.label("Timelapse").classes("font-bold")
                  .tooltip("Interval for saving HQ frame (independent of detected objects)"))
-                (ui.number(label="Seconds",
+                (ui.number(label="Capture Interval",
                            placeholder=app.state.config.recording.capture_interval.timelapse,
-                           min=0, max=3600, precision=1, step=0.1,
+                           min=0, max=3600, precision=1, step=0.1, suffix="seconds",
                            validation={"Required value between 0-3600":
                                        lambda v: validate_number(v, 0, 3600)})
                  .bind_value(app.state.config_updates["recording"]["capture_interval"], "timelapse"))

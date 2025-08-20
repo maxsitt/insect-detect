@@ -571,23 +571,28 @@ def create_deployment_section():
         with ui.row(align_items="center").classes("w-full gap-2"):
             time_label = (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
                           .bind_text(app.state.config_updates["deployment"], "start"))
-            ui.button("Get Time", icon="event",
+            ui.button("Get RPi Time", icon="event",
                       on_click=lambda: time_label.set_text(str(datetime.now().isoformat())))
 
         grid_separator()
         (ui.label("Location").classes("font-bold")
-         .tooltip("Location of the camera deployment (latitude + longitude)"))
+         .tooltip("Location of the camera deployment"))
         with ui.column().classes("w-full gap-2"):
             with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
                 ui.label("Latitude:").classes("font-bold")
-                (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                 .bind_text(app.state.config_updates["deployment"]["location"], "latitude"))
+                (ui.number(label="Latitude (decimal degrees)",
+                           min=-90, max=90, precision=6, step=0.000001)
+                 .bind_value(app.state.config_updates["deployment"]["location"], "latitude",
+                             forward=lambda v: float(v) if v not in (None, "") else None))
                 ui.label("Longitude:").classes("font-bold")
-                (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                 .bind_text(app.state.config_updates["deployment"]["location"], "longitude"))
-                ui.label("Accuracy (m):").classes("font-bold")
-                (ui.label().classes("flex-1 min-h-8 py-2 px-3 rounded border border-gray-700")
-                 .bind_text(app.state.config_updates["deployment"]["location"], "accuracy"))
+                (ui.number(label="Longitude (decimal degrees)",
+                           min=-180, max=180, precision=6, step=0.000001)
+                 .bind_value(app.state.config_updates["deployment"]["location"], "longitude",
+                             forward=lambda v: float(v) if v not in (None, "") else None))
+                ui.label("Accuracy:").classes("font-bold")
+                (ui.number(label="Accuracy", min=0, max=1000, precision=1, step=1, suffix="m")
+                 .bind_value(app.state.config_updates["deployment"]["location"], "accuracy",
+                             forward=lambda v: int(v) if v not in (None, "") else None))
             loc_button = ui.button("Get Location", icon="my_location", on_click=get_location)
             if not app.state.config.webapp.https.enabled:
                 loc_button.disable()

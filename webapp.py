@@ -25,6 +25,7 @@ partly based on open source scripts available at https://github.com/zauberzeug/n
 import asyncio
 import base64
 import copy
+import logging
 import signal
 import socket
 import subprocess
@@ -81,6 +82,14 @@ OPTIONAL_CONFIG_FIELDS = {
     "deployment.notes",
     "startup.auto_run.fallback"
 }
+
+# Set logging levels and format, stream logs to console and save to file
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s",
+                    handlers=[logging.StreamHandler(sys.stdout),
+                              logging.FileHandler(f"{LOGS_PATH}/{Path(__file__).stem}.log",
+                                                  encoding="utf-8")])
+logger = logging.getLogger()
+logger.info("-------- Web App Logger initialized --------")
 
 
 @ui.page("/")
@@ -278,8 +287,8 @@ def get_frame(q_frame):
         iso_sens = frame_dai.getSensitivity()
         exp_time = frame_dai.getExposureTime().total_seconds() * 1000  # convert to milliseconds
         return (frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time)
-    except Exception as e:
-        print(f"Error getting frame: {e}")
+    except Exception:
+        logger.exception("Error getting frame")
         return None
 
 
@@ -1484,30 +1493,30 @@ async def on_app_shutdown():
 
     try:
         loop = asyncio.get_running_loop()
-        loop.call_later(10, lambda: print("Web app forced to exit after timeout.") or sys.exit(0))
+        loop.call_later(10, lambda: logger.warning("Web app forced to exit after timeout.") or sys.exit(0))
     except RuntimeError:
-        print("No running event loop found, exiting immediately.")
+        logger.warning("No running event loop found, exiting immediately.")
         sys.exit(0)
 
 
 def signal_handler(loop, signum, frame):
     """Handle a received signal to gracefully shut down the app."""
-    print("Signal received, initiating graceful app shutdown...")
+    logger.info("Signal received, initiating graceful app shutdown...")
     loop.create_task(close_camera())
     app.shutdown()
 
 
 def on_app_startup(protocol, port, use_https):
-    """Register signal handler and print startup message."""
+    """Register signal handler and show startup message."""
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, lambda: signal_handler(loop, signal.SIGINT, None))
     loop.add_signal_handler(signal.SIGTERM, lambda: signal_handler(loop, signal.SIGTERM, None))
 
-    print("Insect Detect web app ready to go!")
-    print(f"Access via hostname:   {protocol}://{HOSTNAME}:{port}")
-    print(f"Access via IP address: {protocol}://{IP_ADDRESS}:{port}")
+    logger.info("Insect Detect web app ready to go!")
+    logger.info("Access via hostname:   %s://%s:%s", protocol, HOSTNAME, port)
+    logger.info("Access via IP address: %s://%s:%s", protocol, IP_ADDRESS, port)
     if use_https:
-        print("Accept the self-signed SSL certificate in your browser when first connecting.")
+        logger.info("Accept the self-signed SSL certificate in your browser when first connecting.")
 
 
 if __name__ == "__main__":
@@ -1520,7 +1529,7 @@ if __name__ == "__main__":
     ssl_key_path = Path.home() / "ssl_certificates" / "key.pem"
     use_https = https_enabled and ssl_cert_path.exists() and ssl_key_path.exists()
     if https_enabled and not use_https:
-        print("HTTPS is enabled but no SSL certificates were found. Using HTTP instead.")
+        logger.warning("HTTPS is enabled but no SSL certificates were found. Using HTTP instead.")
     protocol = "https" if use_https else "http"
     port = 8443 if use_https else 5000
     ssl_cert = str(ssl_cert_path) if use_https else None

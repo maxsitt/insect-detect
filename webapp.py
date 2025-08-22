@@ -344,7 +344,7 @@ async def get_tracker_data():
     if getattr(app.state, "q_track", None):
         tracker_msg = app.state.q_track.tryGet()
         if tracker_msg is None:
-            return tracker_data
+            return None
         tracklets = tracker_msg.tracklets
         for tracklet in tracklets:
             # Check if tracklet is active (not "LOST" or "REMOVED")

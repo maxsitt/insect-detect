@@ -26,8 +26,9 @@ import socket
 import subprocess
 import sys
 import time
-from gpiozero import LED
 from pathlib import Path
+
+from gpiozero import LED
 
 from utils.config import parse_yaml, update_config_file
 from utils.log import subprocess_log

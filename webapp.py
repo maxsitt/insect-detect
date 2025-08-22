@@ -13,7 +13,7 @@ that will be used to load all configuration parameters.
 
 - load YAML file with configuration parameters and JSON file with detection model parameters
 - stream MJPEG-encoded frames from OAK camera to browser-based web app via HTTP
-- draw SVG overlay with tracker/model data on frames (bounding box, label, confidence, tracking ID)
+- draw SVG overlay with model/tracker data on frames (bounding box, label, confidence, tracking ID)
 - note relevant metadata for each deployment (e.g. start time, location, setting, field notes)
 - configure camera, web app, recording and system settings via web app interface
 - save modified configuration parameters to config file
@@ -33,14 +33,14 @@ import sys
 import time
 from collections import deque
 from datetime import datetime
-from gpiozero import LED
 from pathlib import Path
 
 import depthai as dai
 from fastapi.responses import StreamingResponse
+from gpiozero import LED
 from nicegui import Client, app, binding, core, run, ui
 
-from utils.app import create_duration_inputs, convert_duration, grid_separator, validate_number
+from utils.app import convert_duration, create_duration_inputs, grid_separator, validate_number
 from utils.config import check_config_changes, parse_json, parse_yaml, update_config_file, update_config_selector
 from utils.log import subprocess_log
 from utils.network import get_current_connection, get_ip_address, set_up_network
@@ -107,8 +107,9 @@ async def main_page():
     with ui.column(align_items="center").classes("w-full max-w-3xl mx-auto"):
         create_ui_layout()
 
-    # Create timer to update tracker data and overlay (if enabled) depending on camera frame rate
-    app.state.overlay_timer = ui.timer(app.state.refresh_interval, update_tracker_overlay)
+    # Create timer to get latest model/tracker data and update overlay (capped to 10 Hz)
+    app.state.overlay_timer = ui.timer(max(app.state.refresh_interval, 0.1),
+                                       update_overlay, immediate=False)
 
     # Slow-blink LED to indicate web app is running and user is connected
     if getattr(app.state, "config", None) and app.state.config.led.enabled:
@@ -221,9 +222,9 @@ async def start_camera():
     # Initialize relevant app.state variables
     app.state.connection = get_current_connection()
     app.state.refresh_interval = max(round(1 / app.state.config.webapp.fps, 3), 0.033)  # max. 30 FPS
-    app.state.tracker_data = []
     app.state.labels = app.state.config_model.mappings.labels
     app.state.show_overlay = True
+    app.state.last_overlay_empty = True
     app.state.exposure_region_active = False
     app.state.start_recording = False
     app.state.focus_initialized = False
@@ -249,8 +250,8 @@ async def start_camera():
     app.state.device = dai.Device(pipeline, maxUsbSpeed=dai.UsbSpeed.HIGH)
 
     # Create output queues to get the synchronized HQ frames and tracker + model output
-    app.state.q_frame = app.state.device.getOutputQueue(name="frame", maxSize=4, blocking=False)
-    app.state.q_track = app.state.device.getOutputQueue(name="track", maxSize=4, blocking=False)
+    app.state.q_frame = app.state.device.getOutputQueue(name="frame", maxSize=2, blocking=False)
+    app.state.q_track = app.state.device.getOutputQueue(name="track", maxSize=1, blocking=False)
 
     # Create input queue to send control commands to OAK camera
     app.state.q_ctrl = app.state.device.getInputQueue(name="control", maxSize=4, blocking=False)
@@ -278,14 +279,14 @@ def get_frame(q_frame):
     if not q_frame:
         return None
     try:
-        frame_dai = q_frame.tryGet()  # depthai.ImgFrame (type: BITSTREAM)
-        if frame_dai is None:
+        frame_msg = q_frame.tryGet()  # depthai.ImgFrame (type: BITSTREAM)
+        if frame_msg is None:
             return None
-        frame_bytes = frame_dai.getData().tobytes()  # convert numpy array to bytes
+        frame_bytes = frame_msg.getData().tobytes()  # convert numpy array to bytes
         frame_bytes_length = str(len(frame_bytes)).encode()
-        lens_pos = frame_dai.getLensPosition()
-        iso_sens = frame_dai.getSensitivity()
-        exp_time = frame_dai.getExposureTime().total_seconds() * 1000  # convert to milliseconds
+        lens_pos = frame_msg.getLensPosition()
+        iso_sens = frame_msg.getSensitivity()
+        exp_time = frame_msg.getExposureTime().total_seconds() * 1000  # convert to milliseconds
         return (frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time)
     except Exception:
         logger.exception("Error getting frame")
@@ -295,8 +296,8 @@ def get_frame(q_frame):
 async def frame_generator():
     """Yield MJPEG-encoded frames asynchronously and update camera parameters."""
     try:
+        next_tick = time.monotonic()
         while getattr(app.state, "q_frame", None):
-            loop_start = time.monotonic()
             frame_data = await run.io_bound(get_frame, app.state.q_frame)
 
             if frame_data:
@@ -324,21 +325,27 @@ async def frame_generator():
                        b"Content-Length: " + PLACEHOLDER_PNG_BYTES_LENGTH + b"\r\n\r\n"
                        + PLACEHOLDER_PNG_BYTES + b"\r\n")
 
-            loop_duration = time.monotonic() - loop_start
-            await asyncio.sleep(max(app.state.refresh_interval - loop_duration, 0))
+            next_tick += app.state.refresh_interval
+            delay = next_tick - time.monotonic()
+            # Reset next_tick if more than one interval late to avoid drift or frame bursts
+            if delay < -app.state.refresh_interval:
+                next_tick = time.monotonic()
+            await asyncio.sleep(max(delay, 0))
     except asyncio.CancelledError:
         return
 
 
-async def update_tracker_data():
-    """Update data from object tracker and detection model, set exposure region if enabled."""
-    tracklets_data = []
+async def get_tracker_data():
+    """Get model/tracker data from the OAK camera output queue, set exposure region if enabled."""
+    tracker_data = []
     track_id_max = -1
     track_id_max_bbox = None
 
-    if getattr(app.state, "q_track", None) and app.state.q_track.has():
-        # Get tracker output (including passthrough model output)
-        tracklets = app.state.q_track.get().tracklets
+    if getattr(app.state, "q_track", None):
+        tracker_msg = app.state.q_track.tryGet()
+        if tracker_msg is None:
+            return tracker_data
+        tracklets = tracker_msg.tracklets
         for tracklet in tracklets:
             # Check if tracklet is active (not "LOST" or "REMOVED")
             tracklet_status = tracklet.status.name
@@ -361,7 +368,7 @@ async def update_tracker_data():
                     "x_max": round(bbox[2], 4),
                     "y_max": round(bbox[3], 4)
                 }
-                tracklets_data.append(tracklet_data)
+                tracker_data.append(tracklet_data)
 
         if app.state.config_updates["detection"]["exposure_region"]["enabled"]:
             if track_id_max_bbox:
@@ -377,17 +384,17 @@ async def update_tracker_data():
                 app.state.q_ctrl.send(exp_ctrl)
                 app.state.exposure_region_active = False
 
-    app.state.tracker_data = tracklets_data
+    return tracker_data
 
 
-async def update_overlay():
-    """Update SVG overlay to show latest tracker/model data."""
-    svg_overlay = [
+async def build_overlay(tracker_data):
+    """Build SVG overlay with latest model/tracker data."""
+    svg_parts = [
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" width="100%" height="100%" '
         'style="position:absolute; top:0; left:0; pointer-events:none;">'
     ]
 
-    for data in app.state.tracker_data:
+    for data in tracker_data:
         label = data["label"]
         confidence = data["confidence"]
         track_id = data["track_ID"]
@@ -399,14 +406,14 @@ async def update_overlay():
         height = y_max - y_min
 
         # Add rectangle for bounding box
-        svg_overlay.append(
+        svg_parts.append(
             f'<rect x="{x_min}" y="{y_min}" width="{width}" height="{height}" '
             'fill="none" stroke="red" stroke-width="0.006" stroke-opacity="0.5" />'
         )
 
-        # Add text for tracker/model data
+        # Add text for model/tracker data
         text_y = y_min + height + 0.04 if y_min + height < 0.95 else y_min - 0.05
-        svg_overlay.append(
+        svg_parts.append(
             f'<text x="{x_min}" y="{text_y}" '
             'font-size="0.04" fill="white" stroke="black" stroke-width="0.005" '
             'paint-order="stroke" text-anchor="start" font-weight="bold">'
@@ -414,20 +421,27 @@ async def update_overlay():
             f'<tspan x="{x_min}" dy="0.04">ID: {track_id}</tspan></text>'
         )
 
-    svg_overlay.append("</svg>")
-    app.state.frame_ii.set_content("".join(svg_overlay))
+    svg_parts.append("</svg>")
+    return "".join(svg_parts)
 
 
-async def update_tracker_overlay():
-    """Update tracker/model data + overlay if enabled."""
+async def update_overlay():
+    """Get latest model/tracker data and update overlay."""
     if app.state.show_overlay or app.state.config_updates["detection"]["exposure_region"]["enabled"]:
-        await update_tracker_data()
-        if app.state.show_overlay and app.state.tracker_data:
-            await update_overlay()
-        else:
-            app.state.frame_ii.set_content("")
+        tracker_data = await get_tracker_data()
+        if not tracker_data:
+            if not getattr(app.state, "last_overlay_empty", False):
+                app.state.frame_ii.set_content("")
+                app.state.last_overlay_empty = True
+            return
+        if app.state.show_overlay:
+            svg_overlay = await build_overlay(tracker_data)
+            app.state.frame_ii.set_content(svg_overlay)
+            app.state.last_overlay_empty = False
     else:
-        app.state.frame_ii.set_content("")
+        if not getattr(app.state, "last_overlay_empty", False):
+            app.state.frame_ii.set_content("")
+            app.state.last_overlay_empty = True
 
 
 async def set_manual_focus(e):

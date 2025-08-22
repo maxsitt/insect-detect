@@ -60,12 +60,12 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from gpiozero import LED
 from pathlib import Path
 
 import depthai as dai
 import psutil
 from apscheduler.schedulers.background import BackgroundScheduler
+from gpiozero import LED
 
 from utils.config import parse_json, parse_yaml, sanitize_config
 from utils.data import archive_data, save_encoded_frame, upload_data

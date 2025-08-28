@@ -15,8 +15,7 @@ and deploying the **Insect Detect** DIY camera trap for automated insect monitor
 The camera trap system is composed of low-cost off-the-shelf hardware components
 ([Raspberry Pi Zero 2 W](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/),
 [Luxonis OAK-1](https://docs.luxonis.com/hardware/products/OAK-1),
-[Witty Pi 4 L3V7](https://www.uugear.com/product/witty-pi-4-l3v7/) or
-[PiJuice Zero pHAT](https://uk.pi-supply.com/products/pijuice-zero)), combined with
+[Witty Pi 4 L3V7](https://www.uugear.com/product/witty-pi-4-l3v7/)), combined with
 open source software and can be easily assembled and set up with the
 [provided instructions](https://maxsitt.github.io/insect-detect-docs/).
 
@@ -80,7 +79,7 @@ the web app or by modifying the
 [`config_selector.yaml`](https://github.com/maxsitt/insect-detect/blob/main/configs/config_selector.yaml).
 
 Processing pipeline for the
-[`yolo_tracker_save_hqsync.py`](https://github.com/maxsitt/insect-detect/blob/main/yolo_tracker_save_hqsync.py)
+[`trigger_capture.py`](https://github.com/maxsitt/insect-detect/blob/main/trigger_capture.py)
 script that can be used for automated insect monitoring:
 
 - A custom **YOLO insect detection model** is run in real time on device (OAK) and uses a

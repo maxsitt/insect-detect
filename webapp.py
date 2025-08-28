@@ -1495,11 +1495,11 @@ async def on_app_shutdown():
     await close_camera()
 
     if getattr(app.state, "start_recording", False):
-        subprocess_log(LOGS_PATH, "yolo_tracker_save_hqsync.py")
+        subprocess_log(LOGS_PATH, "trigger_capture.py")
 
         with open(LOGS_PATH / "subprocess.log", "a", encoding="utf-8") as log_file_handle:
             subprocess.Popen(
-                [sys.executable, str(BASE_PATH / "yolo_tracker_save_hqsync.py")],
+                [sys.executable, str(BASE_PATH / "trigger_capture.py")],
                 stdout=log_file_handle,
                 stderr=log_file_handle,
                 start_new_session=True

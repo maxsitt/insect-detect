@@ -6,7 +6,7 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Run this script with the Python interpreter from the virtual environment where you installed the
-required packages, e.g. with 'env_insdet/bin/python3 insect-detect/yolo_tracker_save_hqsync.py'.
+required packages, e.g. with 'env_insdet/bin/python3 insect-detect/trigger_capture.py'.
 
 Modify the 'configs/config_selector.yaml' file to select the active configuration file
 that will be used to load all configuration parameters.

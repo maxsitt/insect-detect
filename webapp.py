@@ -42,7 +42,7 @@ from nicegui import Client, app, binding, core, run, ui
 
 from utils.app import convert_duration, create_duration_inputs, grid_separator, validate_number
 from utils.config import check_config_changes, parse_json, parse_yaml, update_config_file, update_config_selector
-from utils.log import subprocess_log
+from utils.log import get_oak_info, get_rpi_info, subprocess_log
 from utils.network import get_current_connection, get_ip_address, set_up_network
 from utils.oak import convert_bbox_roi, create_pipeline
 
@@ -111,6 +111,9 @@ async def main_page():
     app.state.overlay_timer = ui.timer(max(app.state.refresh_interval, 0.1),
                                        update_overlay, immediate=False)
 
+    # Create timer to update system information from RPi and OAK camera
+    app.state.sys_info_timer = ui.timer(5, update_sys_info, immediate=False)
+
     # Slow-blink LED to indicate web app is running and user is connected
     if getattr(app.state, "config", None) and app.state.config.led.enabled:
         led_gpio_pin = app.state.config.led.gpio_pin
@@ -130,11 +133,11 @@ def create_ui_layout():
     create_video_stream_container()
     create_control_elements()
 
-    with ui.card().tight().classes("w-full"):
+    with ui.card().tight().classes("w-full border-l-4 border-emerald-400"):
         with ui.expansion("Deployment", icon="location_on").classes("w-full font-bold"):
             create_deployment_section()
 
-    with ui.card().tight().classes("w-full"):
+    with ui.card().tight().classes("w-full border-l-4 border-cyan-400"):
         with ui.expansion("Configuration", icon="settings").classes("w-full font-bold"):
             with ui.expansion("Camera Settings", icon="photo_camera").classes("w-full font-bold"):
                 create_camera_settings()
@@ -160,8 +163,11 @@ def create_ui_layout():
             with ui.expansion("Network Settings", icon="network_wifi").classes("w-full font-bold"):
                 create_network_settings()
 
-    with ui.card().tight().classes("w-full"):
+    with ui.card().tight().classes("w-full border-l-4 border-slate-500"):
         with ui.expansion("Advanced", icon="build").classes("w-full font-bold"):
+            with ui.expansion("System Info", icon="monitor_heart").classes("w-full font-bold"):
+                create_sys_info_section()
+            ui.separator()
             with ui.expansion("View Logs", icon="article").classes("w-full font-bold"):
                 create_logs_section()
 
@@ -236,6 +242,24 @@ async def start_camera():
         "battery": {level: convert_duration(getattr(app.state.config.recording.duration.battery, level))
                     for level in ["high", "medium", "low", "minimal"]}
     }
+    app.state.sys_info = {
+        "rpi_cpu_temp": "NA",
+        "rpi_cpu_usage_avg": "NA",
+        "rpi_cpu_usage_sum": "NA",
+        "rpi_ram_usage": "NA",
+        "rpi_ram_available": "NA",
+        "oak_chip_temp": "NA",
+        "oak_cpu_usage_css": "NA",
+        "oak_cpu_usage_mss": "NA",
+        "oak_ram_usage_ddr": "NA",
+        "oak_ram_available_ddr": "NA",
+        "oak_ram_usage_css": "NA",
+        "oak_ram_available_css": "NA",
+        "oak_ram_usage_mss": "NA",
+        "oak_ram_available_mss": "NA",
+        "oak_ram_usage_cmx": "NA",
+        "oak_ram_available_cmx": "NA"
+    }
     app.state.aspect_ratio = app.state.config.webapp.resolution.width / app.state.config.webapp.resolution.height
     app.state.frame_count = 0
     app.state.fps = 0
@@ -253,6 +277,9 @@ async def start_camera():
     app.state.q_frame = app.state.device.getOutputQueue(name="frame", maxSize=2, blocking=False)
     app.state.q_track = app.state.device.getOutputQueue(name="track", maxSize=1, blocking=False)
 
+    # Create output queue to get system information from OAK device
+    app.state.q_syslog = app.state.device.getOutputQueue(name="syslog", maxSize=4, blocking=False)
+
     # Create input queue to send control commands to OAK camera
     app.state.q_ctrl = app.state.device.getInputQueue(name="control", maxSize=4, blocking=False)
 
@@ -261,13 +288,17 @@ async def start_camera():
 
 async def close_camera():
     """Stop streaming and disconnect from OAK device."""
-    for queue in ("q_frame", "q_track", "q_ctrl"):
+    for queue in ("q_frame", "q_track", "q_syslog", "q_ctrl"):
         if getattr(app.state, queue, None):
             setattr(app.state, queue, None)
 
     if getattr(app.state, "overlay_timer", None):
         app.state.overlay_timer.deactivate()
         app.state.overlay_timer = None
+
+    if getattr(app.state, "sys_info_timer", None):
+        app.state.sys_info_timer.deactivate()
+        app.state.sys_info_timer = None
 
     if getattr(app.state, "device", None):
         app.state.device.close()
@@ -342,10 +373,10 @@ async def get_tracker_data():
     track_id_max_bbox = None
 
     if getattr(app.state, "q_track", None):
-        tracker_msg = app.state.q_track.tryGet()
-        if tracker_msg is None:
+        tracklets_msg = app.state.q_track.tryGet()  # depthai.Tracklets
+        if tracklets_msg is None:
             return None
-        tracklets = tracker_msg.tracklets
+        tracklets = tracklets_msg.tracklets
         for tracklet in tracklets:
             # Check if tracklet is active (not "LOST" or "REMOVED")
             tracklet_status = tracklet.status.name
@@ -1167,6 +1198,76 @@ def create_network_settings():
                 add_wifi_network(networks_column, network["ssid"], network["password"])
             ui.button("Add Wi-Fi", color="green", icon="add",
                       on_click=lambda: add_wifi_network(networks_column))
+
+
+async def update_sys_info():
+    """Update system information from RPi and OAK camera."""
+    rpi_info = get_rpi_info()
+    oak_info = get_oak_info(app.state.q_syslog)
+    if rpi_info:
+        app.state.sys_info.update(rpi_info)
+    if oak_info:
+        app.state.sys_info.update(oak_info)
+
+
+def create_sys_info_section():
+    """Create UI elements for displaying RPi and OAK system information."""
+    with ui.grid(columns="auto 1fr 1fr").classes("w-full gap-x-1 items-center"):
+        ui.element()
+        ui.label("RPi").classes("text-center text-h6 font-bold")
+        ui.label("OAK").classes("text-center text-h6 font-bold")
+
+        with ui.row(align_items="center").classes("gap-1"):
+            ui.icon("thermostat", size="sm", color="orange")
+            ui.label("TEMP")
+        (ui.label().classes("text-center")
+         .bind_text_from(app.state.sys_info, "rpi_cpu_temp", lambda t: f"CPU: {t} °C"))
+        (ui.label().classes("text-center")
+         .bind_text_from(app.state.sys_info, "oak_chip_temp", lambda t: f"Chip: {t} °C"))
+
+        with ui.row(align_items="center").classes("gap-1"):
+            ui.icon("speed", size="sm", color="blue")
+            ui.label("CPU")
+        with ui.column().classes("w-full gap-0"):
+            (ui.label().classes("w-full text-center")
+             .bind_text_from(app.state.sys_info, "rpi_cpu_usage_avg", lambda u: f"Average Usage: {u} %"))
+            (ui.label().classes("w-full text-center")
+             .bind_text_from(app.state.sys_info, "rpi_cpu_usage_sum", lambda u: f"Sum All Cores: {u} %"))
+        with ui.column().classes("w-full gap-0"):
+            (ui.label().classes("w-full text-center")
+             .bind_text_from(app.state.sys_info, "oak_cpu_usage_css", lambda u: f"CSS Core: {u} %"))
+            (ui.label().classes("w-full text-center")
+             .bind_text_from(app.state.sys_info, "oak_cpu_usage_mss", lambda u: f"MSS Core: {u} %"))
+
+        with ui.row(align_items="center").classes("gap-1"):
+            ui.icon("memory", size="sm", color="green")
+            ui.label("RAM")
+        with ui.grid(columns="auto auto").classes("w-full gap-0 items-center"):
+            ui.label("Usage").classes("text-center mb-1")
+            ui.label("Free").classes("text-center mb-1")
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "rpi_ram_usage", lambda u: f"{u} %"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "rpi_ram_available", lambda a: f"{a} MB"))
+        with ui.grid(columns="auto auto").classes("w-full gap-0 items-center"):
+            ui.label("Usage").classes("text-center mb-1")
+            ui.label("Free").classes("text-center mb-1")
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_usage_ddr", lambda u: f"DDR: {u} %"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_available_ddr", lambda a: f"{a} MB"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_usage_css", lambda u: f"CSS: {u} %"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_available_css", lambda a: f"{a} MB"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_usage_mss", lambda u: f"MSS: {u} %"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_available_mss", lambda a: f"{a} MB"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_usage_cmx", lambda u: f"CMX: {u} %"))
+            (ui.label().classes("text-center text-xs")
+             .bind_text_from(app.state.sys_info, "oak_ram_available_cmx", lambda a: f"{a} MB"))
 
 
 def read_split_log(log_path, max_lines=1000):

@@ -56,7 +56,7 @@ def init_power_manager(power_manager_model):
                 "voltage_in_V": wittypi.get_input_voltage(),
                 "voltage_out_V": wittypi.get_output_voltage(),
                 "current_out_A": wittypi.get_output_current(),
-                "temp_wittypi": round(wittypi.get_temperature())
+                "temp_wittypi": round(wittypi.get_temperature(), 1)
             }
 
         # Handle SIGTERM signal (e.g. from button as external shutdown trigger)

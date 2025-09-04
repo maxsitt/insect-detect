@@ -70,7 +70,7 @@ from gpiozero import LED
 from utils.config import parse_json, parse_yaml, sanitize_config
 from utils.data import archive_data, save_encoded_frame, upload_data
 from utils.log import record_log, save_logs
-from utils.oak import convert_bbox_roi, create_get_temp_oak, create_pipeline
+from utils.oak import convert_bbox_roi, create_pipeline
 from utils.post import process_images
 from utils.power import init_power_manager
 
@@ -191,6 +191,9 @@ try:
         q_frame = device.getOutputQueue(name="frame", maxSize=4, blocking=False)
         q_track = device.getOutputQueue(name="track", maxSize=4, blocking=False)
 
+        # Create output queue to get system information from OAK device
+        q_syslog = device.getOutputQueue(name="syslog", maxSize=4, blocking=False)
+
         # Create input queue to send control commands to OAK camera (if exposure_region is enabled)
         q_ctrl = device.getInputQueue(name="control", maxSize=4, blocking=False) if EXP_REGION else None
 
@@ -201,15 +204,11 @@ try:
         ])
         metadata_writer.writeheader()
 
-        # Create function to get OAK chip temperature
-        get_temp_oak = create_get_temp_oak(device)
-        temp_oak = get_temp_oak()
-
         if config.logging.enabled:
             # Write RPi + OAK info to .csv file at configured interval
             scheduler = BackgroundScheduler()
             scheduler.add_job(save_logs, "interval", seconds=config.logging.interval, id="log",
-                              args=[save_path, CAM_ID, rec_id, get_temp_oak, get_power_info],
+                              args=[save_path, CAM_ID, rec_id, q_syslog, get_power_info],
                               next_run_time=datetime.now() + timedelta(seconds=2))
             scheduler.start()
 
@@ -225,6 +224,8 @@ try:
                         rec_id, round(REC_TIME / 60), disk_free)
 
         # Initialize variables for start of recording and capture/check events
+        sysinfo_msg = q_syslog.tryGet()  # depthai.SystemInformation
+        temp_oak = round(sysinfo_msg.chipTemperature.average) if sysinfo_msg else 0
         rec_start = datetime.now()
         start_time = time.monotonic()
         last_capture = start_time - CAP_INT_TL  # capture first frame immediately at start
@@ -254,20 +255,21 @@ try:
                 triggered_capture = current_time >= next_capture
                 timelapse_capture = current_time >= last_capture + CAP_INT_TL
 
-                if q_frame.has() and (triggered_capture or timelapse_capture):
+                frame_msg = q_frame.tryGet()  # depthai.ImgFrame (type: BITSTREAM)
+                if frame_msg is not None and (triggered_capture or timelapse_capture):
                     # Get MJPEG-encoded HQ frame and associated data (synced with tracker output)
                     timestamp = datetime.now()
                     timestamp_iso = timestamp.isoformat()
                     timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S-%f")
-                    frame_dai = q_frame.get()       # depthai.ImgFrame (type: BITSTREAM)
-                    frame_hq = frame_dai.getData()  # frame data (bitstream in numpy array)
-                    lens_pos = frame_dai.getLensPosition()
-                    iso_sens = frame_dai.getSensitivity()
-                    exp_time = frame_dai.getExposureTime().total_seconds() * 1000  # milliseconds
+                    frame_hq = frame_msg.getData()  # frame data (numpy array)
+                    lens_pos = frame_msg.getLensPosition()
+                    iso_sens = frame_msg.getSensitivity()
+                    exp_time = frame_msg.getExposureTime().total_seconds() * 1000  # milliseconds
 
-                    if q_track.has():
+                    tracklets_msg = q_track.tryGet()  # depthai.Tracklets
+                    if tracklets_msg is not None:
                         # Get tracker output (including passthrough model output)
-                        tracklets = q_track.get().tracklets
+                        tracklets = tracklets_msg.tracklets
                         for tracklet in tracklets:
                             # Check if tracklet is active (not "LOST" or "REMOVED")
                             tracklet_status = tracklet.status.name
@@ -327,9 +329,8 @@ try:
 
                 # Update OAK chip temperature at configured interval
                 if current_time >= last_temp_check + TEMP_OAK_CHECK:
-                    temp_oak = get_temp_oak()
-                    if temp_oak == "NA":
-                        temp_oak = 0  # set to 0 if "NA" is returned
+                    sysinfo_msg = q_syslog.tryGet()
+                    temp_oak = round(sysinfo_msg.chipTemperature.average) if sysinfo_msg else temp_oak
                     last_temp_check = current_time
 
                 # Update charge level at configured interval and add to list if lower than threshold or not readable
@@ -341,7 +342,7 @@ try:
                         last_charge_check = current_time
 
                 # Sleep for a short duration to avoid busy waiting
-                time.sleep(0.02)
+                time.sleep(0.03)  # max. ~33 FPS
 
             # Write info on end of recording to log file
             rec_stop_shutdown = external_shutdown.is_set()

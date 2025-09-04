@@ -9,11 +9,9 @@ Functions:
     clamp(): Clamp a value between a minimum and a maximum value.
     convert_bbox_roi(): Convert bounding box coordinates to ROI (region of interest).
     convert_cm_lens_position(): Convert centimeter value to OAK lens position value.
-    create_get_temp_oak(): Create a thread-safe function to get average OAK chip temperature.
     create_pipeline(): Create and configure depthai pipeline for OAK camera.
 """
 
-import threading
 from datetime import timedelta
 
 import depthai as dai
@@ -49,22 +47,6 @@ def convert_cm_lens_position(distance_cm):
 
     closest_cm = min(CM_KEYS, key=lambda k: abs(k - distance_cm))
     return CM_LENS_POSITIONS[closest_cm]
-
-
-def create_get_temp_oak(device):
-    """Create a thread-safe function to get average OAK chip temperature."""
-    temp_oak_lock = threading.Lock()
-
-    def get_temp_oak():
-        """Get average OAK chip temperature."""
-        with temp_oak_lock:
-            try:
-                temp_oak = round(device.getChipTemperature().average)
-            except RuntimeError:
-                temp_oak = "NA"
-        return temp_oak
-
-    return get_temp_oak
 
 
 def create_pipeline(base_path, config, config_model, use_webapp_config=False, create_xin=False):
@@ -177,5 +159,13 @@ def create_pipeline(base_path, config, config_model, use_webapp_config=False, cr
         xin_ctrl = pipeline.create(dai.node.XLinkIn)
         xin_ctrl.setStreamName("control")
         xin_ctrl.out.link(cam_rgb.inputControl)
+
+    # Create and configure system logger node to get system information from OAK device
+    syslog = pipeline.create(dai.node.SystemLogger)
+    syslog.setRate(1)  # send current system information every second
+
+    xout_syslog = pipeline.create(dai.node.XLinkOut)
+    xout_syslog.setStreamName("syslog")
+    syslog.out.link(xout_syslog.input)
 
     return pipeline, sensor_res

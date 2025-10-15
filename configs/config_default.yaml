@@ -85,7 +85,7 @@ archive:
   disk_low: 5000    # Minimum required free disk space (MB) for unarchived data retention
 upload:
   enabled: false    # Upload archived data to cloud storage provider (runs 'archive' even if disabled)
-  content: crop     # Options: all, full, crop, metadata (content for upload, always including metadata)
+  content: crop     # Options: all, full, crop, timelapse, metadata (all options include metadata)
 
 # Startup settings (automatically executed at boot by "startup.py" - requires enabled systemd service)
 startup:

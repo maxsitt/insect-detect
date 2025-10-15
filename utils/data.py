@@ -18,30 +18,38 @@ from pathlib import Path
 import psutil
 
 
-def save_encoded_frame(save_path, timestamp_str, frame):
+def save_encoded_frame(save_path, timestamp_str, frame, trigger="detection"):
     """Save MJPEG-encoded frame to .jpg file."""
-    with open(save_path / f"{timestamp_str}.jpg", "wb") as jpg:
+    if trigger == "timelapse":
+        (save_path / "timelapse").mkdir(parents=True, exist_ok=True)
+        file_path = save_path / "timelapse" / f"{timestamp_str}_timelapse.jpg"
+    else:
+        file_path = save_path / f"{timestamp_str}.jpg"
+    with open(file_path, "wb") as jpg:
         jpg.write(frame)
 
 
 def archive_data(data_path, cam_id, low_diskspace=5000):
     """Archive all captured data + logs/configs and manage disk space.
 
-    Store full frames, overlay frames and cropped detections in separate
-    uncompressed .zip files, copy metadata/log/config files to archive
+    Store detection-triggered, timelapse-triggered, overlay and cropped frames
+    in separate uncompressed .zip files, copy metadata/log/config files to archive
     directory. Original data is deleted starting from the oldest directory
     if the remaining free disk space drops below the configured threshold.
     """
     archive_path = data_path.parent / "data_archived" / cam_id
     archive_path.mkdir(parents=True, exist_ok=True)
 
-    cronjob_log = Path.home() / "insect-detect" / "cronjob_log.log"
-    if cronjob_log.exists():
-        subprocess.run(["rsync", "-a", "-u", cronjob_log, archive_path], check=False)
-
     for file_path in data_path.glob("*.*"):
         if file_path.is_file():
             subprocess.run(["rsync", "-a", "-u", file_path, archive_path], check=False)
+
+    logs_path = data_path.parent / "logs"
+    if logs_path.exists() and logs_path.is_dir():
+        archive_logs_path = archive_path / "logs"
+        archive_logs_path.mkdir(exist_ok=True)
+        for log_file in logs_path.glob("*.log"):
+            subprocess.run(["rsync", "-a", "-u", log_file, archive_logs_path], check=False)
 
     dirs_orig = sorted([d for d in data_path.iterdir() if d.is_dir()])
     for date_dir in dirs_orig:
@@ -61,7 +69,7 @@ def archive_data(data_path, cam_id, low_diskspace=5000):
                     full_zip_path = archive_timestamp_dir / f"{timestamp_dir.name}_full.zip"
                     subprocess.run([
                         "zip", "-q", "-r", "-u", "-0", full_zip_path, ".", "-i", "*.jpg",
-                        "-x", "crop/*", "-x", "overlay/*"
+                        "-x", "crop/*", "-x", "overlay/*", "-x", "timelapse/*"
                     ], cwd=timestamp_dir, check=False)
 
                 crop_dir = timestamp_dir / "crop"
@@ -77,6 +85,13 @@ def archive_data(data_path, cam_id, low_diskspace=5000):
                     subprocess.run([
                         "zip", "-q", "-r", "-u", "-0", overlay_zip_path, ".", "-i", "*.jpg",
                     ], cwd=overlay_dir, check=False)
+
+                timelapse_dir = timestamp_dir / "timelapse"
+                if timelapse_dir.exists() and timelapse_dir.is_dir() and next(timelapse_dir.glob("*.jpg"), None):
+                    timelapse_zip_path = archive_timestamp_dir / f"{timestamp_dir.name}_timelapse.zip"
+                    subprocess.run([
+                        "zip", "-q", "-r", "-u", "-0", timelapse_zip_path, ".", "-i", "*.jpg",
+                    ], cwd=timelapse_dir, check=False)
 
                 for file_path in timestamp_dir.glob("*.*"):
                     if file_path.is_file() and file_path.suffix.lower() != ".jpg":
@@ -99,9 +114,11 @@ def upload_data(data_path, archive_path, content="crop"):
     #rclone_config_path = Path.home() / ".config" / "rclone" / "rclone.conf"  # default config path
 
     if content == "full":
-        exclude_filter = ["**/*_crop.zip", "**/*_overlay.zip"]
+        exclude_filter = ["**/*_crop.zip", "**/*_timelapse.zip", "**/*_overlay.zip"]
     elif content == "crop":
-        exclude_filter = ["**/*_full.zip", "**/*_overlay.zip"]
+        exclude_filter = ["**/*_full.zip", "**/*_timelapse.zip", "**/*_overlay.zip"]
+    elif content == "timelapse":
+        exclude_filter = ["**/*_full.zip", "**/*_crop.zip", "**/*_overlay.zip"]
     elif content == "metadata":
         exclude_filter = ["**/*.zip", "**/*.jpg"]
     else:

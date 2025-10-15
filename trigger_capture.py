@@ -318,7 +318,8 @@ try:
 
                     if track_active or timelapse_capture:
                         # Save MJPEG-encoded HQ frame to .jpg file in separate thread
-                        executor.submit(save_encoded_frame, save_path, timestamp_str, frame_hq)
+                        trigger = "detection" if track_active else "timelapse"
+                        executor.submit(save_encoded_frame, save_path, timestamp_str, frame_hq, trigger)
                         last_capture = current_time
                         next_capture = current_time + CAP_INT_DET
 

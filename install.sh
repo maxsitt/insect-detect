@@ -131,3 +131,6 @@ echo
 echo "Then run the scripts with:"
 echo "  uv run webapp"
 echo "  uv run capture"
+echo
+echo "NOTE: Please close and reopen your terminal before using 'uv',"
+echo "to ensure the PATH is updated and 'uv' is available."

@@ -1,0 +1,106 @@
+deployment:
+  start: null
+  location:
+    latitude: null
+    longitude: null
+    accuracy: null
+  setting: null
+  distance: null
+  notes: null
+camera:
+  fps: 15
+  image:
+    resolution: 4k
+    quality: 80
+  zoom:
+    enabled: false
+    factor: 1.0
+  focus:
+    mode: continuous
+    type: lens_pos
+    manual:
+      lens_pos: 156
+      distance: 19
+    range:
+      lens_pos:
+        min: 154
+        max: 165
+      distance:
+        min: 15
+        max: 20
+  isp:
+    sharpness: 1
+    luma_denoise: 1
+    chroma_denoise: 1
+detection:
+  model: platform_insect-detect-tiled_v2-0-0.tar.xz
+  num_shaves: 4
+  conf_threshold: 0.5
+  ae_region:
+    enabled: false
+recording:
+  duration:
+    battery:
+      high: 40
+      medium: 20
+      low: 10
+    default: 40
+  interval:
+    detection: 1.0
+    timelapse: 600.0
+  shutdown:
+    enabled: true
+processing:
+  crop:
+    enabled: false
+    method: square
+  overlay:
+    enabled: false
+  delete:
+    enabled: false
+webapp:
+  stream:
+    quality: 70
+  https:
+    enabled: false
+network:
+  mode: wifi
+  hotspot:
+    ssid: null
+    password: null
+  wifi:
+  - ssid: null
+    password: null
+powermanager:
+  enabled: true
+  model: wittypi
+  charge_min: 30
+  charge_check: 30
+oak:
+  temp_max: 100
+  temp_check: 30
+led:
+  enabled: false
+  gpio_pin: 18
+metrics:
+  enabled: false
+  interval: 30
+storage:
+  disk_min: 1000
+  disk_check: 60
+  archive:
+    enabled: false
+    disk_low: 5000
+  upload:
+    enabled: false
+    content: crops
+startup:
+  hotspot_setup:
+    enabled: true
+  network_setup:
+    enabled: true
+  auto_run:
+    enabled: false
+    primary: capture
+    fallback: null
+    delay: 180

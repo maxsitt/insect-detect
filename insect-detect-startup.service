@@ -1,23 +1,20 @@
 [Unit]
 Description=Insect Detect Startup Service
 Documentation=https://maxsitt.github.io/insect-detect-docs/
-Wants=NetworkManager.service
-After=network.target NetworkManager.service
-Before=multi-user.target
+Wants=network-online.target
+After=network.target network-online.target NetworkManager.service
 
 [Service]
 Type=oneshot
+# Default Raspberry Pi OS username - change if using a different user
 User=pi
 Group=pi
 WorkingDirectory=/home/pi/insect-detect
-ExecStart=/home/pi/env_insdet/bin/python3 /home/pi/insect-detect/startup.py
-Environment=PYTHONPATH=/home/pi/insect-detect
+ExecStart=/home/pi/.local/bin/uv run startup
 Environment=HOME=/home/pi
 RemainAfterExit=yes
-Restart=no
-TimeoutStartSec=3600
+TimeoutStartSec=600
 TimeoutStopSec=30
-PrivateTmp=true
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=insect-detect-startup

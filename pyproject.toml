@@ -1,0 +1,38 @@
+[project]
+name = "insect-detect"
+version = "2.0.0"
+description = "Software for automated insect monitoring with the Insect Detect camera trap."
+requires-python = ">=3.13"
+license = "GPL-3.0-or-later"
+license-files = ["LICEN[CS]E.*"]
+readme = "README.md"
+authors = [{name = "Maximilian Sittinger"}]
+dependencies = [
+    "depthai >=3.5.0,<4",
+    "gpiozero >=2.0.1,<3",
+    "nicegui >=3.9.0,<4",
+    "nmcli >=1.7.0,<2",
+    "numpy >=2.4.4,<3",
+    "opencv-python-headless >=4.13.0,<5",
+    "polars >=1.39.3,<2",
+    "psutil >=7.2.2,<8",
+    "pydantic >=2.12.5,<3",
+    "pyyaml >=6.0.3,<7",
+    "smbus2 >=0.6.0,<1",
+]
+
+[project.scripts]
+startup = "insectdetect.startup:main"
+capture = "insectdetect.capture:main"
+webapp = "insectdetect.webapp:main"
+
+[project.urls]
+Documentation = "https://maxsitt.github.io/insect-detect-docs/"
+Repository = "https://github.com/maxsitt/insect-detect"
+Issues = "https://github.com/maxsitt/insect-detect/issues"
+
+[tool.uv]
+package = true
+
+[tool.pylint.typecheck]
+ignored-modules = ["cv2"]

@@ -1,0 +1,9 @@
+{
+  "models": [
+    {
+      "name": "platform_insect-detect-tiled_v2-0-0",
+      "url": "https://github.com/maxsitt/insect-detect/releases/download/v2.0.0/platform_insect-detect-tiled_v2-0-0.tar.xz",
+      "sha256": "4e50fe20324f19a9f9b722e8b949b35b3b4db60cff6cf9dacb6f11a8eec46362"
+    }
+  ]
+}

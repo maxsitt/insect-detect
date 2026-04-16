@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use resources from this repository, please cite it using this metadata."
-title: "Insect Detect - Software for automated insect monitoring with a DIY camera trap system"
+title: "Software for automated insect monitoring with the Insect Detect camera trap."
 authors:
   - family-names: Sittinger
     given-names: Maximilian

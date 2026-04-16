@@ -60,7 +60,7 @@ def _build_zoom_table(
     """Build a lookup table mapping zoom factors to aligned output pixel dimensions.
 
     Width is aligned to multiples of 32, as required by the VideoEncoder node.
-    Height is aligned to multiples of the GCD of the base dimensions clamped to [2, 32],
+    Height is aligned to multiples of the GCD of the base dimensions clamped to [2, 8],
     which ensures consistent aspect ratios across zoom steps. For near-square presets
     (aspect ratio within 2% of 1:1), height is additionally clamped to never exceed width,
     preventing width < height entries that would occur when the finer height alignment

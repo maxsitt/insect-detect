@@ -121,9 +121,13 @@ fi
 echo
 echo "Installation complete!"
 echo
+echo "The automatic startup service will be active after the next reboot."
+echo
 echo "Use the web app to configure your custom settings,"
 echo "or modify the 'insect-detect/configs/config.yaml' file directly."
-echo "The automatic startup service will be active after the next reboot."
+echo
+echo "To make 'uv' available in your current terminal session, run:"
+echo "  source \$HOME/.local/bin/env"
 echo
 echo "To run the scripts manually, first navigate into the insect-detect directory:"
 echo "  cd insect-detect"
@@ -132,5 +136,3 @@ echo "Then run the scripts with:"
 echo "  uv run webapp"
 echo "  uv run capture"
 echo
-echo "NOTE: Please close and reopen your terminal before using 'uv',"
-echo "to ensure the PATH is updated and 'uv' is available."

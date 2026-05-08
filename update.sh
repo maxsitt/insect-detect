@@ -212,12 +212,18 @@ fi
 if echo "$CHANGED_FILES" | grep -q "^insect-detect-startup\.service$"; then
     echo
     echo "Startup service file was updated. Reinstalling systemd service..."
-    if sudo cp insect-detect-startup.service /etc/systemd/system/ && sudo systemctl daemon-reload; then
-        echo "Systemd service updated successfully."
-    else
+    PATCHED_SERVICE=$(sed \
+      -e "s|User=pi|User=${USER}|g" \
+      -e "s|Group=pi|Group=${USER}|g" \
+      -e "s|/home/pi|${HOME}|g" \
+      insect-detect-startup.service)
+    if ! echo "${PATCHED_SERVICE}" | sudo tee /etc/systemd/system/insect-detect-startup.service > /dev/null; then
         echo "WARNING: Failed to reinstall systemd service."
-        echo "You can reinstall it manually by running 'sudo cp insect-detect-startup.service /etc/systemd/system/'"
-        echo "and then 'sudo systemctl daemon-reload'."
+        echo "You can reinstall it manually by running 'bash install.sh'."
+    elif ! sudo systemctl daemon-reload; then
+        echo "WARNING: Failed to reload systemd daemon."
+    else
+        echo "Systemd service updated successfully."
     fi
 fi
 

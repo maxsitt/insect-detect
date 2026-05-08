@@ -105,8 +105,16 @@ fi
 # Install and enable systemd service for automatic startup on boot
 echo
 echo "[+] Installing systemd service for automatic startup..."
-if ! sudo cp insect-detect-startup.service /etc/systemd/system/; then
-    echo "ERROR: Failed to copy service file."
+
+# Patch service file with actual username and home directory
+PATCHED_SERVICE=$(sed \
+  -e "s|User=pi|User=${USER}|g" \
+  -e "s|Group=pi|Group=${USER}|g" \
+  -e "s|/home/pi|${HOME}|g" \
+  insect-detect-startup.service)
+
+if ! echo "${PATCHED_SERVICE}" | sudo tee /etc/systemd/system/insect-detect-startup.service > /dev/null; then
+    echo "ERROR: Failed to install service file."
     exit 1
 fi
 if ! sudo systemctl daemon-reload; then

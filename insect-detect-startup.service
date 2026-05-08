@@ -6,7 +6,8 @@ After=network.target network-online.target NetworkManager.service
 
 [Service]
 Type=oneshot
-# Default Raspberry Pi OS username - change if using a different user
+# Template file: pi username and /home/pi paths are automatically replaced with the
+# actual username and home directory when installing via install.sh or update.sh
 User=pi
 Group=pi
 WorkingDirectory=/home/pi/insect-detect

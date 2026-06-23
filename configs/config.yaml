@@ -38,6 +38,12 @@ detection:
   conf_threshold: 0.5
   ae_region:
     enabled: false
+tracking:
+  type: SHORT_TERM_IMAGELESS
+  occlusion_ratio_threshold: 0.5
+  tracklet_birth_threshold: 15
+  tracklet_max_lifespan: 60
+  filter_stale_tracklets: true
 recording:
   duration:
     battery:

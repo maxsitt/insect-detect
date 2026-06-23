@@ -298,11 +298,11 @@ def create_pipeline(
 
     # Create and configure ObjectTracker node
     tracker = pipeline.create(dai.node.ObjectTracker)
-    tracker.setTrackerType(dai.TrackerType.SHORT_TERM_IMAGELESS)
+    tracker.setTrackerType(getattr(dai.TrackerType, config.tracking.type))
     tracker.setTrackerIdAssignmentPolicy(dai.TrackerIdAssignmentPolicy.UNIQUE_ID)
-    tracker.setOcclusionRatioThreshold(0.5)  # threshold to filter out overlapping tracklets (default: 0.3)
-    tracker.setTrackletBirthThreshold(20)    # frames to consider tracklet as TRACKED (default: 3)
-    tracker.setTrackletMaxLifespan(300)      # frames before a LOST tracklet is removed (default: 120)
+    tracker.setOcclusionRatioThreshold(config.tracking.occlusion_ratio_threshold)
+    tracker.setTrackletBirthThreshold(config.tracking.tracklet_birth_threshold)
+    tracker.setTrackletMaxLifespan(config.tracking.tracklet_max_lifespan)
     nn_det.passthrough.link(tracker.inputTrackerFrame)
     nn_det.passthrough.link(tracker.inputDetectionFrame)
     nn_det.out.link(tracker.inputDetections)

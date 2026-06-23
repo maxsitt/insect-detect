@@ -209,6 +209,24 @@ class DetectionConfig(BaseModel):
     ae_region: AutoExposureRegionConfig = AutoExposureRegionConfig()
 
 
+class TrackingConfig(BaseModel):
+    """Object tracker settings for the depthai ObjectTracker node.
+
+    - type:                      Tracker algorithm to use for tracking detected objects.
+                                 SHORT_TERM_IMAGELESS: Extrapolates trajectory from recent frames.
+                                 ZERO_TERM_IMAGELESS: Associates new detections to existing tracks.
+    - occlusion_ratio_threshold: IoU threshold above which overlapping tracklets are filtered out.
+    - tracklet_birth_threshold:  Number of frames after which a NEW tracklet is marked as TRACKED.
+    - tracklet_max_lifespan:     Number of frames after which a LOST tracklet is REMOVED.
+    - filter_stale_tracklets:    Skip stale tracklets without updated srcImgDetection from model.
+    """
+    type: Literal["SHORT_TERM_IMAGELESS", "ZERO_TERM_IMAGELESS"] = "SHORT_TERM_IMAGELESS"
+    occlusion_ratio_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+    tracklet_birth_threshold: int = Field(default=15, ge=1, le=100)
+    tracklet_max_lifespan: int = Field(default=60, ge=1, le=500)
+    filter_stale_tracklets: bool = True
+
+
 class BatteryDurationConfig(BaseModel):
     """Maximum recording durations (in minutes) for each battery charge level.
 
@@ -510,6 +528,7 @@ class AppConfig(BaseModel):
     deployment: DeploymentConfig = DeploymentConfig()
     camera: CameraConfig = CameraConfig()
     detection: DetectionConfig = DetectionConfig()
+    tracking: TrackingConfig = TrackingConfig()
     recording: RecordingConfig = RecordingConfig()
     processing: ProcessingConfig = ProcessingConfig()
     webapp: WebappConfig = WebappConfig()

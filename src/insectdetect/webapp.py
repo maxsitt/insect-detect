@@ -79,6 +79,7 @@ _CONSTRAINT_PATHS: list[str] = [
     "camera.focus.range.lens_pos.min", "camera.focus.range.lens_pos.max",
     "camera.isp.sharpness", "camera.isp.luma_denoise", "camera.isp.chroma_denoise",
     "detection.num_shaves", "detection.conf_threshold",
+    "tracking.occlusion_ratio_threshold", "tracking.tracklet_birth_threshold", "tracking.tracklet_max_lifespan",
     "recording.interval.detection", "recording.interval.timelapse", "recording.duration.default",
     "recording.duration.battery.high", "recording.duration.battery.medium", "recording.duration.battery.low",
     "webapp.stream.quality",
@@ -145,6 +146,9 @@ def create_ui_layout() -> None:
             ui.separator().classes("bg-emerald-500 h-0.5")
             with ui.expansion("Detection Settings", icon="radar").classes("w-full font-bold"):
                 create_detection_settings()
+            ui.separator().classes("bg-emerald-500 h-0.5")
+            with ui.expansion("Tracking Settings", icon="route").classes("w-full font-bold"):
+                create_tracking_settings()
             ui.separator().classes("bg-emerald-500 h-0.5")
             with ui.expansion("Recording Settings", icon="videocam").classes("w-full font-bold"):
                 create_recording_settings()
@@ -247,6 +251,7 @@ async def start_camera() -> None:
     app.state.last_roi_layer_empty = True
     app.state.ae_region_active = False
     app.state.last_ae_time = 0.0
+    app.state.last_det_snapshot = {}
     app.state.start_recording = False
     app.state.focus_initialized = False
     app.state.focus_mode_initialized = False
@@ -391,11 +396,19 @@ async def get_tracker_data() -> list[dict] | None:
             tracklet_status = tracklet.status.name
             if tracklet_status in {"TRACKED", "NEW"}:
                 tracklet_id: int = tracklet.id
+                det = tracklet.srcImgDetection
+
+                if app.state.config_updates["tracking"]["filter_stale_tracklets"]:
+                    det_snapshot = (det.xmin, det.ymin, det.xmax, det.ymax, det.confidence)
+                    if app.state.last_det_snapshot.get(tracklet_id) == det_snapshot:
+                        continue  # srcImgDetection frozen, skip stale tracklet
+                    app.state.last_det_snapshot[tracklet_id] = det_snapshot
+
                 bbox_raw: tuple[float, float, float, float] = (
-                    max(0.0, min(1.0, tracklet.srcImgDetection.xmin)),
-                    max(0.0, min(1.0, tracklet.srcImgDetection.ymin)),
-                    max(0.0, min(1.0, tracklet.srcImgDetection.xmax)),
-                    max(0.0, min(1.0, tracklet.srcImgDetection.ymax))
+                    max(0.0, min(1.0, det.xmin)),
+                    max(0.0, min(1.0, det.ymin)),
+                    max(0.0, min(1.0, det.xmax)),
+                    max(0.0, min(1.0, det.ymax))
                 )
                 # De-letterbox bbox from NN-normalized space to frame-normalized space
                 bbox = deletterbox_bbox(
@@ -405,8 +418,8 @@ async def get_tracker_data() -> list[dict] | None:
                 )
 
                 tracklet_data = {
-                    "label": app.state.labels[tracklet.srcImgDetection.label],
-                    "confidence": round(tracklet.srcImgDetection.confidence, 2),
+                    "label": app.state.labels[det.label],
+                    "confidence": round(det.confidence, 2),
                     "track_id": tracklet_id,
                     "track_status": tracklet_status,
                     "x_min": round(bbox[0], 4),
@@ -1074,6 +1087,61 @@ def create_detection_settings() -> None:
          .tooltip("Use bounding box coordinates from detections to set auto exposure region"))
         (ui.switch("Enable", on_change=on_ae_region_change).props("color=green").classes("font-bold")
          .bind_value(app.state.config_updates["detection"]["ae_region"], "enabled"))
+
+
+def create_tracking_settings() -> None:
+    """Create UI elements and config binding for object tracker settings."""
+    with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
+
+        (ui.label("Tracker Type").classes("font-bold")
+         .tooltip(
+            "SHORT_TERM_IMAGELESS: Maintains tracks via trajectory extrapolation from recent frames (temporal prediction). "
+            "ZERO_TERM_IMAGELESS: Associates current-frame detections to existing tracks (no temporal prediction)."
+        ))
+        (ui.select(["SHORT_TERM_IMAGELESS", "ZERO_TERM_IMAGELESS"], label="Type")
+         .bind_value(app.state.config_updates["tracking"], "type"))
+
+        grid_separator()
+        c = FIELD_CONSTRAINTS["tracking.occlusion_ratio_threshold"]
+        (ui.label("Occlusion Ratio Threshold").classes("font-bold")
+         .tooltip("IoU threshold above which overlapping tracklets are filtered out"))
+        (ui.number(label="Threshold",
+                   placeholder=app.state.config.tracking.occlusion_ratio_threshold,
+                   min=c["min"], max=c["max"], precision=2, step=0.01,
+                   validation={f"Required value between {c['min']}-{c['max']}":
+                               lambda v, c=c: validate_number(v, c["min"], c["max"])})
+         .bind_value(app.state.config_updates["tracking"], "occlusion_ratio_threshold",
+                     forward=lambda v: float(v) if v is not None else None))
+
+        grid_separator()
+        c = FIELD_CONSTRAINTS["tracking.tracklet_birth_threshold"]
+        (ui.label("Tracklet Birth Threshold").classes("font-bold")
+         .tooltip("Number of frames after which a NEW tracklet is marked as TRACKED"))
+        (ui.number(label="Frames",
+                   placeholder=app.state.config.tracking.tracklet_birth_threshold,
+                   min=c["min"], max=c["max"], precision=0, step=1,
+                   validation={f"Required value between {c['min']}-{c['max']}":
+                               lambda v, c=c: validate_number(v, c["min"], c["max"])})
+         .bind_value(app.state.config_updates["tracking"], "tracklet_birth_threshold",
+                     forward=lambda v: int(v) if v is not None else None))
+
+        grid_separator()
+        c = FIELD_CONSTRAINTS["tracking.tracklet_max_lifespan"]
+        (ui.label("Tracklet Max Lifespan").classes("font-bold")
+         .tooltip("Number of frames after which a LOST tracklet is REMOVED"))
+        (ui.number(label="Frames",
+                   placeholder=app.state.config.tracking.tracklet_max_lifespan,
+                   min=c["min"], max=c["max"], precision=0, step=1,
+                   validation={f"Required value between {c['min']}-{c['max']}":
+                               lambda v, c=c: validate_number(v, c["min"], c["max"])})
+         .bind_value(app.state.config_updates["tracking"], "tracklet_max_lifespan",
+                     forward=lambda v: int(v) if v is not None else None))
+
+        grid_separator()
+        (ui.label("Filter Stale Tracklets").classes("font-bold")
+         .tooltip("Skip stale tracklets without updated srcImgDetection from model"))
+        (ui.switch("Enable").props("color=green").classes("font-bold")
+         .bind_value(app.state.config_updates["tracking"], "filter_stale_tracklets"))
 
 
 def create_duration_input(
@@ -1831,7 +1899,7 @@ async def show_activate_dialog(config_name: str, has_network_changes: bool) -> N
         # Refresh all UI elements to reflect the still active config (reset config_updates)
         ui.notification("Configuration not activated!", type="warning", timeout=2)
         await asyncio.sleep(0.5)
-        create_ui_layout.refresh()
+        create_ui_layout.refresh()  # type: ignore[attr-defined]
 
 
 async def save_to_file(config_path: Path) -> None:

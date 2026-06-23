@@ -17,8 +17,7 @@ Functions:
 import logging
 import queue
 import threading
-import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
@@ -172,7 +171,7 @@ def make_bbox_square(
 
 
 def process_images(
-    metadata_queue: queue.Queue[list[dict[str, object]]],
+    metadata_queue: queue.Queue[tuple[list[dict[str, object]], Future[None]]],
     session_path: Path,
     config: AppConfig,
     stop_event: threading.Event
@@ -184,7 +183,7 @@ def process_images(
     Stops cleanly when stop_event is set and the queue is drained.
 
     Args:
-        metadata_queue: Queue receiving lists of detection metadata from the recording thread.
+        metadata_queue: Queue receiving (detections, save_future) tuples from the recording thread.
         session_path:   Recording session directory where processed images are saved.
         config:         AppConfig with processing and recording settings.
         stop_event:     Threading event signalling that recording has stopped.
@@ -215,7 +214,7 @@ def process_images(
                 timeout = min(check_interval, 5) if metadata_queue.empty() else 0.1
 
                 try:
-                    detections = metadata_queue.get(timeout=timeout)
+                    detections, save_future = metadata_queue.get(timeout=timeout)
                 except queue.Empty:
                     if stop_event.is_set():
                         break
@@ -229,35 +228,19 @@ def process_images(
                 img_stem = Path(img_filename).stem
                 img_path = session_path / img_filename
 
-                # Wait for image file to be written by the recording thread
-                max_wait_time = 2.0
-                wait_interval = 0.05
-                deadline = time.monotonic() + max_wait_time
-                while not img_path.exists() and time.monotonic() < deadline:
-                    time.sleep(wait_interval)
-
-                if not img_path.exists():
-                    logger.warning("Skipping %s - file not found after %.1fs",
-                                   img_filename, max_wait_time)
+                try:
+                    save_future.result(timeout=5.0)
+                except TimeoutError:
+                    logger.error("Save timed out for %s, skipping", img_filename)
+                    continue
+                except Exception:
+                    logger.exception("Save failed for %s, skipping", img_filename)
                     continue
 
                 try:
-                    # Read image with retries in case the write is still completing
-                    img = None
-                    img_path_str = str(img_path)
-                    max_read_attempts = 5
-                    for attempt in range(max_read_attempts):
-                        img = cv2.imread(img_path_str)
-                        if img is not None:
-                            break
-                        if attempt < max_read_attempts - 1:
-                            logger.debug("Read attempt %d failed for %s, retrying...",
-                                         attempt + 1, img_filename)
-                            time.sleep(0.2)
-
+                    img = cv2.imread(str(img_path))
                     if img is None:
-                        logger.error("Failed to read image %s after %d attempts",
-                                     img_filename, max_read_attempts)
+                        logger.error("Failed to read %s after confirmed save", img_filename)
                         continue
 
                     # Initialize image and overlay parameters on first successfully read frame

@@ -42,7 +42,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -300,7 +300,7 @@ def _run_recording(
         # Start optional image post-processing thread
         processing_thread: threading.Thread | None = None
         processing_stop = threading.Event()
-        metadata_queue: queue.Queue[list[dict[str, object]]] | None = None
+        metadata_queue: queue.Queue[tuple[list[dict[str, object]], Future[None]]] | None = None
         if config.processing.crop.enabled or config.processing.overlay.enabled:
             metadata_queue = queue.Queue()
             processing_thread = threading.Thread(
@@ -346,6 +346,7 @@ def _run_recording(
         # Initialize variables for capture/check events at start of recording session
         det_interval = config.recording.interval.detection
         tl_interval = config.recording.interval.timelapse
+        filter_stale_tracklets = config.tracking.filter_stale_tracklets
         ae_region = config.detection.ae_region.enabled
         ae_region_active = False
         last_ae_time: float = 0.0
@@ -367,6 +368,7 @@ def _run_recording(
         last_temp_oak_check = start_time
         last_charge_check = start_time
         chargelevels: list[int | str | None] = []
+        last_det_snapshot: dict[int, tuple[float, float, float, float, float]] = {}
 
         try:
             # Run recording session as long as all conditions are met
@@ -395,6 +397,7 @@ def _run_recording(
                     iso_sens: int = frame.getSensitivity()
                     exp_time: float = frame.getExposureTime().total_seconds() * 1000
                     frame_metadata: list[dict[str, object]] = []
+                    save_future: Future[None] | None = None
 
                     if track is not None:
                         tracklet_id_max = -1
@@ -404,13 +407,22 @@ def _run_recording(
                             # Only process active tracklets (not "LOST" or "REMOVED")
                             tracklet_status = tracklet.status.name
                             if tracklet_status in {"TRACKED", "NEW"}:
-                                track_active = True
                                 tracklet_id: int = tracklet.id
+                                det = tracklet.srcImgDetection
+
+                                if filter_stale_tracklets:
+                                    det_snapshot = (det.xmin, det.ymin, det.xmax, det.ymax,
+                                                    det.confidence)
+                                    if last_det_snapshot.get(tracklet_id) == det_snapshot:
+                                        continue  # srcImgDetection frozen, skip stale tracklet
+                                    last_det_snapshot[tracklet_id] = det_snapshot
+
+                                track_active = True
                                 bbox_raw: tuple[float, float, float, float] = (
-                                    max(0.0, min(1.0, tracklet.srcImgDetection.xmin)),
-                                    max(0.0, min(1.0, tracklet.srcImgDetection.ymin)),
-                                    max(0.0, min(1.0, tracklet.srcImgDetection.xmax)),
-                                    max(0.0, min(1.0, tracklet.srcImgDetection.ymax))
+                                    max(0.0, min(1.0, det.xmin)),
+                                    max(0.0, min(1.0, det.ymin)),
+                                    max(0.0, min(1.0, det.xmax)),
+                                    max(0.0, min(1.0, det.ymax))
                                 )
                                 # De-letterbox bbox from NN-normalized space to frame-normalized space
                                 bbox = deletterbox_bbox(
@@ -424,8 +436,8 @@ def _run_recording(
                                     "device_id": HOSTNAME,
                                     "session_id": ctx.session_id,
                                     "timestamp": timestamp_iso,
-                                    "label": ctx.labels[tracklet.srcImgDetection.label],
-                                    "confidence": round(tracklet.srcImgDetection.confidence, 2),
+                                    "label": ctx.labels[det.label],
+                                    "confidence": round(det.confidence, 2),
                                     "track_id": tracklet_id,
                                     "track_status": tracklet_status,
                                     "x_min": round(bbox[0], 4),
@@ -472,7 +484,10 @@ def _run_recording(
                     if track_active or timelapse_capture:
                         # Save MJPEG-encoded frame to .jpg in a separate thread
                         trigger = "detection" if track_active else "timelapse"
-                        executor.submit(save_encoded_frame, frame, ctx.session_path, file_stem, trigger)
+                        save_future = executor.submit(
+                            save_encoded_frame,
+                            frame, ctx.session_path, ctx.timelapse_path, file_stem, trigger
+                        )
                         last_capture = current_time
                         next_capture = current_time + det_interval
 
@@ -481,9 +496,9 @@ def _run_recording(
                             result.disk_free = round(psutil.disk_usage("/").free / 1048576)
                             last_disk_check = current_time
 
-                    # Put latest frame metadata in the queue for the image processing thread
-                    if metadata_queue is not None and frame_metadata:
-                        metadata_queue.put_nowait(frame_metadata)
+                    # Put latest frame metadata and save future in the queue for the image processing thread
+                    if metadata_queue is not None and frame_metadata and save_future is not None:
+                        metadata_queue.put_nowait((frame_metadata, save_future))
 
                 # Update OAK chip temperature at configured interval
                 if current_time >= last_temp_oak_check + temp_oak_check:

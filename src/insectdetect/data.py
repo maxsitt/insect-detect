@@ -23,19 +23,21 @@ import psutil
 def save_encoded_frame(
     frame: dai.ImgFrame,
     session_path: Path,
+    timelapse_path: Path,
     file_stem: str,
     trigger: Literal["detection", "timelapse"] = "detection"
 ) -> None:
     """Save MJPEG-encoded frame to .jpg file.
 
     Args:
-        frame:        depthai.ImgFrame message (type: BITSTREAM).
-        session_path: Recording session directory where the frame is saved.
-        file_stem:    Filename stem (without extension) for the saved .jpg file.
-        trigger:      Capture trigger type ('detection' or 'timelapse').
+        frame:          depthai.ImgFrame message (type: BITSTREAM).
+        session_path:   Path to directory where detection-triggered frames are saved.
+        timelapse_path: Path to directory where timelapse-triggered frames are saved.
+        file_stem:      Filename stem (without extension) for the saved .jpg file.
+        trigger:        Capture trigger type ('detection' or 'timelapse').
     """
     if trigger == "timelapse":
-        img_path = session_path / "timelapse" / f"{file_stem}_timelapse.jpg"
+        img_path = timelapse_path / f"{file_stem}_timelapse.jpg"
     else:
         img_path = session_path / f"{file_stem}.jpg"
     with open(img_path, "wb", buffering=1024 * 1024) as jpg:

@@ -10,10 +10,13 @@ Functions:
     deletterbox_bbox():         De-letterbox bounding box from NN-normalized letterboxed space
                                 to frame-normalized space.
     create_pipeline():          Create and configure depthai pipeline for OAK camera.
+    stop_pipeline():            Stop and close the OAK pipeline/device with a bounded wait.
+    send_camctrl():             Send a camera control command, tolerating a lost OAK connection.
 """
 
 import logging
 import math
+import threading
 from datetime import timedelta
 from typing import cast
 
@@ -48,6 +51,18 @@ def convert_cm_lens_position(distance_cm: int) -> int:
         return CM_LENS_POSITIONS[distance_cm]
     closest_cm = min(CM_KEYS, key=lambda k: abs(k - distance_cm))
     return CM_LENS_POSITIONS[closest_cm]
+
+
+def _round_even(value: float) -> int:
+    """Round to the nearest even integer.
+
+    Args:
+        value: Value to round.
+
+    Returns:
+        Nearest even integer.
+    """
+    return round(value / 2) * 2
 
 
 def _build_zoom_table(
@@ -139,12 +154,25 @@ def deletterbox_bbox(
     )
 
 
+def _log_reconnection_status(status: dai.Device.ReconnectionStatus) -> None:
+    """Log OAK device reconnection status changes reported by depthai's connection monitor.
+
+    Args:
+        status: Current reconnection status reported by depthai.
+    """
+    if status == dai.Device.ReconnectionStatus.RECONNECTED:
+        logger.info("OAK device reconnected successfully")
+    elif status == dai.Device.ReconnectionStatus.RECONNECT_FAILED:
+        logger.error("OAK device reconnection failed, device will be closed")
+    else:
+        logger.warning("OAK device disconnected, attempting to reconnect")
+
+
 def create_pipeline(
     config: AppConfig,
     stream: bool = False
 ) -> tuple[
     dai.Pipeline,
-    dai.MessageQueue,
     dai.MessageQueue,
     dai.MessageQueue,
     dai.InputQueue,
@@ -161,17 +189,21 @@ def create_pipeline(
                 If False, request ISP output at HQ resolution for capture.py.
 
     Returns:
-        Tuple of (pipeline, q_frames, q_tracks, q_syslog, q_camctrl,
+        Tuple of (pipeline, q_sync, q_syslog, q_camctrl,
                   frame_size, nn_input_size, sensor_roi, labels).
     """
-    pipeline = dai.Pipeline()
+    # Force USB2 mode and add custom callback to device reconnection attempts
+    device = dai.Device(maxUsbSpeed=dai.UsbSpeed.HIGH)
+    device.setMaxReconnectionAttempts(3, _log_reconnection_status)
+    pipeline = dai.Pipeline(device)
 
     # Get sensor and output resolution, calculate target output resolution based on zoom settings
     sensor_w, sensor_h = SENSOR_RES
     image_w, image_h, stream_w, stream_h = RESOLUTION_PRESETS[config.camera.image.resolution]
     out_w, out_h = (stream_w, stream_h) if stream else (image_w, image_h)
     zoom_factor = config.camera.zoom.factor
-    if config.camera.zoom.enabled and zoom_factor > 1.0:
+    zoom_active = config.camera.zoom.enabled and zoom_factor > 1.0
+    if zoom_active:
         size_key = "stream" if stream else "image"
         target_w, target_h = ZOOM_SIZES[config.camera.image.resolution][size_key][zoom_factor]
     else:
@@ -213,7 +245,7 @@ def create_pipeline(
     # For square or zoomed presets, set AE/AF region to the sensor-space crop area
     sensor_crop_w, sensor_crop_h = SENSOR_CROP[config.camera.image.resolution]
     is_square_preset = sensor_crop_w < sensor_w or sensor_crop_h < sensor_h
-    if is_square_preset or (config.camera.zoom.enabled and zoom_factor > 1.0):
+    if is_square_preset or zoom_active:
         scale_to_crop_w = target_w / out_w
         scale_to_crop_h = target_h / out_h
         roi_w = round(sensor_crop_w * scale_to_crop_w)
@@ -226,36 +258,6 @@ def create_pipeline(
             cam.initialControl.setAutoFocusRegion(*sensor_roi)
     else:
         sensor_roi = (1, 1, sensor_crop_w - 2, sensor_crop_h - 2)
-
-    # Request camera output with configured resolution
-    cam_out = cam.requestOutput(
-        size=(out_w, out_h),
-        type=dai.ImgFrame.Type.NV12,
-        resizeMode=dai.ImgResizeMode.CROP,
-        fps=config.camera.fps
-    )
-
-    if config.camera.zoom.enabled and zoom_factor > 1.0:
-        # Create ImageManip node to crop the center region for zooming
-        crop_x = (out_w - target_w) // 2
-        crop_y = (out_h - target_h) // 2
-        zoom_manip = pipeline.create(dai.node.ImageManip)
-        zoom_manip.initialConfig.setFrameType(dai.ImgFrame.Type.NV12)
-        zoom_manip.initialConfig.addCrop(crop_x, crop_y, target_w, target_h)
-        zoom_manip.setMaxOutputFrameSize(target_w * target_h * 3 // 2)
-        zoom_manip.inputImage.setBlocking(False)
-        cam_out.link(zoom_manip.inputImage)
-        cam_frames = zoom_manip.out
-    else:
-        cam_frames = cam_out
-
-    # Create VideoEncoder node for MJPEG-encoding of HQ frames
-    encoder = pipeline.create(dai.node.VideoEncoder).build(
-        input=cam_frames,
-        frameRate=1,
-        profile=dai.VideoEncoderProperties.Profile.MJPEG,
-        quality=config.webapp.stream.quality if stream else config.camera.image.quality
-    )
 
     # Load the specified detection model from the models directory and get input size and type
     nn_archive = dai.NNArchive(MODELS_PATH / config.detection.model)
@@ -274,14 +276,89 @@ def create_pipeline(
             nn_input_size[0], nn_input_size[1], aspect_diff / max(frame_aspect, nn_aspect) * 100
         )
 
-    # Create ImageManip node to resize (Letterbox) and format frames for detection network input
+    # Calculate scale factor and pixel dimensions for the model input frames
+    nn_fit_scale = min(nn_input_size[0] / target_w, nn_input_size[1] / target_h)
+    nn_target_w = _round_even(target_w * nn_fit_scale)
+    nn_target_h = _round_even(target_h * nn_fit_scale)
+    nn_out_w = _round_even(out_w * nn_fit_scale)
+    nn_out_h = _round_even(out_h * nn_fit_scale)
+
+    # Increase frame pool counts and max sizes to avoid frame drops or pipeline freezes
+    raw_frame_size = sensor_w * sensor_h * 5 // 4  # RAW10-packed, ~1.25 bytes/pixel
+    isp_frame_size = sensor_w * sensor_h * 3 // 2  # YUV420 planar, ~1.5 bytes/pixel
+    hq_frame_size = out_w * out_h * 3 // 2         # NV12, ~1.5 bytes/pixel
+    nn_frame_size = max(nn_target_w * nn_target_h, nn_out_w * nn_out_h) * 3  # BGR, ~3 bytes/pixel
+    out_frame_size = max(hq_frame_size, nn_frame_size)
+    cam.setNumFramesPools(4, 4, 4)
+    cam.setMaxSizePools(raw_frame_size * 4, isp_frame_size * 4, out_frame_size * 4)
+
+    # Create throttled cam output for HQ frames if not in stream mode and capture interval is > 0
+    det_interval = config.recording.interval.detection
+    tl_interval = config.recording.interval.timelapse
+    if not stream and det_interval > 0 and tl_interval > 0:
+        cam_out_hq_fps = min(config.camera.fps, max(1, round(2 / min(det_interval, tl_interval))))
+    else:
+        cam_out_hq_fps = config.camera.fps
+
+    cam_out_hq = cam.requestOutput(
+        size=(out_w, out_h),
+        type=dai.ImgFrame.Type.NV12,
+        resizeMode=dai.ImgResizeMode.CROP,
+        fps=cam_out_hq_fps
+    )
+
+    if zoom_active:
+        # Create ImageManip node to crop the center region for lossless digital zoom
+        zoom_manip = pipeline.create(dai.node.ImageManip)
+        zoom_manip.setMaxOutputFrameSize(target_w * target_h * 3 // 2)
+        zoom_manip.inputImage.setBlocking(False)
+        crop_x = (out_w - target_w) // 2
+        crop_y = (out_h - target_h) // 2
+        zoom_manip.initialConfig.addCrop(crop_x, crop_y, target_w, target_h)
+        cam_out_hq.link(zoom_manip.inputImage)
+        cam_frames_hq = zoom_manip.out
+    else:
+        cam_frames_hq = cam_out_hq
+
+    # Create VideoEncoder node for MJPEG-encoding of HQ frames
+    encoder = pipeline.create(dai.node.VideoEncoder).build(
+        input=cam_frames_hq,
+        frameRate=1,
+        profile=dai.VideoEncoderProperties.Profile.MJPEG,
+        quality=config.webapp.stream.quality if stream else config.camera.image.quality
+    )
+    encoder.input.setBlocking(False)
+
+    # Create downscaled cam output for model input frames at full camera fps
+    cam_out_nn = cam.requestOutput(
+        size=(nn_out_w, nn_out_h) if zoom_active else (nn_target_w, nn_target_h),
+        type=nn_input_type,
+        resizeMode=dai.ImgResizeMode.CROP,
+        fps=config.camera.fps
+    )
+
+    if zoom_active:
+        # Create ImageManip node to crop the center region for lossless digital zoom (model input)
+        nn_zoom_manip = pipeline.create(dai.node.ImageManip)
+        nn_zoom_manip.setMaxOutputFrameSize(nn_target_w * nn_target_h * 3)
+        nn_zoom_manip.inputImage.setBlocking(False)
+        nn_zoom_manip.inputImage.setMaxSize(1)
+        nn_crop_x = (nn_out_w - nn_target_w) // 2
+        nn_crop_y = (nn_out_h - nn_target_h) // 2
+        nn_zoom_manip.initialConfig.addCrop(nn_crop_x, nn_crop_y, nn_target_w, nn_target_h)
+        cam_out_nn.link(nn_zoom_manip.inputImage)
+        cam_frames_nn = nn_zoom_manip.out
+    else:
+        cam_frames_nn = cam_out_nn
+
+    # Create ImageManip node to letterbox-resize to the model input size
     nn_manip = pipeline.create(dai.node.ImageManip)
-    nn_manip.initialConfig.setFrameType(nn_input_type)
-    nn_manip.initialConfig.setOutputSize(nn_input_size[0], nn_input_size[1],
-                                         dai.ImageManipConfig.ResizeMode.LETTERBOX)
     nn_manip.setMaxOutputFrameSize(nn_input_size[0] * nn_input_size[1] * 3)
     nn_manip.inputImage.setBlocking(False)
-    cam_frames.link(nn_manip.inputImage)
+    nn_manip.inputImage.setMaxSize(1)
+    nn_manip.initialConfig.setOutputSize(nn_input_size[0], nn_input_size[1],
+                                         dai.ImageManipConfig.ResizeMode.LETTERBOX)
+    cam_frames_nn.link(nn_manip.inputImage)
 
     # Create and configure DetectionNetwork node
     nn_det = pipeline.create(dai.node.DetectionNetwork).build(
@@ -292,6 +369,7 @@ def create_pipeline(
     nn_det.setConfidenceThreshold(config.detection.conf_threshold)
     nn_det.setNumInferenceThreads(2)
     nn_det.input.setBlocking(False)
+    nn_det.input.setMaxSize(1)
     labels = nn_det.getClasses()
     if labels is None:
         raise ValueError(f"Could not retrieve class labels from NN archive: {config.detection.model}")
@@ -307,25 +385,63 @@ def create_pipeline(
     nn_det.passthrough.link(tracker.inputDetectionFrame)
     nn_det.out.link(tracker.inputDetections)
 
-    # Create Sync node to synchronize HQ frames with tracker output
+    # Create and configure Sync node to synchronize HQ frames with tracker output
     sync = pipeline.create(dai.node.Sync)
-    sync.setSyncThreshold(timedelta(milliseconds=100))
+    sync.setSyncThreshold(timedelta(milliseconds=50))
+    sync.setSyncAttempts(20)
+    sync.inputs["tracks"].setMaxSize(40)
     encoder.bitstream.link(sync.inputs["frames"])
     tracker.out.link(sync.inputs["tracks"])
 
-    # Create MessageDemux node and output queues for frames and tracks
-    demux = pipeline.create(dai.node.MessageDemux)
-    sync.out.link(demux.input)
-    q_frames = demux.outputs["frames"].createOutputQueue(maxSize=2, blocking=False)
-    q_tracks = demux.outputs["tracks"].createOutputQueue(maxSize=2, blocking=False)
-
-    # Create SystemLogger node to periodically get system information from OAK device
+    # Create and configure SystemLogger node to get system information from OAK device
     syslog = pipeline.create(dai.node.SystemLogger)
     syslog.setRate(1)
+
+    # Create output queues for Sync and SystemLogger nodes
+    q_sync = sync.out.createOutputQueue(maxSize=1, blocking=False)
     q_syslog = syslog.out.createOutputQueue(maxSize=2, blocking=False)
 
     # Create input queue to send camera control commands (e.g. AE region, focus control)
     q_camctrl = cam.inputControl.createInputQueue(maxSize=1, blocking=False)
 
-    return (pipeline, q_frames, q_tracks, q_syslog, q_camctrl,
-            (target_w, target_h), nn_input_size, sensor_roi, labels)
+    return pipeline, q_sync, q_syslog, q_camctrl, (target_w, target_h), nn_input_size, sensor_roi, labels
+
+
+def stop_pipeline(pipeline: dai.Pipeline) -> None:
+    """Stop and close the OAK pipeline/device, with a bounded wait.
+
+    depthai's internal reconnection monitor thread can race with an explicit close() call if
+    a USB disconnect/reconnect is in progress at the same time, occasionally blocking close()
+    indefinitely. Running the close in a background thread and waiting at most 10 seconds
+    ensures the caller always regains control even if depthai's own close never returns.
+
+    Args:
+        pipeline: The depthai Pipeline to stop.
+    """
+    closed = threading.Event()
+
+    def _stop() -> None:
+        try:
+            pipeline.stop()
+            pipeline.wait()
+        except Exception:
+            logger.exception("Error while stopping OAK pipeline")
+        finally:
+            closed.set()
+
+    threading.Thread(target=_stop, name="OAKPipelineStopper", daemon=True).start()
+    if not closed.wait(timeout=10.0):
+        logger.warning("OAK pipeline did not stop within 10 seconds")
+
+
+def send_camctrl(q_camctrl: dai.InputQueue, ctrl: dai.CameraControl) -> None:
+    """Send a camera control command, tolerating a lost OAK connection.
+
+    Args:
+        q_camctrl: depthai input queue for CameraControl messages.
+        ctrl:      CameraControl message to send.
+    """
+    try:
+        q_camctrl.send(ctrl)
+    except Exception:
+        logger.exception("Could not send camera control command")

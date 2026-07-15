@@ -17,10 +17,11 @@ Functions:
 import logging
 import queue
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor
+import time
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import cv2
 import cv2.typing
@@ -28,9 +29,13 @@ import numpy as np
 from numpy.typing import NDArray
 
 from insectdetect.config import AppConfig
+from insectdetect.constants import IMAGE_DRAIN_TIMEOUT
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
+
+# Minimum time (seconds) between processing images, to limit RPi CPU usage and power consumption
+_THROTTLE_INTERVAL = 2.0
 
 
 @dataclass(frozen=True)
@@ -174,19 +179,23 @@ def process_images(
     metadata_queue: queue.Queue[tuple[list[dict[str, object]], Future[None]]],
     session_path: Path,
     config: AppConfig,
-    stop_event: threading.Event
+    stop_event: threading.Event,
+    abort_event: threading.Event
 ) -> None:
     """Process images in real-time as metadata arrives in queue.
 
     This function is designed to run in a separate thread. It continuously
     monitors the metadata queue and processes images as they become available.
-    Stops cleanly when stop_event is set and the queue is drained.
+    Stops cleanly when stop_event is set and the queue is drained (bounded by
+    IMAGE_DRAIN_TIMEOUT), or immediately once abort_event is set.
 
     Args:
         metadata_queue: Queue receiving (detections, save_future) tuples from the recording thread.
         session_path:   Recording session directory where processed images are saved.
         config:         AppConfig with processing and recording settings.
         stop_event:     Threading event signalling that recording has stopped.
+        abort_event:    Threading event signalling an immediate stop (e.g. Ctrl+C), skipping
+                        the graceful drain of any images still queued.
     """
     crop_enabled = config.processing.crop.enabled
     crop_method = config.processing.crop.method
@@ -200,49 +209,131 @@ def process_images(
     overlay_encode_params = [cv2.IMWRITE_JPEG_QUALITY, 80]
     labels_seen: set[str] = set()
     processed_count = 0
+    skipped_count = 0
     crops_path = session_path / "crops"
     overlays_path = session_path / "overlays"
+    drain_deadline: float | None = None
 
     if crop_enabled:
         crops_path.mkdir(exist_ok=True)
     if overlay_enabled:
         overlays_path.mkdir(exist_ok=True)
 
+    # Manage executor manually to avoid blocking shutdown if a write is stuck
+    write_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ImgWriter")
+    writer_stuck = False
+    last_io_future: Future[Any] | None = None
+
+    def _log_io_result(fut: Future[Any], filename: str, op: str) -> None:
+        """Log any exception or unsuccessful result from a I/O operation."""
+        try:
+            result = fut.result()
+        except CancelledError:
+            return
+        except Exception:
+            logger.exception("%s failed for %s", op.capitalize(), filename)
+            return
+        if result is False:
+            logger.error("%s returned failure for %s", op.capitalize(), filename)
+
+    def _submit_io(func: Any, *args: Any, filename: str, op: str, **kwargs: Any) -> tuple[Future[Any], str]:
+        """Submit a I/O operation, tracking and logging its outcome."""
+        nonlocal last_io_future
+        fut = write_executor.submit(func, *args, **kwargs)
+        fut.add_done_callback(lambda f: _log_io_result(f, filename, op))
+        last_io_future = fut
+        return fut, op
+
+    def _io_succeeded(fut: Future[Any], img_filename: str, op: str = "write") -> bool:
+        """Wait briefly for a submitted I/O operation and flag the executor as stuck on timeout."""
+        nonlocal writer_stuck
+        try:
+            result = fut.result(timeout=5.0)
+        except TimeoutError:
+            if not writer_stuck:
+                writer_stuck = True
+                logger.error(
+                    "%s timed out for %s and disk I/O appears stuck, disabling "
+                    "image processing for the rest of this session", op.capitalize(), img_filename
+                )
+            return False
+        except Exception:
+            return False
+        return result is not False
+
     try:
-        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="ImgWriter") as write_executor:
-            while True:
-                timeout = min(check_interval, 5) if metadata_queue.empty() else 0.1
+        while True:
+            if abort_event.is_set():
+                remaining = metadata_queue.qsize()
+                if remaining:
+                    logger.warning(
+                        "Post-processing aborted: %d image(s) could not be processed", remaining
+                    )
+                break
 
-                try:
-                    detections, save_future = metadata_queue.get(timeout=timeout)
-                except queue.Empty:
-                    if stop_event.is_set():
-                        break
-                    continue
+            if stop_event.is_set():
+                if drain_deadline is None:
+                    drain_deadline = time.monotonic() + IMAGE_DRAIN_TIMEOUT
+                elif time.monotonic() >= drain_deadline:
+                    remaining = metadata_queue.qsize()
+                    if remaining:
+                        logger.warning(
+                            "Post-processing drain timed out after %d seconds: %d image(s) "
+                            "could not be processed", int(IMAGE_DRAIN_TIMEOUT), remaining
+                        )
+                    break
 
-                if not detections:
-                    logger.warning("Received empty detections list, skipping")
-                    continue
+            # Throttle queue.get() timeout to avoid busy-waiting when the queue is empty
+            timeout = min(check_interval, 5) if metadata_queue.empty() else 0.1
 
+            try:
+                detections, save_future = metadata_queue.get(timeout=timeout)
+            except queue.Empty:
+                if stop_event.is_set():
+                    break
+                continue
+
+            if not detections:
+                logger.warning("Received empty detections list, skipping")
+                skipped_count += 1
+                continue
+
+            try:
                 img_filename = str(detections[0]["filename"])
                 img_stem = Path(img_filename).stem
                 img_path = session_path / img_filename
+            except Exception:
+                logger.exception("Malformed detections metadata, skipping")
+                skipped_count += 1
+                continue
 
-                try:
-                    save_future.result(timeout=5.0)
-                except TimeoutError:
-                    logger.error("Save timed out for %s, skipping", img_filename)
-                    continue
-                except Exception:
-                    logger.exception("Save failed for %s, skipping", img_filename)
-                    continue
+            if writer_stuck:
+                # Skip the save wait, image decode and bbox computation if writer thread is stuck
+                skipped_count += 1
+                continue
 
-                try:
-                    img = cv2.imread(str(img_path))
-                    if img is None:
-                        logger.error("Failed to read %s after confirmed save", img_filename)
-                        continue
+            try:
+                save_future.result(timeout=5.0)
+            except TimeoutError:
+                logger.error("Save timed out for %s, skipping", img_filename)
+                skipped_count += 1
+                continue
+            except Exception:
+                logger.exception("Save failed for %s, skipping", img_filename)
+                skipped_count += 1
+                continue
 
+            cycle_start = time.monotonic()
+
+            try:
+                write_futures: list[tuple[Future[Any], str]] = []
+                write_ok = True
+
+                img = cv2.imread(str(img_path))
+                if img is None:
+                    logger.error("Failed to read %s after confirmed save", img_filename)
+                    skipped_count += 1
+                else:
                     # Initialize image and overlay parameters on first successfully read frame
                     if img_params is None:
                         img_h, img_w = img.shape[:2]
@@ -279,13 +370,9 @@ def process_images(
                             crop_filename = f"{img_stem}_ID{track_ids[idx]}_crop.jpg"
                             crop_path = crops_path / label / crop_filename
                             crop = img[bbox[1]:bbox[3], bbox[0]:bbox[2]].copy()
-                            try:
-                                write_executor.submit(cv2.imwrite, str(crop_path), crop,
-                                                      crop_encode_params)
-                            except RuntimeError:
-                                logger.warning("Skip writing crops for %s - executor shutdown",
-                                               img_filename)
-                                break
+                            write_futures.append(_submit_io(
+                                cv2.imwrite, str(crop_path), crop, crop_encode_params,
+                                filename=crop_filename, op="crop write"))
 
                     if overlay_enabled:
                         assert ovl_params is not None
@@ -296,22 +383,51 @@ def process_images(
 
                         overlay_filename = f"{img_stem}_overlay.jpg"
                         overlay_path = overlays_path / overlay_filename
-                        try:
-                            write_executor.submit(cv2.imwrite, str(overlay_path), img,
-                                                  overlay_encode_params)
-                        except RuntimeError:
-                            logger.warning("Skip writing overlay for %s - executor shutdown",
-                                           img_filename)
+                        write_futures.append(_submit_io(
+                            cv2.imwrite, str(overlay_path), img, overlay_encode_params,
+                            filename=overlay_filename, op="overlay write"))
 
-                    if delete_original:
-                        img_path.unlink(missing_ok=True)
+                    for fut, op in write_futures:
+                        if writer_stuck:
+                            write_ok = False
+                            break
+                        if not _io_succeeded(fut, img_filename, op):
+                            write_ok = False
 
-                    processed_count += 1
+                    if write_ok:
+                        processed_count += 1
+                    else:
+                        skipped_count += 1
 
-                except Exception:
-                    logger.exception("Error processing image %s", img_filename)
+                    if delete_original and not writer_stuck and write_ok:
+                        del_future, del_op = _submit_io(
+                            img_path.unlink, missing_ok=True, filename=img_filename, op="delete")
+                        _io_succeeded(del_future, img_filename, del_op)
+
+                if not stop_event.is_set():
+                    elapsed = time.monotonic() - cycle_start
+                    remaining_pause = _THROTTLE_INTERVAL - elapsed
+                    if remaining_pause > 0:
+                        stop_event.wait(timeout=remaining_pause)
+
+            except Exception:
+                logger.exception("Error processing image %s", img_filename)
 
     except Exception:
         logger.exception("Error during image processing")
     finally:
-        logger.info("Image processing finished: %d frames processed", processed_count)
+        # shutdown(wait=True) below has no timeout, so pre-check the last future with a
+        # bounded wait first. Also catches futures left unchecked by an exception between
+        # submission and the _io_succeeded() check above, which would leave writer_stuck unset
+        if last_io_future is not None and not writer_stuck:
+            try:
+                last_io_future.result(timeout=5.0)
+            except TimeoutError:
+                writer_stuck = True
+            except Exception:
+                pass  # already logged via the done callback
+        write_executor.shutdown(wait=not writer_stuck, cancel_futures=writer_stuck)
+        logger.info(
+            "Image processing finished: %d frames processed, %d skipped",
+            processed_count, skipped_count
+        )

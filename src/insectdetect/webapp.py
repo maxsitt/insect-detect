@@ -56,7 +56,7 @@ from insectdetect.constants import (AUTO_RUN_MARKER, BASE_PATH, CONFIGS_PATH, HO
                                     STREAMING_MARKER, UV)
 from insectdetect.metrics import configure_logger, get_oak_metrics, get_rpi_metrics, subprocess_log
 from insectdetect.network import get_current_connection, get_ip_address, set_up_network
-from insectdetect.oak import ZOOM_SIZES, create_pipeline, deletterbox_bbox
+from insectdetect.oak import ZOOM_SIZES, create_pipeline, deletterbox_bbox, send_camctrl, stop_pipeline
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
@@ -252,6 +252,7 @@ async def start_camera() -> None:
     app.state.ae_region_active = False
     app.state.last_ae_time = 0.0
     app.state.last_det_snapshot = {}
+    app.state.tracker_data = []
     app.state.start_recording = False
     app.state.focus_initialized = False
     app.state.focus_mode_initialized = False
@@ -283,7 +284,7 @@ async def start_camera() -> None:
         "oak_ram_available_cmx": "NA",
     }
 
-    (app.state.pipeline, app.state.q_frames, app.state.q_tracks, app.state.q_syslog,
+    (app.state.pipeline, app.state.q_sync, app.state.q_syslog,
      app.state.q_camctrl, app.state.frame_size, app.state.nn_input_size, app.state.sensor_roi,
      app.state.labels) = create_pipeline(app.state.config, stream=True)
 
@@ -293,14 +294,14 @@ async def start_camera() -> None:
     # Workaround to avoid focus issues if setAutoFocusRegion() was used in initial camera control
     if app.state.config.camera.focus.mode != "manual":
         af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
-        app.state.q_camctrl.send(af_ctrl)
+        send_camctrl(app.state.q_camctrl, af_ctrl)
 
     ui.notification("OAK camera pipeline started!", type="positive", timeout=2)
 
 
 async def close_camera() -> None:
     """Stop streaming and OAK pipeline, clean up resources."""
-    for queue in ("q_frames", "q_tracks", "q_syslog", "q_camctrl"):
+    for queue in ("q_sync", "q_syslog", "q_camctrl"):
         if getattr(app.state, queue, None):
             setattr(app.state, queue, None)
 
@@ -313,7 +314,7 @@ async def close_camera() -> None:
         app.state.sys_info_timer = None
 
     if getattr(app.state, "pipeline", None):
-        app.state.pipeline.stop()
+        stop_pipeline(app.state.pipeline)
         app.state.pipeline = None
 
     if getattr(app.state, "led", None):
@@ -321,37 +322,44 @@ async def close_camera() -> None:
         app.state.led = None
 
 
-def get_frame(q_frames: dai.MessageQueue | None) -> tuple[bytes, bytes, int, int, float] | None:
-    """Get MJPEG-encoded frame and associated metadata from the OAK camera output queue."""
-    if not q_frames:
+def get_synced_data(
+    q_sync: dai.MessageQueue | None
+) -> tuple[bytes, bytes, int, int, float, dai.Tracklets] | None:
+    """Get synced MJPEG-encoded frame and Tracklets from the OAK output queue."""
+    if not q_sync:
         return None
     try:
-        frame = cast(dai.ImgFrame | None, q_frames.tryGet())
-        if frame is None:
+        group = cast(dai.MessageGroup | None, q_sync.tryGet())
+        if group is None:
             return None
+        frame = cast(dai.ImgFrame, group["frames"])
+        track = cast(dai.Tracklets, group["tracks"])
         frame_bytes: bytes = frame.getData().tobytes()
         frame_bytes_length: bytes = str(len(frame_bytes)).encode()
         lens_pos: int = frame.getLensPosition()
         iso_sens: int = frame.getSensitivity()
         exp_time: float = frame.getExposureTime().total_seconds() * 1000
-        return frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time
+        return frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time, track
     except Exception:
         return None
 
 
 async def frame_generator() -> AsyncGenerator[bytes, None]:
-    """Yield MJPEG-encoded frames asynchronously and update camera parameters."""
+    """Yield MJPEG-encoded frames asynchronously, update camera parameters and tracker data."""
     try:
         next_tick = time.monotonic()
-        while getattr(app.state, "q_frames", None):
-            frame_data = get_frame(app.state.q_frames)
-            if frame_data is not None:
-                frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time = frame_data
+        while getattr(app.state, "q_sync", None):
+            synced_data = get_synced_data(app.state.q_sync)
+            if synced_data is not None:
+                frame_bytes, frame_bytes_length, lens_pos, iso_sens, exp_time, track = synced_data
 
                 yield (b"--frame\r\n"
                        b"Content-Type: image/jpeg\r\n"
                        b"Content-Length: " + frame_bytes_length + b"\r\n\r\n"
                        + frame_bytes + b"\r\n")
+
+                # Process the frame's synced tracker data (also sets AE region if enabled)
+                app.state.tracker_data = process_tracker_data(track)
 
                 # Update camera parameters twice per second
                 app.state.frame_count += 1
@@ -365,6 +373,8 @@ async def frame_generator() -> AsyncGenerator[bytes, None]:
                     app.state.frame_count = 0
                     app.state.prev_time = current_time
             else:
+                app.state.tracker_data = []
+
                 yield (b"--frame\r\n"
                        b"Content-Type: image/png\r\n"
                        b"Content-Length: " + PLACEHOLDER_PNG_BYTES_LENGTH + b"\r\n\r\n"
@@ -380,83 +390,87 @@ async def frame_generator() -> AsyncGenerator[bytes, None]:
         return
 
 
-async def get_tracker_data() -> list[dict] | None:
-    """Get model/tracker data from the OAK camera output queue, set AE region if enabled."""
+def process_tracker_data(track: dai.Tracklets) -> list[dict]:
+    """Process a Tracklets message (synced with the current frame) into overlay data.
+
+    Also sets the AE region from the most recently active tracklet if enabled.
+
+    Args:
+        track: Tracklets message synced with the currently displayed frame.
+
+    Returns:
+        List of tracklet data dicts for all active (TRACKED/NEW) tracklets.
+    """
     tracker_data: list[dict] = []
-    if getattr(app.state, "q_tracks", None):
-        track = cast(dai.Tracklets | None, app.state.q_tracks.tryGet())
-        if track is None:
-            return None
+    tracklet_id_max = -1
+    bbox_max: tuple[float, float, float, float] | None = None
 
-        tracklet_id_max = -1
-        bbox_max: tuple[float, float, float, float] | None = None
+    for tracklet in track.tracklets:
+        # Only process active tracklets (not "LOST" or "REMOVED")
+        tracklet_status = tracklet.status.name
+        if tracklet_status in {"TRACKED", "NEW"}:
+            tracklet_id: int = tracklet.id
+            det = tracklet.srcImgDetection
 
-        for tracklet in track.tracklets:
-            # Only process active tracklets (not "LOST" or "REMOVED")
-            tracklet_status = tracklet.status.name
-            if tracklet_status in {"TRACKED", "NEW"}:
-                tracklet_id: int = tracklet.id
-                det = tracklet.srcImgDetection
+            if app.state.config_updates["tracking"]["filter_stale_tracklets"]:
+                det_snapshot = (det.xmin, det.ymin, det.xmax, det.ymax, det.confidence)
+                if app.state.last_det_snapshot.get(tracklet_id) == det_snapshot:
+                    continue  # srcImgDetection frozen, skip stale tracklet
+                app.state.last_det_snapshot[tracklet_id] = det_snapshot
 
-                if app.state.config_updates["tracking"]["filter_stale_tracklets"]:
-                    det_snapshot = (det.xmin, det.ymin, det.xmax, det.ymax, det.confidence)
-                    if app.state.last_det_snapshot.get(tracklet_id) == det_snapshot:
-                        continue  # srcImgDetection frozen, skip stale tracklet
-                    app.state.last_det_snapshot[tracklet_id] = det_snapshot
+            bbox_raw: tuple[float, float, float, float] = (
+                max(0.0, min(1.0, det.xmin)),
+                max(0.0, min(1.0, det.ymin)),
+                max(0.0, min(1.0, det.xmax)),
+                max(0.0, min(1.0, det.ymax))
+            )
+            # De-letterbox bbox from NN-normalized space to frame-normalized space
+            bbox = deletterbox_bbox(
+                bbox_raw,
+                app.state.frame_size[0], app.state.frame_size[1],
+                app.state.nn_input_size[0], app.state.nn_input_size[1]
+            )
 
-                bbox_raw: tuple[float, float, float, float] = (
-                    max(0.0, min(1.0, det.xmin)),
-                    max(0.0, min(1.0, det.ymin)),
-                    max(0.0, min(1.0, det.xmax)),
-                    max(0.0, min(1.0, det.ymax))
+            tracklet_data = {
+                "label": app.state.labels[det.label],
+                "confidence": round(det.confidence, 2),
+                "track_id": tracklet_id,
+                "track_status": tracklet_status,
+                "x_min": round(bbox[0], 4),
+                "y_min": round(bbox[1], 4),
+                "x_max": round(bbox[2], 4),
+                "y_max": round(bbox[3], 4)
+            }
+            tracker_data.append(tracklet_data)
+
+            # Track most recent active tracking ID and its bounding box
+            if tracklet_status == "TRACKED" and tracklet_id > tracklet_id_max:
+                tracklet_id_max = tracklet_id
+                bbox_max = bbox
+
+    if app.state.config_updates["detection"]["ae_region"]["enabled"]:
+        if bbox_max:
+            ae_time = time.monotonic()
+            if ae_time - app.state.last_ae_time >= 1.0:
+                # Set AE region to bbox of most recent active tracking ID (capped to 1 Hz)
+                # Map bbox (frame-normalized) to sensor-space coordinates
+                roi_x, roi_y, roi_w, roi_h = app.state.sensor_roi
+                rect_bbox: tuple[int, int, int, int] = (
+                    max(1, round(roi_x + bbox_max[0] * roi_w)),
+                    max(1, round(roi_y + bbox_max[1] * roi_h)),
+                    max(10, round((bbox_max[2] - bbox_max[0]) * roi_w)),
+                    max(10, round((bbox_max[3] - bbox_max[1]) * roi_h)),
                 )
-                # De-letterbox bbox from NN-normalized space to frame-normalized space
-                bbox = deletterbox_bbox(
-                    bbox_raw,
-                    app.state.frame_size[0], app.state.frame_size[1],
-                    app.state.nn_input_size[0], app.state.nn_input_size[1]
-                )
-
-                tracklet_data = {
-                    "label": app.state.labels[det.label],
-                    "confidence": round(det.confidence, 2),
-                    "track_id": tracklet_id,
-                    "track_status": tracklet_status,
-                    "x_min": round(bbox[0], 4),
-                    "y_min": round(bbox[1], 4),
-                    "x_max": round(bbox[2], 4),
-                    "y_max": round(bbox[3], 4)
-                }
-                tracker_data.append(tracklet_data)
-
-                # Track most recent active tracking ID and its bounding box
-                if tracklet_status == "TRACKED" and tracklet_id > tracklet_id_max:
-                    tracklet_id_max = tracklet_id
-                    bbox_max = bbox
-
-        if app.state.config_updates["detection"]["ae_region"]["enabled"]:
-            if bbox_max:
-                ae_time = time.monotonic()
-                if ae_time - app.state.last_ae_time >= 1.0:
-                    # Set AE region to bbox of most recent active tracking ID (capped to 1 Hz)
-                    # Map bbox (frame-normalized) to sensor-space coordinates
-                    roi_x, roi_y, roi_w, roi_h = app.state.sensor_roi
-                    rect_bbox: tuple[int, int, int, int] = (
-                        max(1, round(roi_x + bbox_max[0] * roi_w)),
-                        max(1, round(roi_y + bbox_max[1] * roi_h)),
-                        max(10, round((bbox_max[2] - bbox_max[0]) * roi_w)),
-                        max(10, round((bbox_max[3] - bbox_max[1]) * roi_h)),
-                    )
-                    exp_ctrl = dai.CameraControl().setAutoExposureRegion(*rect_bbox)
-                    app.state.q_camctrl.send(exp_ctrl)
-                    app.state.ae_region_active = True
-                    app.state.last_ae_time = ae_time
-            elif app.state.ae_region_active:
-                # Reset AE region to full visible FOV in sensor space if no active tracking ID
-                exp_ctrl = dai.CameraControl().setAutoExposureRegion(*app.state.sensor_roi)
-                app.state.q_camctrl.send(exp_ctrl)
-                app.state.ae_region_active = False
-                app.state.last_ae_time = 0.0
+                exp_ctrl = dai.CameraControl().setAutoExposureRegion(*rect_bbox)
+                send_camctrl(app.state.q_camctrl, exp_ctrl)
+                app.state.ae_region_active = True
+                app.state.last_ae_time = ae_time
+        elif app.state.ae_region_active:
+            # Reset AE region to full visible FOV in sensor space if no active tracking ID
+            exp_ctrl = dai.CameraControl().setAutoExposureRegion(*app.state.sensor_roi)
+            send_camctrl(app.state.q_camctrl, exp_ctrl)
+            app.state.ae_region_active = False
+            app.state.last_ae_time = 0.0
 
     return tracker_data
 
@@ -569,20 +583,12 @@ async def update_overlay() -> None:
             app.state.roi_layer.content = ""
             app.state.last_roi_layer_empty = True
 
-    if app.state.show_overlay or app.state.config_updates["detection"]["ae_region"]["enabled"]:
-        tracker_data = await get_tracker_data()
-        if not tracker_data:
-            if not getattr(app.state, "last_overlay_empty", False):
-                app.state.frame_ii.content = ""
-                app.state.last_overlay_empty = True
-            return
-        if app.state.show_overlay:
-            app.state.frame_ii.content = build_tracker_overlay(tracker_data)
-            app.state.last_overlay_empty = False
-    else:
-        if not getattr(app.state, "last_overlay_empty", False):
-            app.state.frame_ii.content = ""
-            app.state.last_overlay_empty = True
+    if app.state.show_overlay and app.state.tracker_data:
+        app.state.frame_ii.content = build_tracker_overlay(app.state.tracker_data)
+        app.state.last_overlay_empty = False
+    elif not getattr(app.state, "last_overlay_empty", False):
+        app.state.frame_ii.content = ""
+        app.state.last_overlay_empty = True
 
 
 def reset_zoom() -> None:
@@ -604,7 +610,7 @@ async def set_manual_focus(e: ValueChangeEventArguments) -> None:
     mf_ctrl = dai.CameraControl()
     mf_ctrl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.OFF)
     mf_ctrl.setManualFocus(e.value)
-    app.state.q_camctrl.send(mf_ctrl)
+    send_camctrl(app.state.q_camctrl, mf_ctrl)
 
 
 async def preview_focus_range(e: ValueChangeEventArguments) -> None:
@@ -620,12 +626,12 @@ async def preview_focus_range(e: ValueChangeEventArguments) -> None:
         mf_ctrl = dai.CameraControl()
         mf_ctrl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.OFF)
         mf_ctrl.setManualFocus(e.value["min"])
-        app.state.q_camctrl.send(mf_ctrl)
+        send_camctrl(app.state.q_camctrl, mf_ctrl)
     elif app.state.previous_lens_pos_range["max"] != e.value["max"]:
         mf_ctrl = dai.CameraControl()
         mf_ctrl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.OFF)
         mf_ctrl.setManualFocus(e.value["max"])
-        app.state.q_camctrl.send(mf_ctrl)
+        send_camctrl(app.state.q_camctrl, mf_ctrl)
     app.state.previous_lens_pos_range = e.value
 
 
@@ -903,7 +909,7 @@ async def on_focus_mode_change(e: ValueChangeEventArguments) -> None:
         if not getattr(app.state, "q_camctrl", None):
             return
         af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
-        app.state.q_camctrl.send(af_ctrl)
+        send_camctrl(app.state.q_camctrl, af_ctrl)
     else:
         app.state.focus_initialized = False
         app.state.focus_distance_enabled = False
@@ -1048,7 +1054,7 @@ async def on_ae_region_change(e: ValueChangeEventArguments) -> None:
         if not getattr(app.state, "q_camctrl", None):
             return
         exp_ctrl = dai.CameraControl().setAutoExposureRegion(*app.state.sensor_roi)
-        app.state.q_camctrl.send(exp_ctrl)
+        send_camctrl(app.state.q_camctrl, exp_ctrl)
         app.state.ae_region_active = False
 
 

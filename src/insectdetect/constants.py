@@ -30,7 +30,7 @@ AUTO_RUN_MARKER: Path = BASE_PATH / ".auto_run_active"
 STREAMING_MARKER: Path = BASE_PATH / ".streaming_active"
 
 # OAK image sensor resolution (cropped from full sensor resolution, e.g. 4056x3040 for OAK-1)
-SENSOR_RES = (3840, 2160)
+SENSOR_RES: tuple[int, int] = (3840, 2160)
 
 # Resolution presets for high-resolution images (capture.py) and streamed frames (webapp.py)
 RESOLUTION_PRESETS: dict[str, tuple[int, int, int, int]] = {
@@ -47,6 +47,12 @@ SENSOR_CROP: dict[str, tuple[int, int]] = {
     "1080p":        (3840, 2160),
     "1080p-square": (2176, 2160),
 }
+
+# Maximum time (seconds) to wait for OAK reconnection before stopping the recording session
+OAK_RECONNECT_TIMEOUT: int = 40
+
+# Maximum time (seconds) to keep draining backlog of images to process after recording session ends
+IMAGE_DRAIN_TIMEOUT: int = 120
 
 # Available GPIO pins (BCM numbering) for LED (excluding pins that are used by Witty Pi 4 L3V7)
 LED_GPIO_PINS: list[int] = [18, 23, 24, 25, 8, 7, 12, 16, 20, 21, 27, 22, 10, 9, 11, 13, 19, 26]

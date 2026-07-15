@@ -12,7 +12,7 @@ Usage:
 Recording Session Flow:
     1. Initialize power manager (Witty Pi 4 L3V7 or PiJuice Zero) if enabled.
     2. Check preconditions: disk space and battery charge must meet thresholds (else: shutdown).
-    3. Create timestamped session directory and save config snapshot.
+    3. Create timestamped session directory and save config + OAK pipeline schema snapshots.
     4. Run OAK object detection + tracking pipeline on downscaled frames.
     5. Synchronize tracker output with high-resolution frames.
     6. Capture high-resolution frames on detection triggers and/or timelapse intervals.
@@ -22,11 +22,11 @@ Recording Session Flow:
 
 Stop Conditions:
     - Configured recording session duration exceeded.
+    - External shutdown trigger (e.g. button press).
     - Free disk space drops below threshold.
     - OAK chip temperature exceeds threshold.
     - Battery charge level drops below threshold more than twice.
-    - External shutdown trigger (e.g. button press).
-    - OAK pipeline stops unexpectedly.
+    - OAK connection lost and not recovered within the reconnect timeout.
 
 Recording Duration:
     Automatically adjusted based on current battery charge level (high/medium/low).
@@ -53,10 +53,11 @@ import psutil
 from gpiozero import LED
 
 from insectdetect.config import AppConfig, load_config_selector, load_config_yaml, sanitize_config
-from insectdetect.constants import CONFIGS_PATH, DATA_PATH, HOSTNAME, LOGS_PATH
+from insectdetect.constants import (CONFIGS_PATH, DATA_PATH, HOSTNAME, IMAGE_DRAIN_TIMEOUT,
+                                    LOGS_PATH, OAK_RECONNECT_TIMEOUT)
 from insectdetect.data import archive_data, save_encoded_frame, upload_data
 from insectdetect.metrics import configure_logger, save_metrics, save_session_info
-from insectdetect.oak import create_pipeline, deletterbox_bbox
+from insectdetect.oak import create_pipeline, deletterbox_bbox, send_camctrl, stop_pipeline
 from insectdetect.postprocess import process_images
 from insectdetect.power import PowerManagerState, init_power_manager
 
@@ -74,8 +75,7 @@ class RecordingContext:
     session_dur: float
     pwr: PowerManagerState
     pipeline: dai.Pipeline
-    q_frames: dai.MessageQueue
-    q_tracks: dai.MessageQueue
+    q_sync: dai.MessageQueue
     q_syslog: dai.MessageQueue
     q_camctrl: dai.InputQueue
     frame_size: tuple[int, int]
@@ -96,6 +96,7 @@ class RecordingResult:
     stopped_by_disk: bool = False
     stopped_by_temp: bool = False
     stopped_by_charge: bool = False
+    stopped_by_pipeline: bool = False
 
 
 def _start_led(config: AppConfig) -> LED | None:
@@ -178,21 +179,13 @@ def _get_session_dur(config: AppConfig, pwr: PowerManagerState) -> float:
     return config.recording.duration.default * 60
 
 
-def _create_session_dir(
-    data_path: Path,
-    config_active: str,
-    config: AppConfig
-) -> tuple[Path, Path, Path, int]:
-    """Create timestamped directory for this recording session and save config snapshot.
+def _create_session_dir(data_path: Path) -> tuple[Path, Path, Path, int]:
+    """Create timestamped directory for this recording session.
 
     The session ID is read from a persistent file and incremented on each run.
-    The active config is saved as a sanitized JSON snapshot (passwords masked)
-    alongside the captured data for reproducibility.
 
     Args:
-        data_path:     Root data directory where session folders are created.
-        config_active: Filename of the active config (e.g. 'config.yaml').
-        config:        AppConfig containing all configuration settings.
+        data_path: Root data directory where session folders are created.
 
     Returns:
         Tuple of (session_path, metadata_path, timelapse_path, session_id).
@@ -208,11 +201,31 @@ def _create_session_dir(
     timelapse_path = session_path / "timelapse"
     timelapse_path.mkdir(exist_ok=True)
 
-    config_snapshot_path = session_path / f"{timestamp}_{Path(config_active).stem}.json"
-    json.dump(sanitize_config(config), config_snapshot_path.open("w", encoding="utf-8"), indent=2)
-
     logger.info("Recording session directory created: %s", session_path)
     return session_path, metadata_path, timelapse_path, session_id
+
+
+def _save_config_snapshot(session_path: Path, config_active: str, config: AppConfig) -> None:
+    """Save a sanitized JSON snapshot (passwords masked) of the active config.
+
+    Args:
+        session_path:  Recording session directory where the config snapshot is saved.
+        config_active: Filename of the active config (e.g. 'config.yaml').
+        config:        AppConfig containing all configuration settings.
+    """
+    config_snapshot_path = session_path / f"{session_path.name}_{Path(config_active).stem}.json"
+    json.dump(sanitize_config(config), config_snapshot_path.open("w", encoding="utf-8"), indent=2)
+
+
+def _save_pipeline_schema(session_path: Path, pipeline: dai.Pipeline) -> None:
+    """Save a JSON snapshot of the OAK pipeline schema.
+
+    Args:
+        session_path: Recording session directory where the schema snapshot is saved.
+        pipeline:     Fully built and started depthai Pipeline to serialize.
+    """
+    schema_path = session_path / f"{session_path.name}_pipeline_schema.json"
+    json.dump(pipeline.serializeToJson(False), schema_path.open("w", encoding="utf-8"), indent=2)
 
 
 def _start_metrics_thread(
@@ -276,119 +289,157 @@ def _run_recording(
         RecordingResult with stop reason flags and final system state.
     """
     result = RecordingResult()
+    result.session_start = datetime.now()
 
-    with (
-        ctx.pipeline,
-        ThreadPoolExecutor(max_workers=1) as executor,
-        open(ctx.metadata_path, "a", buffering=1, encoding="utf-8") as metadata_file
-    ):
-        # Start optional system metrics logging thread
-        metrics_thread: threading.Thread | None = None
-        metrics_stop = threading.Event()
-        if config.metrics.enabled:
-            metrics_thread = _start_metrics_thread(
-                stop_event=metrics_stop,
-                interval=config.metrics.interval,
-                initial_delay=4.0,
-                session_path=ctx.session_path,
-                device_id=HOSTNAME,
-                session_id=ctx.session_id,
-                q_syslog=ctx.q_syslog,
-                get_power_info=ctx.pwr.get_power_info
-            )
+    metrics_thread: threading.Thread | None = None
+    metrics_stop = threading.Event()
+    processing_thread: threading.Thread | None = None
+    processing_stop = threading.Event()
+    processing_abort = threading.Event()
+    metadata_queue: queue.Queue[tuple[list[dict[str, object]], Future[None]]] | None = None
 
-        # Start optional image post-processing thread
-        processing_thread: threading.Thread | None = None
-        processing_stop = threading.Event()
-        metadata_queue: queue.Queue[tuple[list[dict[str, object]], Future[None]]] | None = None
-        if config.processing.crop.enabled or config.processing.overlay.enabled:
-            metadata_queue = queue.Queue()
-            processing_thread = threading.Thread(
-                target=process_images,
-                args=(metadata_queue, ctx.session_path, config, processing_stop),
-                name="ImageProcessor",
-                daemon=False
-            )
-            processing_thread.start()
+    save_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="FrameSaver")
+    last_save_future: Future[None] | None = None
 
-        # Write header to metadata .csv file
-        metadata_writer = csv.DictWriter(metadata_file, fieldnames=[
-            "device_id", "session_id", "timestamp", "label", "confidence",
-            "track_id", "track_status", "x_min", "y_min", "x_max", "y_max",
-            "lens_position", "iso_sensitivity", "exposure_time", "filename"
-        ])
-        metadata_writer.writeheader()
-
-        # Upload pipeline to OAK device and start camera
-        ctx.pipeline.start()
-
-        # Ensure camera runs in continuous auto focus mode if manual focus is not enabled
-        # Workaround to avoid focus issues if setAutoFocusRegion() was used in initial camera control
-        if config.camera.focus.mode != "manual":
-            af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
-            ctx.q_camctrl.send(af_ctrl)
-
-        # Give auto focus/exposure/whitebalance some time to stabilize
-        time.sleep(2)
-
-        # Log recording session start with initial system state
-        if ctx.pwr.enabled:
-            logger.info(
-                "Recording session %s started | Duration: %s min | Free disk space: %s MB | Charge level: %s%%",
-                ctx.session_id, round(ctx.session_dur / 60), disk_free, ctx.pwr.chargelevel_start
-            )
-        else:
-            logger.info(
-                "Recording session %s started | Duration: %s min | Free disk space: %s MB",
-                ctx.session_id, round(ctx.session_dur / 60), disk_free
-            )
-
-        # Initialize variables for capture/check events at start of recording session
-        det_interval = config.recording.interval.detection
-        tl_interval = config.recording.interval.timelapse
-        filter_stale_tracklets = config.tracking.filter_stale_tracklets
-        ae_region = config.detection.ae_region.enabled
-        ae_region_active = False
-        last_ae_time: float = 0.0
-        disk_min = config.storage.disk_min
-        disk_check = config.storage.disk_check
-        temp_oak_max = config.oak.temp_max
-        temp_oak_check = config.oak.temp_check
-        charge_min = config.powermanager.charge_min
-        charge_check = config.powermanager.charge_check
-        sysinfo = cast(dai.SystemInformation | None, ctx.q_syslog.tryGet())
-        result.disk_free = disk_free
-        result.temp_oak = round(sysinfo.chipTemperature.average) if sysinfo else 0
-        result.chargelevel = ctx.pwr.chargelevel_start if ctx.pwr.enabled else None
-        result.session_start = datetime.now()
-        start_time = time.monotonic()
-        last_capture = start_time - tl_interval  # trigger first timelapse capture immediately
-        next_capture = start_time + det_interval
-        last_disk_check = start_time
-        last_temp_oak_check = start_time
-        last_charge_check = start_time
-        chargelevels: list[int | str | None] = []
-        last_det_snapshot: dict[int, tuple[float, float, float, float, float]] = {}
-
+    def _log_save_result(fut: Future[None]) -> None:
+        """Log any exception raised during frame save operations."""
         try:
+            fut.result()
+        except Exception:
+            logger.exception("Failed to save frame")
+
+    try:
+        with open(ctx.metadata_path, "a", buffering=1, encoding="utf-8") as metadata_file:
+
+            # Write header to metadata .csv file
+            metadata_writer = csv.DictWriter(metadata_file, fieldnames=[
+                "device_id", "session_id", "timestamp", "label", "confidence",
+                "track_id", "track_status", "x_min", "y_min", "x_max", "y_max",
+                "lens_position", "iso_sensitivity", "exposure_time", "filename"
+            ])
+            metadata_writer.writeheader()
+
+            # Start optional system metrics logging thread
+            if config.metrics.enabled:
+                metrics_thread = _start_metrics_thread(
+                    stop_event=metrics_stop,
+                    interval=config.metrics.interval,
+                    initial_delay=4.0,
+                    session_path=ctx.session_path,
+                    device_id=HOSTNAME,
+                    session_id=ctx.session_id,
+                    q_syslog=ctx.q_syslog,
+                    get_power_info=ctx.pwr.get_power_info
+                )
+
+            # Start optional image post-processing thread
+            if config.processing.crop.enabled or config.processing.overlay.enabled:
+                metadata_queue = queue.Queue()
+                processing_thread = threading.Thread(
+                    target=process_images,
+                    args=(metadata_queue, ctx.session_path, config, processing_stop, processing_abort),
+                    name="ImageProcessor",
+                    daemon=False
+                )
+                processing_thread.start()
+
+            # Start OAK pipeline and save pipeline schema snapshot
+            ctx.pipeline.start()
+            _save_pipeline_schema(ctx.session_path, ctx.pipeline)
+
+            # Ensure camera runs in continuous auto focus mode if manual focus is not enabled
+            # Workaround to avoid focus issues if setAutoFocusRegion() was used in initial camera control
+            if config.camera.focus.mode != "manual":
+                af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
+                send_camctrl(ctx.q_camctrl, af_ctrl)
+
+            # Give auto focus/exposure/whitebalance some time to stabilize
+            time.sleep(2)
+
+            # Log recording session start with initial system state
+            if ctx.pwr.enabled:
+                logger.info(
+                    "Recording session %s started | Duration: %s min | Free disk space: %s MB | Charge level: %s%%",
+                    ctx.session_id, round(ctx.session_dur / 60), disk_free, ctx.pwr.chargelevel_start
+                )
+            else:
+                logger.info(
+                    "Recording session %s started | Duration: %s min | Free disk space: %s MB",
+                    ctx.session_id, round(ctx.session_dur / 60), disk_free
+                )
+
+            # Initialize variables for capture/check events at start of recording session
+            det_interval = config.recording.interval.detection
+            tl_interval = config.recording.interval.timelapse
+            filter_stale_tracklets = config.tracking.filter_stale_tracklets
+            ae_region = config.detection.ae_region.enabled
+            ae_region_active = False
+            last_ae_time: float = 0.0
+            disk_min = config.storage.disk_min
+            disk_check = config.storage.disk_check
+            temp_oak_max = config.oak.temp_max
+            temp_oak_check = config.oak.temp_check
+            charge_min = config.powermanager.charge_min
+            charge_check = config.powermanager.charge_check
+            try:
+                sysinfo = cast(dai.SystemInformation | None, ctx.q_syslog.tryGet())
+            except Exception:
+                logger.exception("Error getting system information from q_syslog")
+                sysinfo = None
+            result.disk_free = disk_free
+            result.temp_oak = round(sysinfo.chipTemperature.average) if sysinfo else 0
+            result.chargelevel = ctx.pwr.chargelevel_start if ctx.pwr.enabled else None
+            start_time = time.monotonic()
+            last_capture = start_time - tl_interval  # trigger first timelapse capture immediately
+            next_capture = start_time + det_interval
+            last_disk_check = start_time
+            last_temp_oak_check = start_time
+            last_charge_check = start_time
+            chargelevels: list[int | str | None] = []
+            last_det_snapshot: dict[int, tuple[float, float, float, float, float]] = {}
+            pipeline_closed_since: float | None = None
+
             # Run recording session as long as all conditions are met
             while (
                 time.monotonic() < start_time + ctx.session_dur
-                and ctx.pipeline.isRunning()
                 and not ctx.pwr.external_shutdown.is_set()
                 and result.disk_free > disk_min
                 and result.temp_oak < temp_oak_max
                 and len(chargelevels) < 3
             ):
-                # Determine whether to capture image based on current time and configured intervals
-                track_active = False
+                frame = track = None
+                triggered_capture = timelapse_capture = track_active = False
                 current_time = time.monotonic()
-                triggered_capture = current_time >= next_capture
-                timelapse_capture = current_time >= last_capture + tl_interval
-                frame = cast(dai.ImgFrame | None, ctx.q_frames.tryGet())
-                track = cast(dai.Tracklets | None, ctx.q_tracks.tryGet())
 
-                if frame is not None and (triggered_capture or timelapse_capture):
+                if ctx.q_sync.isClosed():
+                    # Wait for OAK reconnection if the queue was closed
+                    if pipeline_closed_since is None:
+                        pipeline_closed_since = current_time
+                        logger.warning(
+                            "OAK connection lost, waiting up to %s seconds for reconnection",
+                            OAK_RECONNECT_TIMEOUT
+                        )
+                    elif current_time - pipeline_closed_since >= OAK_RECONNECT_TIMEOUT:
+                        result.stopped_by_pipeline = True
+                        break
+                else:
+                    pipeline_closed_since = None
+
+                    # Determine whether to capture image based on current time and configured intervals
+                    triggered_capture = current_time >= next_capture
+                    timelapse_capture = current_time >= last_capture + tl_interval
+
+                    if triggered_capture or timelapse_capture:
+                        # Get latest synchronized frame and tracker output from OAK device
+                        try:
+                            group = cast(dai.MessageGroup | None, ctx.q_sync.tryGet())
+                            if group is not None:
+                                frame = cast(dai.ImgFrame | None, group["frames"])
+                                track = cast(dai.Tracklets | None, group["tracks"])
+                        except Exception:
+                            logger.exception("Error getting synced frame/tracks from q_sync")
+
+                if frame is not None:
                     timestamp = datetime.now()
                     timestamp_iso = timestamp.isoformat()
                     timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S-%f")
@@ -471,38 +522,44 @@ def _run_recording(
                                         max(10, round((bbox_max[3] - bbox_max[1]) * roi_h))
                                     )
                                     exp_ctrl = dai.CameraControl().setAutoExposureRegion(*rect_bbox)
-                                    ctx.q_camctrl.send(exp_ctrl)
+                                    send_camctrl(ctx.q_camctrl, exp_ctrl)
                                     ae_region_active = True
                                     last_ae_time = ae_time
                             elif ae_region_active:
                                 # Reset AE region to full visible FOV in sensor space if no active tracking ID
                                 exp_ctrl = dai.CameraControl().setAutoExposureRegion(*ctx.sensor_roi)
-                                ctx.q_camctrl.send(exp_ctrl)
+                                send_camctrl(ctx.q_camctrl, exp_ctrl)
                                 ae_region_active = False
                                 last_ae_time = 0.0
 
                     if track_active or timelapse_capture:
                         # Save MJPEG-encoded frame to .jpg in a separate thread
                         trigger = "detection" if track_active else "timelapse"
-                        save_future = executor.submit(
+                        save_future = save_executor.submit(
                             save_encoded_frame,
                             frame, ctx.session_path, ctx.timelapse_path, file_stem, trigger
                         )
+                        save_future.add_done_callback(_log_save_result)
+                        last_save_future = save_future
                         last_capture = current_time
                         next_capture = current_time + det_interval
-
-                        # Update free disk space (MB) at configured interval
-                        if current_time >= last_disk_check + disk_check:
-                            result.disk_free = round(psutil.disk_usage("/").free / 1048576)
-                            last_disk_check = current_time
 
                     # Put latest frame metadata and save future in the queue for the image processing thread
                     if metadata_queue is not None and frame_metadata and save_future is not None:
                         metadata_queue.put_nowait((frame_metadata, save_future))
 
+                # Update free disk space (MB) at configured interval
+                if current_time >= last_disk_check + disk_check:
+                    result.disk_free = round(psutil.disk_usage("/").free / 1048576)
+                    last_disk_check = current_time
+
                 # Update OAK chip temperature at configured interval
                 if current_time >= last_temp_oak_check + temp_oak_check:
-                    sysinfo = cast(dai.SystemInformation | None, ctx.q_syslog.tryGet())
+                    try:
+                        sysinfo = cast(dai.SystemInformation | None, ctx.q_syslog.tryGet())
+                    except Exception:
+                        logger.exception("Error getting system information from q_syslog")
+                        sysinfo = None
                     result.temp_oak = round(sysinfo.chipTemperature.average) if sysinfo else result.temp_oak
                     last_temp_oak_check = current_time
 
@@ -528,34 +585,52 @@ def _run_recording(
             result.stopped_by_charge = ctx.pwr.enabled and len(chargelevels) >= 3
             _log_recording_end(ctx, result)
 
-        except Exception:
-            logger.exception("Error during recording session %s", ctx.session_id)
-        finally:
-            # Stop background metrics logger and wait for thread to finish
-            metrics_stop.set()
-            if metrics_thread is not None:
-                metrics_thread.join(timeout=10)
-                if metrics_thread.is_alive():
-                    logger.warning("Metrics logger thread did not finish within 10 seconds")
+    except KeyboardInterrupt:
+        # Skip the graceful post-processing drain entirely on a manual Ctrl+C stop
+        processing_abort.set()
+        raise
+    except Exception:
+        logger.exception("Error during recording session %s", ctx.session_id)
+    finally:
+        result.session_end = datetime.now()
 
-            # Write recording session summary to .csv file
-            result.session_end = datetime.now()
-            save_session_info(
-                DATA_PATH, ctx.session_path, HOSTNAME, ctx.session_id,
-                result.session_start, result.session_end,
-                ctx.pwr.chargelevel_start, result.chargelevel
-            )
+        # Stop background metrics logger and wait for thread to finish
+        metrics_stop.set()
+        if metrics_thread is not None:
+            metrics_thread.join(timeout=5.0)
+            if metrics_thread.is_alive():
+                logger.warning("Metrics logger thread did not finish within 5 seconds")
 
-            # Remove timelapse directory if no frames were saved
-            if ctx.timelapse_path.exists() and not next(ctx.timelapse_path.iterdir(), None):
-                ctx.timelapse_path.rmdir()
+        # Stop OAK pipeline and close device
+        stop_pipeline(ctx.pipeline)
 
-            # Signal stop to image processing thread and wait for it to finish
-            if processing_thread is not None:
-                processing_stop.set()
-                processing_thread.join(timeout=120)
-                if processing_thread.is_alive():
-                    logger.warning("Image processing thread did not finish within 2 minutes")
+        # Wait (bounded) for the frame-save executor to finish pending writes, then shut it down
+        if last_save_future is not None:
+            try:
+                last_save_future.result(timeout=5.0)
+            except TimeoutError:
+                logger.warning("Frame-save executor did not finish within 5 seconds")
+            except Exception:
+                pass  # already logged via the done_callback
+        save_executor.shutdown(wait=False, cancel_futures=True)
+
+        # Write recording session summary to .csv file
+        save_session_info(
+            DATA_PATH, ctx.session_path, HOSTNAME, ctx.session_id,
+            result.session_start, result.session_end,
+            ctx.pwr.chargelevel_start, result.chargelevel
+        )
+
+        # Remove timelapse directory if no frames were saved
+        if ctx.timelapse_path.exists() and not next(ctx.timelapse_path.iterdir(), None):
+            ctx.timelapse_path.rmdir()
+
+        # Signal stop to image processing thread and wait for it to finish
+        if processing_thread is not None:
+            processing_stop.set()
+            processing_thread.join(timeout=IMAGE_DRAIN_TIMEOUT + 5.0)
+            if processing_thread.is_alive():
+                logger.warning("Image processing thread did not stop within timeout")
 
     return result
 
@@ -581,6 +656,9 @@ def _log_recording_end(ctx: RecordingContext, result: RecordingResult) -> None:
     elif result.stopped_by_charge:
         logger.warning("Recording session %s stopped early due to low charge level: %s%%",
                        ctx.session_id, result.chargelevel)
+    elif result.stopped_by_pipeline:
+        logger.warning("Recording session %s stopped early: OAK connection lost and not recovered "
+                       "within %s seconds", ctx.session_id, OAK_RECONNECT_TIMEOUT)
     elif ctx.pwr.enabled:
         logger.info(
             "Recording session %s finished | Duration: %s min | Free disk space: %s MB | Charge level: %s%%",
@@ -648,6 +726,8 @@ def _archive_and_upload(
 
 def main() -> None:
     """Run a recording session."""
+    session_id: int | None = None
+
     # Create data and logs directories if they don't exist
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     LOGS_PATH.mkdir(parents=True, exist_ok=True)
@@ -674,51 +754,53 @@ def main() -> None:
     disk_free = round(psutil.disk_usage("/").free / 1048576)
     _check_preconditions(config, pwr, disk_free)
 
-    # Turn on LED to indicate recording session is running
-    led = _start_led(config)
-
     # Determine recording session duration based on battery charge level (or use default)
     session_dur = _get_session_dur(config, pwr)
 
-    # Create timestamped session directory and save sanitized config snapshot
-    session_path, metadata_path, timelapse_path, session_id = _create_session_dir(
-        DATA_PATH, config_active, config
-    )
-
-    # Create OAK camera pipeline and output queues
-    (pipeline, q_frames, q_tracks, q_syslog, q_camctrl,
-     frame_size, nn_input_size, sensor_roi, labels) = create_pipeline(config, stream=False)
-
-    # Bundle all session state into a single context object
-    ctx = RecordingContext(
-        session_path=session_path,
-        metadata_path=metadata_path,
-        timelapse_path=timelapse_path,
-        session_id=session_id,
-        session_dur=session_dur,
-        pwr=pwr,
-        pipeline=pipeline,
-        q_frames=q_frames,
-        q_tracks=q_tracks,
-        q_syslog=q_syslog,
-        q_camctrl=q_camctrl,
-        frame_size=frame_size,
-        nn_input_size=nn_input_size,
-        sensor_roi=sensor_roi,
-        labels=labels
-    )
+    # Turn on LED to indicate recording session is running
+    led = _start_led(config)
 
     try:
+        # Create timestamped session directory
+        session_path, metadata_path, timelapse_path, session_id = _create_session_dir(DATA_PATH)
+
+        # Save sanitized config snapshot
+        _save_config_snapshot(session_path, config_active, config)
+
+        # Create OAK camera pipeline and get output queues
+        (pipeline, q_sync, q_syslog, q_camctrl,
+         frame_size, nn_input_size, sensor_roi, labels) = create_pipeline(config, stream=False)
+
+        # Bundle all session state into a single context object
+        ctx = RecordingContext(
+            session_path=session_path,
+            metadata_path=metadata_path,
+            timelapse_path=timelapse_path,
+            session_id=session_id,
+            session_dur=session_dur,
+            pwr=pwr,
+            pipeline=pipeline,
+            q_sync=q_sync,
+            q_syslog=q_syslog,
+            q_camctrl=q_camctrl,
+            frame_size=frame_size,
+            nn_input_size=nn_input_size,
+            sensor_roi=sensor_roi,
+            labels=labels
+        )
+
         # Start recording session
         result = _run_recording(ctx, config, disk_free)
         _archive_and_upload(ctx, result, config)
+
     except KeyboardInterrupt:
         logger.warning("Recording session %s stopped by Ctrl+C", session_id)
     except Exception:
-        logger.exception("Error during initialization of recording session %s", session_id)
+        logger.exception("Error running recording session %s", session_id)
     finally:
         if led:
             led.off()
+
         # Optionally shut down Raspberry Pi after recording session
         if not pwr.external_shutdown.is_set() and config.recording.shutdown.enabled:
             subprocess.run(["sudo", "shutdown", "-h", "now"], check=False)

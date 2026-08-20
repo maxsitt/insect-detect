@@ -8,17 +8,18 @@ license-files = ["LICEN[CS]E*"]
 readme = "README.md"
 authors = [{name = "Maximilian Sittinger"}]
 dependencies = [
-    "depthai >=3.8.0,<4",
+    "depthai >=3.9.0,<4",
     "gpiozero >=2.0.1,<3",
-    "nicegui >=3.14.0,<4",
+    "nicegui >=3.16.0,<4",
     "nmcli >=1.8.0,<2",
-    "numpy >=2.5.1,<3",
-    "opencv-python-headless >=4.13.0.92,<5",
-    "polars >=1.42.1,<2",
+    "numpy >=2.5.2,<3",
+    "opencv-python-headless >=4.14.0.94,<5",
+    "polars >=1.43.2,<2",
     "psutil >=7.2.2,<8",
     "pydantic >=2.13.4,<3",
     "pyyaml >=6.0.3,<7",
     "smbus2 >=0.6.1,<1",
+    "zipstream-ng >=1.9.3,<2",
 ]
 
 [project.scripts]
@@ -33,6 +34,13 @@ Issues = "https://github.com/maxsitt/insect-detect/issues"
 
 [tool.uv]
 package = true
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint.per-file-ignores]
+# Nested 'with' blocks mirror the UI element hierarchy (NiceGUI's documented style)
+"src/insectdetect/webapp.py" = ["SIM117"]
 
 [tool.pylint.typecheck]
 ignored-modules = ["cv2"]

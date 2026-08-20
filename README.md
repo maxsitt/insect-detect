@@ -104,11 +104,33 @@ to `~/insect-detect`, creates a virtual environment with access to system site p
 models, generates self-signed SSL certificates for the web app and installs + enables
 the `insect-detect-startup.service` systemd service.
 
-**Optional:** Install and configure [Rclone](https://rclone.org/docs/) if you want to use the upload feature:
+### Rclone setup
+
+**Optional:** Install [Rclone](https://rclone.org/install/) if you want to use the upload feature:
 
 ``` bash
 wget -qO- https://rclone.org/install.sh | sudo bash
 ```
+
+[Configure Rclone](https://rclone.org/docs/) by following the instructions for your storage system:
+
+``` bash
+rclone config
+```
+
+Rclone supports [many storage backends](https://rclone.org/overview/), which all use
+the same destination syntax `<remote>:<path>`, where `<remote>` is the name you gave the
+storage system in `rclone config`. Only the path differs between backends, as some
+require a bucket as first path segment while others take a plain folder path. Set the
+destination as `storage.upload.remote` in the config (the device ID is appended
+automatically), e.g.:
+
+| Backend                         | `storage.upload.remote`     | Note                                    |
+|---------------------------------|-----------------------------|-----------------------------------------|
+| MinIO, S3, B2, GCS, Azure       | `minio:bucket-name`         | bucket required as first path segment   |
+| Google Drive, Dropbox           | `drive:insect-detect`       | plain folder path, no bucket            |
+| SFTP, WebDAV, Nextcloud         | `sftp:/srv/insect-detect`   | absolute or user-relative path          |
+| Local mount (USB drive, NAS)    | `/mnt/usb/insect-detect`    | no remote name required                 |
 
 ### Update
 
@@ -406,7 +428,8 @@ Local storage monitoring, archiving and upload settings.
 | `storage.disk_check`       | `int` (1-600)                                               | `60`    | Interval (seconds) to check the available disk space during recording.                                                                                                                                                                                                                                                                                      |
 | `storage.archive.enabled`  | `bool`                                                      | `false` | Copy captured data to a separate archive directory after the recording session. Only the session that just ended is archived. Images are stored as uncompressed zip files, metadata/log/config files are copied directly. Sessions that were stopped early by an external trigger, low disk space or low battery charge are skipped and not archived later. |
 | `storage.archive.disk_low` | `int` (500-50000)                                           | `5000`  | Free disk space threshold (MB) below which the oldest original date directories are deleted after archiving. Directories containing a session that was not archived are never deleted, so recording stops at `storage.disk_min` instead.                                                                                                                    |
-| `storage.upload.enabled`   | `bool`                                                      | `false` | Upload archived data to a remote server or cloud storage via Rclone. Archiving is always run before uploading. Only the session that just ended is uploaded, together with the log and metadata files.                                                                                                                                                      |
+| `storage.upload.enabled`   | `bool`                                                      | `false` | Upload archived data to a remote server or cloud storage via Rclone. Archiving is always run before uploading. Only the session that just ended is uploaded, together with the log and metadata files. Automatically disabled if `storage.upload.remote` is not set.                                                                                        |
+| `storage.upload.remote`    | `str`                                                       | `''`    | Rclone destination written as `<remote>:<path>`, with the remote name as defined via `rclone config` (see [Rclone setup](#rclone-setup)). The device ID is appended automatically, so the remote layout mirrors the archive directory: `<remote>/<device_id>/<date>/<session>`.                                                                            |
 | `storage.upload.content`   | `all`, `full`, `crops`, `overlays`, `timelapse`, `metadata` | `crops` | Which archived files to upload (all options include metadata, log and config files): `all` uploads everything except overlay frames, `full`/`crops`/`overlays`/`timelapse` upload only the respective zip files, `metadata` uploads no images. Images are uploaded as one zip file per category, metadata/log/config files are copied directly.             |
 
 ### Startup

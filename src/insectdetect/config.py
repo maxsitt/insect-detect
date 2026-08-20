@@ -455,6 +455,13 @@ class UploadConfig(BaseModel):
     is uploaded if not stopped early due to external trigger, low disk space,
     or low battery charge.
 
+    The 'remote' field is the rclone destination that the archive directory is
+    uploaded to, written as '<remote>:<path>' with the remote name as defined via
+    'rclone config'. Whether the path has to start with a bucket depends on the
+    backend (see the Rclone setup section in the README for examples). The device
+    ID is always appended, resulting in '<remote>/<device_id>/<date>/<session>'.
+    Uploading is disabled automatically if no remote is configured.
+
     The 'content' field selects which archived zip files to upload
     (all options always include metadata, log and config files):
     - all:       upload all data except overlay frames
@@ -465,7 +472,19 @@ class UploadConfig(BaseModel):
     - metadata:  upload only metadata, log and config files, no images
     """
     enabled: bool = False
+    remote: str = ""
     content: ContentSelection = "crops"
+
+    @model_validator(mode="after")
+    def enabled_requires_remote(self) -> "UploadConfig":
+        """Normalize the remote and disable uploading if no remote is configured."""
+        self.remote = self.remote.strip().rstrip("/")
+        if self.enabled and not self.remote:
+            logger.warning(
+                "'storage.upload' was disabled, as 'storage.upload.remote' is not set"
+            )
+            self.enabled = False
+        return self
 
 
 class StorageConfig(BaseModel):

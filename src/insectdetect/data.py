@@ -369,7 +369,7 @@ def _rclone_copy(
     return True
 
 
-def upload_data(session_path: Path, content: ContentSelection = "crops") -> bool:
+def upload_data(session_path: Path, remote: str, content: ContentSelection = "crops") -> bool:
     """Upload the archived data of a recording session to a cloud storage provider via rclone.
 
     Only the archived session is uploaded, together with the log files and the metadata
@@ -389,14 +389,13 @@ def upload_data(session_path: Path, content: ContentSelection = "crops") -> bool
 
     Args:
         session_path: Path to the recording session directory that was archived.
+        remote:       Rclone destination (from 'config.storage.upload.remote').
         content:      Content selection string (from 'config.storage.upload.content').
 
     Returns:
         True if both the session and the metadata upload finished successfully.
     """
-    # This example uses MinIO as storage provider
-    # The remote layout mirrors the archive directory ('<bucket>/<device_id>/<date>/<session>')
-    remote_root = f"minio:bucket/{HOSTNAME}"
+    remote_root = f"{remote}/{HOSTNAME}"
 
     exclude_patterns: dict[str, list[str]] = {
         "all":       ["*_overlays.zip"],

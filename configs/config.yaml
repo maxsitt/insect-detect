@@ -99,6 +99,7 @@ storage:
     disk_low: 5000
   upload:
     enabled: false
+    remote: ''
     content: crops
 startup:
   hotspot_setup:

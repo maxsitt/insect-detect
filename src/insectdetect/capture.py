@@ -751,8 +751,9 @@ def _archive_and_upload(
         else:
             logger.error("Archiving of data finished with errors: %s", ARCHIVE_PATH)
         if config.storage.upload.enabled:
-            if upload_data(ctx.session_path, config.storage.upload.content):
-                logger.info("Uploading of data finished")
+            if upload_data(ctx.session_path, config.storage.upload.remote,
+                           config.storage.upload.content):
+                logger.info("Uploading of data finished: %s", config.storage.upload.remote)
             else:
                 logger.error("Uploading of data finished with errors - see rclone.log")
     except Exception:

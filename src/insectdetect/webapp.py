@@ -1582,6 +1582,12 @@ def create_system_settings() -> None:
         with ui.column().classes("w-full gap-1"):
             (ui.switch("Enable").props("color=green").classes("font-bold")
              .bind_value(app.state.config_updates["storage"]["upload"], "enabled"))
+            (ui.input(label="Remote", placeholder="minio:bucket-name").classes("w-full")
+             .tooltip("Rclone destination as '<remote>:<path>', with the remote name as defined "
+                      "via 'rclone config' (e.g. 'minio:bucket-name' or 'drive:insect-detect'). "
+                      "The device ID is appended automatically. Required for upload.")
+             .bind_visibility_from(app.state.config_updates["storage"]["upload"], "enabled")
+             .bind_value(app.state.config_updates["storage"]["upload"], "remote"))
             (ui.select(CONTENT_OPTIONS, label="Content").classes("w-full")
              .tooltip("Select content for upload: 'all' excludes overlay frames, all options include metadata")
              .bind_visibility_from(app.state.config_updates["storage"]["upload"], "enabled")

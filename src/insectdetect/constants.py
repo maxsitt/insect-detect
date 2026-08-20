@@ -8,6 +8,7 @@ Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 import socket
 from pathlib import Path
+from typing import Literal, get_args
 
 # Hostname used as device identifier (camera trap ID)
 HOSTNAME: str = socket.gethostname()
@@ -18,12 +19,25 @@ UV: Path = Path.home() / ".local" / "bin" / "uv"
 # Paths to root directory and subdirectories for data, logs, configs, and models
 BASE_PATH: Path = Path.home() / "insect-detect"
 DATA_PATH: Path = BASE_PATH / "data"
+ARCHIVE_PATH: Path = BASE_PATH / "data_archived" / HOSTNAME
 LOGS_PATH: Path = BASE_PATH / "logs"
 CONFIGS_PATH: Path = BASE_PATH / "configs"
 MODELS_PATH: Path = BASE_PATH / "models"
 
 # Path to the config selector file that stores the filename of the active config file
 CONFIG_SELECTOR_PATH: Path = CONFIGS_PATH / "config_selector.yaml"
+
+# Name of the file that stores one row of session information per recording session
+SESSION_INFO_NAME: str = "session_info.csv"
+
+# Names of the subdirectories in the session directory, which are (optionally)
+# created by postprocess.py ('crops', 'overlays') and capture.py ('timelapse')
+SUBDIR_NAMES: tuple[str, ...] = ("crops", "overlays", "timelapse")
+
+# Content categories that can be selected for upload and download ('all' excludes overlays)
+# all options additionally include the metadata and config files (upload also the log files)
+ContentSelection = Literal["all", "full", "crops", "overlays", "timelapse", "metadata"]
+CONTENT_OPTIONS: list[str] = list(get_args(ContentSelection))
 
 # Marker files used to coordinate startup sequencing between processes
 AUTO_RUN_MARKER: Path = BASE_PATH / ".auto_run_active"
@@ -59,3 +73,6 @@ LED_GPIO_PINS: list[int] = [18, 23, 24, 25, 8, 7, 12, 16, 20, 21, 27, 22, 10, 9,
 
 # Minimum password length for Wi-Fi network (WPA2 security standard)
 WPA2_PASSWORD_MIN_LENGTH: int = 8
+
+# Average expected download speed (MB/s) over a Raspberry Pi Wi-Fi connection
+DOWNLOAD_SPEED: float = 4.5

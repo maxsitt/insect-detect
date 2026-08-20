@@ -17,15 +17,16 @@ Functions:
 import csv
 import logging
 import sys
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, cast
+from typing import cast
 
 import depthai as dai
 import polars as pl
 import psutil
 
-from insectdetect.constants import LOGS_PATH
+from insectdetect.constants import LOGS_PATH, SESSION_INFO_NAME
 
 
 def configure_logger(script_name: str, stream_to_console: bool = False) -> None:
@@ -120,7 +121,7 @@ def save_metrics(
         get_power_info: Optional callable returning a dict of power metrics for logging.
     """
     try:
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now().isoformat()  # noqa: DTZ005
         rpi_info = get_rpi_metrics()
         oak_info = get_oak_metrics(q_syslog)
 
@@ -170,7 +171,7 @@ def save_session_info(
         chargelevel_start: Battery charge level at session start (% or 'USB_C_IN' or 'NA').
         chargelevel:       Battery charge level at session end (% or 'USB_C_IN' or 'NA').
     """
-    session_info_path = data_path / "session_info.csv"
+    session_info_path = data_path / SESSION_INFO_NAME
     try:
         metadata_path = next(session_path.glob("*metadata.csv"))
         metadata = pl.read_csv(metadata_path, columns=["track_id", "track_status"])
@@ -208,6 +209,6 @@ def subprocess_log(script_name: str) -> None:
     Args:
         script_name: Name of the script being launched via subprocess.
     """
-    timestamp = datetime.now().strftime("%F %T")
+    timestamp = datetime.now().strftime("%F %T")  # noqa: DTZ005
     with open(LOGS_PATH / "subprocess.log", "a", encoding="utf-8") as f:
         f.write(f"{timestamp} - Running {script_name} via subprocess\n")

@@ -46,16 +46,23 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 import depthai as dai
 import psutil
 from gpiozero import LED
 
 from insectdetect.config import AppConfig, load_config_selector, load_config_yaml, sanitize_config
-from insectdetect.constants import (CONFIGS_PATH, DATA_PATH, HOSTNAME, IMAGE_DRAIN_TIMEOUT,
-                                    LOGS_PATH, OAK_RECONNECT_TIMEOUT)
-from insectdetect.data import archive_data, save_encoded_frame, upload_data
+from insectdetect.constants import (
+    ARCHIVE_PATH,
+    CONFIGS_PATH,
+    DATA_PATH,
+    HOSTNAME,
+    IMAGE_DRAIN_TIMEOUT,
+    LOGS_PATH,
+    OAK_RECONNECT_TIMEOUT,
+)
+from insectdetect.data import archive_data, upload_data
 from insectdetect.metrics import configure_logger, save_metrics, save_session_info
 from insectdetect.oak import create_pipeline, deletterbox_bbox, send_camctrl, stop_pipeline
 from insectdetect.postprocess import process_images
@@ -194,7 +201,7 @@ def _create_session_dir(data_path: Path) -> tuple[Path, Path, Path, int]:
     session_id = int(session_id_file.read_text(encoding="utf-8")) + 1 if session_id_file.exists() else 1
     session_id_file.write_text(str(session_id), encoding="utf-8")
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # noqa: DTZ005
     session_path = data_path / timestamp[:10] / timestamp
     session_path.mkdir(parents=True, exist_ok=True)
     metadata_path = session_path / f"{timestamp}_metadata.csv"
@@ -269,6 +276,30 @@ def _start_metrics_thread(
     return thread
 
 
+def _save_encoded_frame(
+    frame: dai.ImgFrame,
+    session_path: Path,
+    timelapse_path: Path,
+    file_stem: str,
+    trigger: Literal["detection", "timelapse"] = "detection"
+) -> None:
+    """Save MJPEG-encoded frame to .jpg file.
+
+    Args:
+        frame:          depthai.ImgFrame message (type: BITSTREAM).
+        session_path:   Path to directory where detection-triggered frames are saved.
+        timelapse_path: Path to directory where timelapse-triggered frames are saved.
+        file_stem:      Filename stem (without extension) for the saved .jpg file.
+        trigger:        Capture trigger type ('detection' or 'timelapse').
+    """
+    if trigger == "timelapse":
+        img_path = timelapse_path / f"{file_stem}_timelapse.jpg"
+    else:
+        img_path = session_path / f"{file_stem}.jpg"
+    with open(img_path, "wb", buffering=1024 * 1024) as jpg:
+        frame.getData().tofile(jpg)
+
+
 def _run_recording(
     ctx: RecordingContext,
     config: AppConfig,
@@ -289,7 +320,7 @@ def _run_recording(
         RecordingResult with stop reason flags and final system state.
     """
     result = RecordingResult()
-    result.session_start = datetime.now()
+    result.session_start = datetime.now()  # noqa: DTZ005
 
     metrics_thread: threading.Thread | None = None
     metrics_stop = threading.Event()
@@ -440,7 +471,7 @@ def _run_recording(
                             logger.exception("Error getting synced frame/tracks from q_sync")
 
                 if frame is not None:
-                    timestamp = datetime.now()
+                    timestamp = datetime.now()  # noqa: DTZ005
                     timestamp_iso = timestamp.isoformat()
                     timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S-%f")
                     file_stem = f"{HOSTNAME}_{timestamp_str}"
@@ -536,7 +567,7 @@ def _run_recording(
                         # Save MJPEG-encoded frame to .jpg in a separate thread
                         trigger = "detection" if track_active else "timelapse"
                         save_future = save_executor.submit(
-                            save_encoded_frame,
+                            _save_encoded_frame,
                             frame, ctx.session_path, ctx.timelapse_path, file_stem, trigger
                         )
                         save_future.add_done_callback(_log_save_result)
@@ -592,7 +623,7 @@ def _run_recording(
     except Exception:
         logger.exception("Error during recording session %s", ctx.session_id)
     finally:
-        result.session_end = datetime.now()
+        result.session_end = datetime.now()  # noqa: DTZ005
 
         # Stop background metrics logger and wait for thread to finish
         metrics_stop.set()
@@ -678,11 +709,11 @@ def _archive_and_upload(
 ) -> None:
     """Copy captured data to archive directory and optionally upload after recording session.
 
-    Archiving is always performed when upload is enabled since uploading requires
-    an archived copy of the data. Skipped if recording session was stopped early
-    by external trigger, low disk space, or low battery charge.
+    Only the current recording session is archived and uploaded if not stopped
+    early due to external trigger, low disk space, or low battery charge.
     An additional charge level check is performed before archiving to ensure
     sufficient battery remains (at least charge_min + 10%) when not on USB power.
+    Archiving is always performed when upload is enabled (requires archived data).
 
     Args:
         ctx:    RecordingContext with data path, device ID and power management state.
@@ -715,11 +746,15 @@ def _archive_and_upload(
         return
 
     try:
-        archive_path = archive_data(DATA_PATH, HOSTNAME, config.storage.archive.disk_low)
-        logger.info("Archiving of data finished")
+        if archive_data(ctx.session_path, config.storage.archive.disk_low):
+            logger.info("Archiving of data finished: %s", ARCHIVE_PATH)
+        else:
+            logger.error("Archiving of data finished with errors: %s", ARCHIVE_PATH)
         if config.storage.upload.enabled:
-            upload_data(DATA_PATH, archive_path, config.storage.upload.content)
-            logger.info("Uploading of data finished")
+            if upload_data(ctx.session_path, config.storage.upload.content):
+                logger.info("Uploading of data finished")
+            else:
+                logger.error("Uploading of data finished with errors - see rclone.log")
     except Exception:
         logger.exception("Error during archiving/uploading of data")
 

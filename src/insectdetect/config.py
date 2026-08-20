@@ -24,8 +24,13 @@ from typing import Any, Literal, cast
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from insectdetect.constants import (CONFIG_SELECTOR_PATH, CONFIGS_PATH, LED_GPIO_PINS,
-                                    WPA2_PASSWORD_MIN_LENGTH)
+from insectdetect.constants import (
+    CONFIG_SELECTOR_PATH,
+    CONFIGS_PATH,
+    LED_GPIO_PINS,
+    WPA2_PASSWORD_MIN_LENGTH,
+    ContentSelection,
+)
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
@@ -163,7 +168,7 @@ class FocusConfig(BaseModel):
     """Focus settings for the OAK camera.
 
     Modes:
-    - continuous: continuous auto focus (default)
+    - continuous: continuous auto focus
     - manual:     fixed focus position defined in 'focus.manual'
     - range:      auto focus restricted to a range defined in 'focus.range'
 
@@ -272,7 +277,7 @@ class CropConfig(BaseModel):
     """Crop individual detections from full images and save as separate files if enabled.
 
     Methods:
-    - square:   crop to a square bounding box - can improve subsequent classification (default)
+    - square:   crop to a square bounding box - can improve subsequent classification
     - original: crop to the original detection bounding box aspect ratio
     """
     enabled: bool = False
@@ -373,7 +378,7 @@ class NetworkConfig(BaseModel):
 
     Modes:
     - hotspot: start a Raspberry Pi Wi-Fi hotspot for direct device connection
-    - wifi:    connect to one of the configured Wi-Fi networks if available (default)
+    - wifi:    connect to one of the configured Wi-Fi networks if available
     """
     mode: Literal["hotspot", "wifi"] = "wifi"
     hotspot: HotspotConfig = HotspotConfig()
@@ -431,10 +436,13 @@ class MetricsConfig(BaseModel):
 class ArchiveConfig(BaseModel):
     """Copy captured data to a separate archive directory if enabled.
 
+    Only the current recording session is archived if not stopped early
+    due to external trigger, low disk space, or low battery charge.
     Detection-triggered, timelapse and overlay frames, as well as crops are
     stored in separate uncompressed zip files. Metadata, log and config files
-    are copied directly. The oldest original data directories are deleted
-    when free disk space drops below the 'disk_low' threshold (in MB).
+    are copied directly. The oldest original date directories are deleted when
+    free disk space drops below the 'disk_low' (MB) threshold, if all of their
+    sessions were previously archived.
     """
     enabled: bool = False
     disk_low: int = Field(default=5000, ge=500, le=50000)
@@ -443,16 +451,21 @@ class ArchiveConfig(BaseModel):
 class UploadConfig(BaseModel):
     """Upload archived data to a remote server or cloud storage via rclone if enabled.
 
-    Archiving is always run before uploading. The 'content' field selects
-    which archived zip files to upload (all options include metadata):
+    Archiving is always run before uploading. Only the current recording session
+    is uploaded if not stopped early due to external trigger, low disk space,
+    or low battery charge.
+
+    The 'content' field selects which archived zip files to upload
+    (all options always include metadata, log and config files):
     - all:       upload all data except overlay frames
     - full:      upload only full frame zip files
-    - crops:     upload only cropped detection zip files (default)
+    - crops:     upload only cropped detection zip files
+    - overlays:  upload only overlay frame zip files
     - timelapse: upload only timelapse frame zip files
-    - metadata:  upload only metadata and log files, no images
+    - metadata:  upload only metadata, log and config files, no images
     """
     enabled: bool = False
-    content: Literal["all", "full", "crops", "timelapse", "metadata"] = "crops"
+    content: ContentSelection = "crops"
 
 
 class StorageConfig(BaseModel):

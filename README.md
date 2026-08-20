@@ -62,6 +62,8 @@ this raw output into classified and filtered results, ready for analysis.
   interactive zoom/focus controls, all configuration settings, deployment metadata input
   (incl. GPS coordinates via the browser Geolocation API), log file viewer, system info
   panel and an integrated terminal with full shell access to the Raspberry Pi.
+- **Data download** - captured images and metadata can be downloaded from the web app as
+  a zip archive, without removing the microSD card or interrupting the deployment.
 - **Config profiles** - save, switch between and reuse multiple named configuration
   files (`.yaml`) for different deployment setups.
 - **Intelligent power management** - battery charge level monitoring with conditional
@@ -70,10 +72,10 @@ this raw output into classified and filtered results, ready for analysis.
   on boot, with an optional fallback to the other application after a configurable delay.
 - **Network management** - Raspberry Pi Wi-Fi hotspot for direct connection in the field,
   or automatic connection to configured Wi-Fi networks, both set up on startup.
-- **Archiving + upload** - captured data can be copied to a separate archive directory
-  as uncompressed zip files and uploaded to a remote server or cloud storage via
-  [Rclone](https://rclone.org/docs/), including automatic deletion of the oldest
-  original data when free disk space runs low.
+- **Archiving + upload** - after each recording session, the captured data can be copied
+  to a separate archive directory as uncompressed zip files and uploaded to a remote
+  server or cloud storage via [Rclone](https://rclone.org/docs/), including automatic
+  deletion of the oldest original data when free disk space runs low.
 - **Safety stop conditions** - recording sessions are stopped early if free disk space,
   battery charge or OAK chip temperature reach their configured limits.
 - **System metrics logging** - optional periodic logging of CPU/RAM usage,
@@ -182,23 +184,13 @@ Each recording session:
 5. Crops detections and/or draws overlays in real time, if enabled.
 6. Archives and optionally uploads the captured data, if enabled.
 
-### Automatic startup
-
-The `insect-detect-startup.service` systemd service is installed and enabled by
-`install.sh` and runs the startup sequence after each boot: creating the Wi-Fi hotspot,
-setting up all configured Wi-Fi networks in NetworkManager and - if
-`startup.auto_run.enabled` is `true` - launching the configured `primary` application
-(`capture` or `webapp`). If a `fallback` application is configured, it is started after
-`startup.auto_run.delay` seconds. When `primary` is `webapp`, the fallback is cancelled
-if you connect to the live stream at any point during the delay window.
-
 ### Output structure
 
 ``` text
 ~/insect-detect/
 ├── configs/                                       # config files (active file set in config_selector.yaml)
 ├── models/                                        # detection model archives + models.json registry
-├── logs/                                          # capture.log, webapp.log, startup.log, subprocess.log
+├── logs/                                          # capture.log, webapp.log, startup.log, subprocess.log, rclone.log
 ├── data/
 │   ├── session_info.csv                           # one row per recording session
 │   ├── last_session_id.txt
@@ -223,6 +215,44 @@ normalized to the full frame (0-1).
 
 See [Post-processing](#post-processing) for turning this output into classified and
 filtered results ready for analysis.
+
+### Downloading captured data
+
+Transferring the captured data by removing the microSD card is significantly faster,
+but requires interrupting the deployment and opening the enclosure. For a quick
+check of the data in the field, use the **Download Data** section of the web app.
+
+Select one or more recording sessions and the content that you want to download:
+
+| Content     | Included data                                   |
+| ----------- | ----------------------------------------------- |
+| `all`       | everything except overlay frames (default)      |
+| `full`      | detection-triggered full frames                 |
+| `crops`     | cropped detections                              |
+| `overlays`  | full frames with bounding box overlays          |
+| `timelapse` | timelapse frames                                |
+| `metadata`  | metadata .csv and config .json files, no images |
+
+Every content option also includes the metadata .csv and config .json files
+of the selected sessions.
+
+The live stream and OAK camera are stopped while images are downloaded.
+After the download is finished, both can be restarted with the
+**Resume Stream** button in the video container.
+
+Log files can be downloaded from the **Advanced** > **View Logs** section, either
+individually or all at once as a zip archive. Downloading the log file will always
+provide the complete file, while the viewer only shows the last 1000 lines.
+
+### Automatic startup
+
+The `insect-detect-startup.service` systemd service is installed and enabled by
+`install.sh` and runs the startup sequence after each boot: creating the Wi-Fi hotspot,
+setting up all configured Wi-Fi networks in NetworkManager and - if
+`startup.auto_run.enabled` is `true` - launching the configured `primary` application
+(`capture` or `webapp`). If a `fallback` application is configured, it is started after
+`startup.auto_run.delay` seconds. When `primary` is `webapp`, the fallback is cancelled
+if you connect to the live stream at any point during the delay window.
 
 ---
 
@@ -370,14 +400,14 @@ Power management, OAK monitoring, LED and system metrics settings.
 
 Local storage monitoring, archiving and upload settings.
 
-| Setting                    | Type / Options                                  | Default | Description                                                                                                                                                                                                                         |
-|----------------------------|-------------------------------------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `storage.disk_min`         | `int` (100-10000)                               | `1000`  | Minimum required free disk space (MB) to start and continue a recording session.                                                                                                                                                    |
-| `storage.disk_check`       | `int` (1-600)                                   | `60`    | Interval (seconds) to check the available disk space during recording.                                                                                                                                                              |
-| `storage.archive.enabled`  | `bool`                                          | `false` | Copy captured data to a separate archive directory (`data_archived/<device_id>/`) after the recording session. Images are stored as uncompressed zip files, metadata/log/config files are copied directly.                          |
-| `storage.archive.disk_low` | `int` (500-50000)                               | `5000`  | Free disk space threshold (MB) below which the oldest original data directories are deleted after archiving.                                                                                                                        |
-| `storage.upload.enabled`   | `bool`                                          | `false` | Upload archived data to a remote server or cloud storage via Rclone. Archiving is always run before uploading.                                                                                                                      |
-| `storage.upload.content`   | `all`, `full`, `crops`, `timelapse`, `metadata` | `crops` | Which archived files to upload (all options include metadata, log and config files): `all` uploads everything except overlay frames, `full`/`crops`/`timelapse` upload only the respective zip files, `metadata` uploads no images. |
+| Setting                    | Type / Options                                              | Default | Description                                                                                                                                                                                                                                                                                                                                                 |
+|----------------------------|-------------------------------------------------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `storage.disk_min`         | `int` (100-10000)                                           | `1000`  | Minimum required free disk space (MB) to start and continue a recording session.                                                                                                                                                                                                                                                                            |
+| `storage.disk_check`       | `int` (1-600)                                               | `60`    | Interval (seconds) to check the available disk space during recording.                                                                                                                                                                                                                                                                                      |
+| `storage.archive.enabled`  | `bool`                                                      | `false` | Copy captured data to a separate archive directory after the recording session. Only the session that just ended is archived. Images are stored as uncompressed zip files, metadata/log/config files are copied directly. Sessions that were stopped early by an external trigger, low disk space or low battery charge are skipped and not archived later. |
+| `storage.archive.disk_low` | `int` (500-50000)                                           | `5000`  | Free disk space threshold (MB) below which the oldest original date directories are deleted after archiving. Directories containing a session that was not archived are never deleted, so recording stops at `storage.disk_min` instead.                                                                                                                    |
+| `storage.upload.enabled`   | `bool`                                                      | `false` | Upload archived data to a remote server or cloud storage via Rclone. Archiving is always run before uploading. Only the session that just ended is uploaded, together with the log and metadata files.                                                                                                                                                      |
+| `storage.upload.content`   | `all`, `full`, `crops`, `overlays`, `timelapse`, `metadata` | `crops` | Which archived files to upload (all options include metadata, log and config files): `all` uploads everything except overlay frames, `full`/`crops`/`overlays`/`timelapse` upload only the respective zip files, `metadata` uploads no images. Images are uploaded as one zip file per category, metadata/log/config files are copied directly.             |
 
 ### Startup
 

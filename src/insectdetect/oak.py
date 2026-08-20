@@ -361,15 +361,13 @@ def create_pipeline(
     cam_frames_nn.link(nn_manip.inputImage)
 
     # Create and configure DetectionNetwork node
-    nn_det = pipeline.create(dai.node.DetectionNetwork).build(
-        input=nn_manip.out,
-        nnArchive=nn_archive
-    )
+    nn_det = pipeline.create(dai.node.DetectionNetwork)
     nn_det.setNNArchive(nn_archive, numShaves=config.detection.num_shaves)  # type: ignore[call-arg]
     nn_det.setConfidenceThreshold(config.detection.conf_threshold)
     nn_det.setNumInferenceThreads(2)
     nn_det.input.setBlocking(False)
     nn_det.input.setMaxSize(1)
+    nn_manip.out.link(nn_det.input)
     labels = nn_det.getClasses()
     if labels is None:
         raise ValueError(f"Could not retrieve class labels from NN archive: {config.detection.model}")

@@ -72,6 +72,7 @@ webapp:
 network:
   mode: wifi
   hotspot:
+    fallback: true
     ssid: null
     password: null
   wifi:
@@ -102,9 +103,7 @@ storage:
     remote: ''
     content: crops
 startup:
-  hotspot_setup:
-    enabled: true
-  network_setup:
+  wifi_sync:
     enabled: true
   auto_run:
     enabled: false

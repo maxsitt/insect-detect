@@ -870,13 +870,14 @@ def create_control_elements() -> None:
 
         # WiFi/Hotspot status icons
         ui.separator().props("vertical")
-        if app.state.connection["mode"] == "wifi":
-            ui.icon("wifi", color="green")
-            ui.icon("wifi_tethering_off", color="gray")
-        elif app.state.connection["mode"] == "hotspot":
+        connection = app.state.connection
+        if connection and connection.is_hotspot:
             ui.icon("wifi_off", color="gray")
             ui.icon("wifi_tethering", color="green")
-        ui.label(f"{app.state.connection['ssid']}").classes("text-xs")
+        elif connection:
+            ui.icon("wifi", color="green")
+            ui.icon("wifi_tethering_off", color="gray")
+        ui.label((connection.ssid or "") if connection else "").classes("text-xs")
 
     # Config file selector
     with ui.row(align_items="center").classes("w-full gap-2 mt-0"):
@@ -1415,6 +1416,8 @@ def add_wifi_network(networks_column: ui.column, ssid: str = "", password: str =
             (ui.input(label="Password", validation={
                 "Minimum 8 characters": lambda v: v is None or v == "" or len(str(v)) >= 8})
              .props("clearable").classes("flex-1")
+             .tooltip("A changed password is applied at the next reconnect or reboot, "
+                      "an active connection to this network is not interrupted")
              .bind_value(app.state.config_updates["network"]["wifi"][idx], "password",
                          forward=lambda v: str(v) if v not in (None, "") else None))
             ui.button(color="red", icon="delete",
@@ -1435,6 +1438,11 @@ def create_network_settings() -> None:
         grid_separator()
         ui.label("RPi Hotspot").classes("font-bold")
         with ui.column().classes("w-full"):
+            (ui.switch("Fallback").props("color=green").classes("font-bold")
+             .tooltip("Activate the hotspot if no configured Wi-Fi network is in range. Only "
+                      "has an effect in 'wifi' mode, where disabling it deletes the hotspot "
+                      "profile - the RPi is then not accessible without Wi-Fi")
+             .bind_value(app.state.config_updates["network"]["hotspot"], "fallback"))
             with ui.row(align_items="baseline").classes("w-full gap-2"):
                 (ui.input(label="SSID", placeholder=HOSTNAME).props("clearable").classes("flex-1")
                  .bind_value(app.state.config_updates["network"]["hotspot"], "ssid",
@@ -1598,16 +1606,10 @@ def create_startup_settings() -> None:
     """Create UI elements and config binding for startup settings."""
     with ui.grid(columns="auto 1fr").classes("w-full gap-x-5 items-center"):
 
-        (ui.label("Hotspot Setup").classes("font-bold")
-         .tooltip("Create RPi Wi-Fi hotspot if it doesn't exist (uses hostname for SSID and password)"))
+        (ui.label("Wi-Fi Sync").classes("font-bold")
+         .tooltip("Create and update NetworkManager profiles for all configured Wi-Fi networks"))
         (ui.switch("Enable").props("color=green").classes("font-bold")
-         .bind_value(app.state.config_updates["startup"]["hotspot_setup"], "enabled"))
-
-        grid_separator()
-        (ui.label("Network Setup").classes("font-bold")
-         .tooltip("Create/update all configured Wi-Fi profiles in NetworkManager (including hotspot)"))
-        (ui.switch("Enable").props("color=green").classes("font-bold")
-         .bind_value(app.state.config_updates["startup"]["network_setup"], "enabled"))
+         .bind_value(app.state.config_updates["startup"]["wifi_sync"], "enabled"))
 
         grid_separator()
         (ui.label("Auto Run").classes("font-bold")
@@ -2454,7 +2456,7 @@ async def on_app_shutdown() -> None:
 
         with open(LOGS_PATH / "subprocess.log", "a", encoding="utf-8") as log_file_handle:  # noqa: ASYNC230
             subprocess.Popen(  # noqa: ASYNC220
-                [str(UV), "run", "capture"],
+                [str(UV), "run", "--no-sync", "capture"],
                 stdout=log_file_handle,
                 stderr=log_file_handle,
                 cwd=BASE_PATH,

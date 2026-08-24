@@ -74,5 +74,14 @@ LED_GPIO_PINS: list[int] = [18, 23, 24, 25, 8, 7, 12, 16, 20, 21, 27, 22, 10, 9,
 # Minimum password length for Wi-Fi network (WPA2 security standard)
 WPA2_PASSWORD_MIN_LENGTH: int = 8
 
+# Maximum time (seconds) to wait for the wlan0 interface to become available at startup
+WLAN0_READY_TIMEOUT: int = 30
+
+# Maximum number of Wi-Fi scan attempts before giving up
+WIFI_SCAN_ATTEMPTS: int = 3
+
+# Maximum time (seconds) to wait for a Wi-Fi or hotspot connection to be activated
+WIFI_CONNECT_TIMEOUT: int = 30
+
 # Average expected download speed (MB/s) over a Raspberry Pi Wi-Fi connection
 DOWNLOAD_SPEED: float = 4.5

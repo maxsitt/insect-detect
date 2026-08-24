@@ -1,8 +1,8 @@
 [Unit]
 Description=Insect Detect Startup Service
 Documentation=https://maxsitt.github.io/insect-detect-docs/
-Wants=network-online.target
-After=network.target network-online.target NetworkManager.service
+Wants=NetworkManager.service
+After=network.target NetworkManager.service
 
 [Service]
 Type=oneshot
@@ -11,7 +11,7 @@ Type=oneshot
 User=pi
 Group=pi
 WorkingDirectory=/home/pi/insect-detect
-ExecStart=/home/pi/.local/bin/uv run startup
+ExecStart=/home/pi/.local/bin/uv run --no-sync startup
 Environment=HOME=/home/pi
 RemainAfterExit=yes
 TimeoutStartSec=600

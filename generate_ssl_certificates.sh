@@ -24,7 +24,7 @@ if ! openssl req -x509 -newkey rsa:2048 -sha256 -nodes \
     -out "$SSL_DIR/cert.pem" -keyout "$SSL_DIR/key.pem" \
     -days "$CERT_DAYS" \
     -subj "/CN=${DEVICE_HOSTNAME}" \
-    -addext "subjectAltName=DNS:${DEVICE_HOSTNAME},DNS:${DEVICE_HOSTNAME}.local" 2>/dev/null; then
+    -addext "subjectAltName=DNS:${DEVICE_HOSTNAME},DNS:${DEVICE_HOSTNAME}.local,IP:10.42.0.1" 2>/dev/null; then
     echo "ERROR: Failed to generate SSL certificates."
     exit 1
 fi

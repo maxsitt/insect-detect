@@ -165,14 +165,18 @@ the recording settings:
 uv run webapp
 ```
 
-Connect to the Raspberry Pi Wi-Fi hotspot or to the same network as the Raspberry Pi
-and open the web app in your browser:
+Connect to the same network as the Raspberry Pi and open the web app in your browser:
 
 - HTTP: `http://<hostname>:5000`
 - HTTPS: `https://<hostname>:8443` (needs to be enabled in config)
 
-You can also use the IP address instead of the hostname - both are printed to the
-console and to `logs/webapp.log` on startup.
+When connected to the Raspberry Pi Wi-Fi hotspot, the web app is only reachable
+at the fixed hotspot IP address:
+
+- HTTP: `http://10.42.0.1:5000`
+- HTTPS: `https://10.42.0.1:8443`
+
+Both addresses are printed to the console and to `logs/webapp.log` on startup.
 
 HTTPS is required for the browser Geolocation API that can be used to fill in the
 GPS coordinates of the deployment site. When connecting via HTTPS for the first time,
@@ -270,11 +274,22 @@ provide the complete file, while the viewer only shows the last 1000 lines.
 
 The `insect-detect-startup.service` systemd service is installed and enabled by
 `install.sh` and runs the startup sequence after each boot: creating the Wi-Fi hotspot,
-setting up all configured Wi-Fi networks in NetworkManager and - if
-`startup.auto_run.enabled` is `true` - launching the configured `primary` application
-(`capture` or `webapp`). If a `fallback` application is configured, it is started after
-`startup.auto_run.delay` seconds. When `primary` is `webapp`, the fallback is cancelled
-if you connect to the live stream at any point during the delay window.
+setting up all configured Wi-Fi networks in NetworkManager, activating the configured
+`network.mode` and - if `startup.auto_run.enabled` is `true` - launching the configured
+`primary` application (`capture` or `webapp`). If a `fallback` application is configured,
+it is started after `startup.auto_run.delay` seconds. When `primary` is `webapp`, the
+fallback is cancelled if you connect to the live stream at any point during the delay window.
+
+In `wifi` mode, the Raspberry Pi hotspot is only activated as fallback if none of the
+configured Wi-Fi networks can be reached. Set `network.hotspot.fallback` to `false` if the hotspot
+should never be started in `wifi` mode - its profile is then deleted from NetworkManager,
+which means that the Raspberry Pi is not accessible if no Wi-Fi network is in range.
+
+Wi-Fi networks are only synced from the config file to NetworkManager, never the other way
+around. Removing a network from `network.wifi` therefore does not delete its NetworkManager
+profile and the Raspberry Pi can still connect to it - use `sudo nmtui` to delete the profile
+if this is not wanted. This protects Wi-Fi networks that were set up outside of the app
+(e.g. with the Raspberry Pi Imager) from being removed.
 
 ---
 
@@ -394,12 +409,13 @@ Image processing settings applied to captured full images while the recording se
 
 ### Network
 
-| Setting                    | Type / Options              | Default         | Description                                                                                                                 |
-|----------------------------|-----------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------|
-| `network.mode`             | `wifi`, `hotspot`           | `wifi`          | Connect to one of the configured Wi-Fi networks if available (`wifi`), or start the Raspberry Pi Wi-Fi hotspot (`hotspot`). |
-| `network.hotspot.ssid`     | `string \| null`            | `null`          | SSID of the Raspberry Pi Wi-Fi hotspot. If not set, the hostname is used and written to the config file on startup.         |
-| `network.hotspot.password` | `string \| null`            | `null`          | Password of the hotspot (at least 8 characters). If not set, the hostname is used (padded with hyphens if too short).       |
-| `network.wifi`             | list of `ssid` + `password` | one empty entry | Wi-Fi networks to connect to, tried in the listed order. Passwords must be at least 8 characters long.                      |
+| Setting                    | Type / Options              | Default         | Description                                                                                                                                                                       |
+|----------------------------|-----------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `network.mode`             | `wifi`, `hotspot`           | `wifi`          | Connect to one of the configured Wi-Fi networks if available (`wifi`), or start the Raspberry Pi Wi-Fi hotspot (`hotspot`).                                                       |
+| `network.hotspot.fallback` | `bool`                      | `true`          | Activate the hotspot if no configured Wi-Fi network is in range. Only has an effect if `mode` is `wifi`, where disabling it also deletes the hotspot profile from NetworkManager. |
+| `network.hotspot.ssid`     | `string \| null`            | `null`          | SSID of the Raspberry Pi Wi-Fi hotspot. If not set, the hostname is used and written to the config file on startup.                                                               |
+| `network.hotspot.password` | `string \| null`            | `null`          | Password of the hotspot (at least 8 characters). If not set, the hostname is used (padded with hyphens if too short).                                                             |
+| `network.wifi`             | list of `ssid` + `password` | one empty entry | Wi-Fi networks to connect to, tried in the listed order. Passwords must be at least 8 characters long. Networks are only synced to NetworkManager, never removed from it.         |
 
 ### System
 
@@ -429,7 +445,7 @@ Local storage monitoring, archiving and upload settings.
 | `storage.archive.enabled`  | `bool`                                                      | `false` | Copy captured data to a separate archive directory after the recording session. Only the session that just ended is archived. Images are stored as uncompressed zip files, metadata/log/config files are copied directly. Sessions that were stopped early by an external trigger, low disk space or low battery charge are skipped and not archived later. |
 | `storage.archive.disk_low` | `int` (500-50000)                                           | `5000`  | Free disk space threshold (MB) below which the oldest original date directories are deleted after archiving. Directories containing a session that was not archived are never deleted, so recording stops at `storage.disk_min` instead.                                                                                                                    |
 | `storage.upload.enabled`   | `bool`                                                      | `false` | Upload archived data to a remote server or cloud storage via Rclone. Archiving is always run before uploading. Only the session that just ended is uploaded, together with the log and metadata files. Automatically disabled if `storage.upload.remote` is not set.                                                                                        |
-| `storage.upload.remote`    | `str`                                                       | `''`    | Rclone destination written as `<remote>:<path>`, with the remote name as defined via `rclone config` (see [Rclone setup](#rclone-setup)). The device ID is appended automatically, so the remote layout mirrors the archive directory: `<remote>/<device_id>/<date>/<session>`.                                                                            |
+| `storage.upload.remote`    | `str`                                                       | `''`    | Rclone destination written as `<remote>:<path>`, with the remote name as defined via `rclone config` (see [Rclone setup](#rclone-setup)). The device ID is appended automatically, so the remote layout mirrors the archive directory: `<remote>/<device_id>/<date>/<session>`.                                                                             |
 | `storage.upload.content`   | `all`, `full`, `crops`, `overlays`, `timelapse`, `metadata` | `crops` | Which archived files to upload (all options include metadata, log and config files): `all` uploads everything except overlay frames, `full`/`crops`/`overlays`/`timelapse` upload only the respective zip files, `metadata` uploads no images. Images are uploaded as one zip file per category, metadata/log/config files are copied directly.             |
 
 ### Startup
@@ -439,8 +455,7 @@ Automatic network setup and application launch on startup (requires the enabled
 
 | Setting                         | Type / Options              | Default   | Description                                                                                                                                                                      |
 |---------------------------------|-----------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `startup.hotspot_setup.enabled` | `bool`                      | `true`    | Automatically create the Raspberry Pi Wi-Fi hotspot on startup if it does not already exist in NetworkManager.                                                                   |
-| `startup.network_setup.enabled` | `bool`                      | `true`    | Automatically create/update all Wi-Fi networks from the config in NetworkManager on startup.                                                                                     |
+| `startup.wifi_sync.enabled`     | `bool`                      | `true`    | Create and update NetworkManager profiles for all Wi-Fi networks in the config. Disable to keep Wi-Fi profiles that were set up outside of the app (e.g. via `nmtui`) unchanged. |
 | `startup.auto_run.enabled`      | `bool`                      | `false`   | Automatically launch `capture` or `webapp` on startup.                                                                                                                           |
 | `startup.auto_run.primary`      | `capture`, `webapp`         | `capture` | Application launched immediately on startup.                                                                                                                                     |
 | `startup.auto_run.fallback`     | `capture`, `webapp`, `null` | `null`    | Application launched after `delay` seconds if `primary` has not been interrupted by user interaction. Must differ from `primary`, `null` disables it.                            |

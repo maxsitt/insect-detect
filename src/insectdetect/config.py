@@ -9,10 +9,10 @@ Functions:
     get_field_constraints(): Extract numeric constraints for a nested field from a Pydantic model.
     load_config_selector(): Load the config selector file and return a validated ConfigSelectorModel.
     load_config_yaml(): Load a YAML config file, clamp out-of-range values and return a validated AppConfig.
-    check_config_changes(): Return True if two configs differ.
+    check_config_changes(): Return True if original and updates represent different configurations.
     update_config_selector(): Update the config selector file to point to a different config file.
-    update_config_yaml(): Merge updates into the active config file, write back and re-validate.
-    sanitize_config(): Return a copy of the config with all passwords masked.
+    update_config_yaml(): Merge updates into a config file, write back and re-validate.
+    sanitize_config(): Return a deep copy of the config with all network passwords masked.
 """
 
 import copy
@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from insectdetect.constants import (
     CONFIG_SELECTOR_PATH,
     CONFIGS_PATH,
+    HOSTNAME,
     LED_GPIO_PINS,
     WPA2_PASSWORD_MIN_LENGTH,
     ContentSelection,
@@ -338,9 +339,33 @@ class WebappConfig(BaseModel):
 
 
 class HotspotConfig(BaseModel):
-    """SSID and password for the Raspberry Pi Wi-Fi hotspot."""
+    """Settings for the Raspberry Pi Wi-Fi hotspot.
+
+    - fallback: activate the hotspot if in 'wifi' mode, if no configured Wi-Fi network
+                is in range. Disabling deletes the hotspot profile from NetworkManager.
+    """
+    fallback: bool = True
     ssid: str | None = None
     password: str | None = None
+
+    @field_validator("ssid", "password", mode="before")
+    @classmethod
+    def numeric_to_str(cls, v: object) -> object:
+        """Convert an SSID or password consisting only of digits to a string."""
+        return str(v) if isinstance(v, int) and not isinstance(v, bool) else v
+
+    @property
+    def effective_ssid(self) -> str:
+        """Return the configured hotspot SSID, or the hostname if it is not set."""
+        return self.ssid or HOSTNAME
+
+    @property
+    def effective_password(self) -> str:
+        """Return the configured hotspot password, or the hostname if it is not set.
+
+        Padded with hyphens to meet the WPA2 minimum password length if too short.
+        """
+        return self.password or HOSTNAME.ljust(WPA2_PASSWORD_MIN_LENGTH, "-")
 
     @field_validator("password")
     @classmethod
@@ -359,6 +384,12 @@ class WifiNetwork(BaseModel):
     """SSID and password for a Wi-Fi network."""
     ssid: str | None = None
     password: str | None = None
+
+    @field_validator("ssid", "password", mode="before")
+    @classmethod
+    def numeric_to_str(cls, v: object) -> object:
+        """Convert an SSID or password consisting only of digits to a string."""
+        return str(v) if isinstance(v, int) and not isinstance(v, bool) else v
 
     @field_validator("password")
     @classmethod
@@ -383,6 +414,11 @@ class NetworkConfig(BaseModel):
     mode: Literal["hotspot", "wifi"] = "wifi"
     hotspot: HotspotConfig = HotspotConfig()
     wifi: list[WifiNetwork] = [WifiNetwork()]
+
+    @property
+    def hotspot_enabled(self) -> bool:
+        """Return True if the hotspot is used as network mode or as Wi-Fi fallback."""
+        return self.mode == "hotspot" or self.hotspot.fallback
 
 
 class PowerManagerConfig(BaseModel):
@@ -499,18 +535,10 @@ class StorageConfig(BaseModel):
     upload: UploadConfig = UploadConfig()
 
 
-class HotspotSetupConfig(BaseModel):
-    """Automatically create the Raspberry Pi Wi-Fi hotspot on startup if enabled.
+class WifiSyncConfig(BaseModel):
+    """Create/update NetworkManager profiles for all Wi-Fi networks in the config on startup if enabled.
 
-    The hotspot is only created if it does not already exist in NetworkManager.
-    """
-    enabled: bool = True
-
-
-class NetworkSetupConfig(BaseModel):
-    """Automatically configure all Wi-Fi networks from config in NetworkManager if enabled.
-
-    Existing network profiles are updated and new ones are created as needed.
+    Disable to keep Wi-Fi profiles that were set up outside of the app (e.g. via nmtui) unchanged.
     """
     enabled: bool = True
 
@@ -545,8 +573,7 @@ class AutoRunConfig(BaseModel):
 
 class StartupConfig(BaseModel):
     """Settings for automatic network setup and application launch on startup."""
-    hotspot_setup: HotspotSetupConfig = HotspotSetupConfig()
-    network_setup: NetworkSetupConfig = NetworkSetupConfig()
+    wifi_sync: WifiSyncConfig = WifiSyncConfig()
     auto_run: AutoRunConfig = AutoRunConfig()
 
 
@@ -721,7 +748,7 @@ def _deep_update(base: dict[str, object], updates: dict[str, object]) -> None:
 
 
 def load_config_selector() -> ConfigSelectorModel:
-    """Load config selector file, validate and return a ConfigSelectorModel.
+    """Load the config selector file and return a validated ConfigSelectorModel.
 
     Raises FileNotFoundError with a list of available config files if
     the referenced config file does not exist in the configs/ directory.

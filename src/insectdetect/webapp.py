@@ -74,6 +74,9 @@ from insectdetect.constants import (
     DOWNLOAD_SPEED,
     HOSTNAME,
     LED_GPIO_PINS,
+    LENS_POS_DEFAULT,
+    LENS_POS_MAX,
+    LENS_POS_MIN,
     LOGS_PATH,
     MODELS_PATH,
     RESOLUTION_PRESETS,
@@ -83,6 +86,7 @@ from insectdetect.constants import (
     ContentSelection,
 )
 from insectdetect.data import SessionInfo, build_zip_stream, iter_session_entries, list_sessions
+from insectdetect.focus import load_manual_focus, record_webapp_focus, resolve_lens_pos
 from insectdetect.metrics import configure_logger, get_oak_metrics, get_rpi_metrics, subprocess_log
 from insectdetect.network import get_current_connection, get_ip_address, set_up_network
 from insectdetect.oak import ZOOM_SIZES, create_pipeline, deletterbox_bbox, send_camctrl, stop_pipeline
@@ -103,9 +107,7 @@ PLACEHOLDER_PNG_BYTES_LENGTH = str(len(PLACEHOLDER_PNG_BYTES)).encode()
 # Each value is a dict with keys 'min', 'max' and 'multiple_of' (int/float or None)
 _CONSTRAINT_PATHS: list[str] = [
     "camera.fps", "camera.zoom.factor", "camera.image.quality",
-    "camera.focus.manual.distance", "camera.focus.manual.lens_pos",
-    "camera.focus.range.distance.min", "camera.focus.range.distance.max",
-    "camera.focus.range.lens_pos.min", "camera.focus.range.lens_pos.max",
+    "camera.focus.range.min", "camera.focus.range.max", "camera.focus.compensation.coeff",
     "camera.isp.sharpness", "camera.isp.luma_denoise", "camera.isp.chroma_denoise",
     "detection.num_shaves", "detection.conf_threshold",
     "tracking.occlusion_ratio_threshold", "tracking.tracklet_birth_threshold", "tracking.tracklet_max_lifespan",
@@ -190,6 +192,14 @@ async def main_page() -> None:
     # Create timer to update system information from RPi and OAK camera (capped to 0.2 Hz)
     app.state.sys_info_timer = ui.timer(5, update_sys_info, immediate=False)
 
+    # Warn if manual focus is active but no focus position has been set in the web app yet
+    if app.state.config.camera.focus.mode == "manual" and load_manual_focus().lens_pos is None:
+        ui.notification(
+            f"No focus position set yet, using the default lens position {LENS_POS_DEFAULT}. "
+            "Adjust the focus slider and save the position to keep the images in focus.",
+            type="warning", timeout=8
+        )
+
 
 def init_app_state() -> None:
     """Load the active configuration and initialize the application state."""
@@ -216,7 +226,7 @@ def init_app_state() -> None:
     app.state.focus_mode_initialized = False
     app.state.manual_focus_enabled = app.state.config.camera.focus.mode == "manual"
     app.state.focus_range_enabled = app.state.config.camera.focus.mode == "range"
-    app.state.focus_distance_enabled = app.state.config.camera.focus.type == "distance"
+    app.state.lens_pos_manual = resolve_lens_pos()
     app.state.frame_count = 0
     app.state.fps = 0
     app.state.lens_pos = 0
@@ -392,7 +402,8 @@ async def start_streaming() -> None:
     """Upload pipeline to OAK device and start the live stream."""
     (app.state.pipeline, app.state.q_sync, app.state.q_syslog,
      app.state.q_camctrl, app.state.frame_size, app.state.nn_input_size, app.state.sensor_roi,
-     app.state.labels) = create_pipeline(app.state.config, stream=True)
+     app.state.labels) = create_pipeline(app.state.config, stream=True,
+                                         lens_pos=app.state.lens_pos_manual)
 
     app.state.pipeline.start()
 
@@ -744,6 +755,20 @@ async def set_manual_focus(e: ValueChangeEventArguments) -> None:
     send_camctrl(app.state.q_camctrl, mf_ctrl)
 
 
+def save_focus_position() -> None:
+    """Persist the focus position set with the slider, together with the OAK chip temperature."""
+    temp = app.state.sys_info.get("oak_chip_temp")
+    if not isinstance(temp, (int, float)):
+        ui.notification("OAK chip temperature not available yet, wait a few seconds and save "
+                        "the focus position again.", type="negative", timeout=5)
+        return
+
+    lens_pos = int(app.state.lens_pos_manual)
+    record_webapp_focus(lens_pos, float(temp))
+    ui.notification(f"Focus position {lens_pos} saved at {temp} °C chip temperature.",
+                    type="positive", timeout=3)
+
+
 async def preview_focus_range(e: ValueChangeEventArguments) -> None:
     """Set manual focus position of OAK camera to the last changed focus range position."""
     if not app.state.focus_initialized or not hasattr(app.state, "previous_lens_pos_range"):
@@ -844,22 +869,27 @@ def create_control_elements() -> None:
     # Slider for manual focus control (only visible if focus mode is set to "manual")
     with ui.column().classes("w-full gap-0 mb-0").bind_visibility_from(app.state, "manual_focus_enabled"):
         ui.label("Manual Focus:").classes("font-bold")
-        c = FIELD_CONSTRAINTS["camera.focus.manual.lens_pos"]
-        assert c["min"] is not None and c["max"] is not None
-        (ui.slider(min=float(c["min"]), max=float(c["max"]), step=1, on_change=set_manual_focus)
-         .props("label")
-         .bind_value(app.state.config_updates["camera"]["focus"]["manual"], "lens_pos",
-                     forward=lambda v: int(v) if v is not None else None))
+        with ui.row(align_items="center").classes("w-full gap-4"):
+            (ui.slider(min=float(LENS_POS_MIN), max=float(LENS_POS_MAX), step=1,
+                       on_change=set_manual_focus)
+             .props("label")
+             .classes("flex-1")
+             .bind_value(app.state, "lens_pos_manual",
+                         forward=lambda v: int(v) if v is not None else LENS_POS_DEFAULT))
+            (ui.button(icon="save", color="green", on_click=save_focus_position)
+             .props("dense round")
+             .tooltip("Save focus position together with the current chip temperature "
+                      "(required for thermal focus compensation)"))
 
     # Slider for auto focus range control (only visible if focus mode is set to "range")
     with ui.column().classes("w-full gap-0 mb-0").bind_visibility_from(app.state, "focus_range_enabled"):
         ui.label("Focus Range:").classes("font-bold")
-        c_min = FIELD_CONSTRAINTS["camera.focus.range.lens_pos.min"]
-        c_max = FIELD_CONSTRAINTS["camera.focus.range.lens_pos.max"]
+        c_min = FIELD_CONSTRAINTS["camera.focus.range.min"]
+        c_max = FIELD_CONSTRAINTS["camera.focus.range.max"]
         assert c_min["min"] is not None and c_max["max"] is not None
         (ui.range(min=float(c_min["min"]), max=float(c_max["max"]), step=1, on_change=preview_focus_range)
          .props("label")
-         .bind_value(app.state.config_updates["camera"]["focus"]["range"], "lens_pos",
+         .bind_value(app.state.config_updates["camera"]["focus"], "range",
                      forward=lambda v: {"min": int(v["min"]), "max": int(v["max"])} if v is not None else None))
 
     with ui.row(align_items="center").classes("w-full gap-2"):
@@ -998,7 +1028,7 @@ def create_deployment_section() -> None:
 
 
 async def on_focus_mode_change(e: ValueChangeEventArguments) -> None:
-    """Update relevant focus parameters in config, set continuous focus if selected."""
+    """Update focus control visibility, set continuous focus if selected."""
     if not app.state.focus_mode_initialized:
         app.state.focus_mode_initialized = True
         return
@@ -1009,20 +1039,13 @@ async def on_focus_mode_change(e: ValueChangeEventArguments) -> None:
             return
         af_ctrl = dai.CameraControl().setAutoFocusMode(dai.CameraControl.AutoFocusMode.CONTINUOUS_VIDEO)
         send_camctrl(app.state.q_camctrl, af_ctrl)
-    else:
-        app.state.focus_initialized = False
-        app.state.focus_distance_enabled = False
-        app.state.config_updates["camera"]["focus"]["type"] = "lens_pos"
-        ui.notification("Focus type set to 'lens_pos' for manual adjustment with the control slider.",
-                        type="warning", timeout=3)
+        return
 
-
-async def on_focus_type_change(e: ValueChangeEventArguments) -> None:
-    """Update focus distance visibility when focus type changes."""
-    app.state.focus_distance_enabled = e.value == "distance"
-    if e.value == "distance":
-        ui.notification("Focus control slider will still use lens position for finer adjustment.",
-                        type="warning", timeout=3)
+    app.state.focus_initialized = False
+    if e.value == "manual":
+        ui.notification("Adjust the focus position with the control slider and save it with the "
+                        "button next to it, otherwise it will not be used for the recording.",
+                        type="warning", timeout=5)
 
 
 def create_camera_settings() -> None:
@@ -1034,42 +1057,31 @@ def create_camera_settings() -> None:
          .bind_value(app.state.config_updates["camera"]["focus"], "mode"))
 
         grid_separator()
-        ui.label("Focus Type").classes("font-bold")
+        (ui.label("Focus Compensation").classes("font-bold")
+         .tooltip("Correct the thermal drift of the focus position while the OAK chip heats up. "
+                  "Only used in 'manual' focus mode and requires a focus position that was saved "
+                  "with the save button next to the focus slider."))
+        comp = app.state.config_updates["camera"]["focus"]["compensation"]
         with ui.column().classes("w-full gap-1"):
-            (ui.select(["lens_pos", "distance"], label="Type", on_change=on_focus_type_change)
-             .classes("w-full")
-             .bind_value(app.state.config_updates["camera"]["focus"], "type"))
-
-            with (ui.column().classes("w-full gap-1")
-                  .bind_visibility_from(app.state, "focus_distance_enabled")):
-                c = FIELD_CONSTRAINTS["camera.focus.manual.distance"]
-                with ui.row(align_items="center").classes("w-full gap-2"):
-                    (ui.number(label="Manual Focus",
-                               placeholder=app.state.config.camera.focus.manual.distance,
-                               min=c["min"], max=c["max"], precision=0, step=1, suffix="cm",
-                               validation={f"Required value between {c['min']}-{c['max']}":
-                                           lambda v, c=c: validate_number(v, c["min"], c["max"])}).classes("flex-1")
-                     .bind_value(app.state.config_updates["camera"]["focus"]["manual"], "distance",
-                                 forward=lambda v: int(v) if v is not None else None))
-                c_min = FIELD_CONSTRAINTS["camera.focus.range.distance.min"]
-                c_max = FIELD_CONSTRAINTS["camera.focus.range.distance.max"]
-                with ui.row(align_items="center").classes("w-full gap-2"):
-                    (ui.number(label="Range Min",
-                               placeholder=app.state.config.camera.focus.range.distance.min,
-                               min=c_min["min"], max=c_min["max"], precision=0, step=1, suffix="cm",
-                               validation={f"Required value between {c_min['min']}-{c_min['max']}":
-                                           lambda v, c=c_min: validate_number(v, c["min"], c["max"])}).classes("flex-1")
-                     .bind_value(app.state.config_updates["camera"]["focus"]["range"]["distance"], "min",
-                                 forward=lambda v: int(v) if v is not None else None))
-                    (ui.number(label="Range Max",
-                               placeholder=app.state.config.camera.focus.range.distance.max,
-                               min=c_max["min"], max=c_max["max"], precision=0, step=1, suffix="cm",
-                               validation={f"Required value between {c_max['min']}-{c_max['max']}":
-                                           lambda v, c=c_max: validate_number(v, c["min"], c["max"])}).classes("flex-1")
-                     .bind_value(app.state.config_updates["camera"]["focus"]["range"]["distance"], "max",
-                                 forward=lambda v: int(v) if v is not None else None))
-                (ui.label("Focus control slider will still use lens position for finer adjustment!")
-                 .classes("text-xs text-gray-500"))
+            (ui.switch("Enable").props("color=green").classes("font-bold")
+             .bind_value(comp, "enabled"))
+            with ui.column().classes("w-full gap-1").bind_visibility_from(comp, "enabled"):
+                c = FIELD_CONSTRAINTS["camera.focus.compensation.coeff"]
+                assert c["min"] is not None and c["max"] is not None
+                (ui.number(label="Coefficient",
+                           placeholder=app.state.config.camera.focus.compensation.coeff,
+                           min=float(c["min"]), max=float(c["max"]), precision=3, step=0.01,
+                           suffix="pos/°C",
+                           validation={f"Required value between {c['min']}-{c['max']}":
+                                       lambda v, c=c: validate_number(v, c["min"], c["max"])})
+                 .classes("w-full")
+                 .tooltip("Lens position correction per °C of chip temperature rise.")
+                 .bind_value(comp, "coeff",
+                             forward=lambda v: round(float(v), 3) if v is not None else None))
+                (ui.switch("Focus Sweep").props("color=green").classes("font-bold")
+                 .tooltip("Re-measure the focus position at the start of each recording session. "
+                          "Needs a scene with a single dominant focus plane and adds ~70 s.")
+                 .bind_value(comp, "sweep"))
 
         grid_separator()
         (ui.label("Center-crop Zoom").classes("font-bold")

@@ -307,7 +307,7 @@ values are automatically clamped to their allowed bounds (with a warning logged 
 corrected value written back to the config file). Additional constraints:
 
 - `processing.delete` requires `processing.crop` or `processing.overlay` to be enabled.
-- `camera.focus.range` min values must be less than the corresponding max values.
+- `camera.focus.range.min` must be less than `camera.focus.range.max`.
 - `startup.auto_run.fallback` must differ from `startup.auto_run.primary`.
 - Wi-Fi and hotspot passwords must be at least 8 characters long (WPA2).
 - `led.gpio_pin` must be one of the allowed BCM pins (see [System](#system)).
@@ -332,24 +332,29 @@ with [`insect-detect-post`](https://github.com/maxsitt/insect-detect-post).
 
 OAK camera settings for frame rate, image quality, zoom, focus and ISP.
 
-| Setting                           | Type / Options                             | Default      | Description                                                                                                                                                             |
-|-----------------------------------|--------------------------------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `camera.fps`                      | `int` (1-20)                               | `15`         | Frame rate of the camera output used for detection model inference and object tracking.                                                                                 |
-| `camera.image.resolution`         | `4k`, `4k-square`, `1080p`, `1080p-square` | `4k`         | Resolution preset for captured full images: `4k` (3840x2160), `4k-square` (2176x2160), `1080p` (1920x1080), `1080p-square` (1088x1080).                                 |
-| `camera.image.quality`            | `int` (10-100)                             | `80`         | JPEG quality of the captured full images.                                                                                                                               |
-| `camera.zoom.enabled`             | `bool`                                     | `false`      | Crop to zoom factor to restrict the camera field of view.                                                                                                               |
-| `camera.zoom.factor`              | `float` (1.0-3.0, steps of 0.1)            | `1.0`        | Zoom factor. Values > 1.0 crop symmetrically around the center, keeping the original aspect ratio. Applied to both the full frame output and the detection model input. |
-| `camera.focus.mode`               | `continuous`, `manual`, `range`            | `continuous` | Focus mode: continuous auto focus, fixed position (`focus.manual`) or auto focus restricted to a range (`focus.range`).                                                 |
-| `camera.focus.type`               | `lens_pos`, `distance`                     | `lens_pos`   | Whether focus positions are specified as OAK lens position values or as subject distance in cm.                                                                         |
-| `camera.focus.manual.lens_pos`    | `int` (120-255)                            | `156`        | Fixed lens position for `manual` focus mode (120 = infinity, 255 = closest focus distance).                                                                             |
-| `camera.focus.manual.distance`    | `int` (8-80)                               | `19`         | Fixed subject distance (cm) for `manual` focus mode, converted to a lens position.                                                                                      |
-| `camera.focus.range.lens_pos.min` | `int` (120-210)                            | `154`        | Minimum lens position for `range` focus mode (must be less than max).                                                                                                   |
-| `camera.focus.range.lens_pos.max` | `int` (122-255)                            | `165`        | Maximum lens position for `range` focus mode.                                                                                                                           |
-| `camera.focus.range.distance.min` | `int` (8-75)                               | `15`         | Minimum subject distance (cm) for `range` focus mode (must be less than max).                                                                                           |
-| `camera.focus.range.distance.max` | `int` (9-80)                               | `20`         | Maximum subject distance (cm) for `range` focus mode.                                                                                                                   |
-| `camera.isp.sharpness`            | `int` (0-4)                                | `1`          | ISP sharpness level.                                                                                                                                                    |
-| `camera.isp.luma_denoise`         | `int` (0-4)                                | `1`          | ISP luma noise reduction level.                                                                                                                                         |
-| `camera.isp.chroma_denoise`       | `int` (0-4)                                | `1`          | ISP chroma noise reduction level.                                                                                                                                       |
+| Setting                             | Type / Options                             | Default      | Description                                                                                                                                                             |
+|-------------------------------------|--------------------------------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `camera.fps`                        | `int` (1-20)                               | `15`         | Frame rate of the camera output used for detection model inference and object tracking.                                                                                 |
+| `camera.image.resolution`           | `4k`, `4k-square`, `1080p`, `1080p-square` | `4k`         | Resolution preset for captured full images: `4k` (3840x2160), `4k-square` (2176x2160), `1080p` (1920x1080), `1080p-square` (1088x1080).                                 |
+| `camera.image.quality`              | `int` (10-100)                             | `80`         | JPEG quality of the captured full images.                                                                                                                               |
+| `camera.zoom.enabled`               | `bool`                                     | `false`      | Crop to zoom factor to restrict the camera field of view.                                                                                                               |
+| `camera.zoom.factor`                | `float` (1.0-3.0, steps of 0.1)            | `1.0`        | Zoom factor. Values > 1.0 crop symmetrically around the center, keeping the original aspect ratio. Applied to both the full frame output and the detection model input. |
+| `camera.focus.mode`                 | `continuous`, `manual`, `range`            | `continuous` | Focus mode: continuous auto focus, fixed position (set in the web app) or auto focus restricted to a range (`focus.range`).                                             |
+| `camera.focus.range.min`            | `int` (120-210)                            | `154`        | Minimum lens position for `range` focus mode (120 = infinity, 255 = closest focus distance, must be less than max).                                                     |
+| `camera.focus.range.max`            | `int` (122-255)                            | `165`        | Maximum lens position for `range` focus mode.                                                                                                                           |
+| `camera.focus.compensation.enabled` | `bool`                                     | `true`       | Compensate the thermal drift of the manual focus position while the OAK chip heats up (`manual` focus mode only).                                                       |
+| `camera.focus.compensation.coeff`   | `float` (0.0-1.0)                          | `0.373`      | Lens position correction per °C of chip temperature rise.                                                                                                               |
+| `camera.focus.compensation.sweep`   | `bool`                                     | `false`      | Re-measure the focus position at session start with a bounded focus sweep. Needs a scene with a single dominant focus plane and adds ~70 s per session.                 |
+| `camera.isp.sharpness`              | `int` (0-4)                                | `1`          | ISP sharpness level.                                                                                                                                                    |
+| `camera.isp.luma_denoise`           | `int` (0-4)                                | `1`          | ISP luma noise reduction level.                                                                                                                                         |
+| `camera.isp.chroma_denoise`         | `int` (0-4)                                | `1`          | ISP chroma noise reduction level.                                                                                                                                       |
+
+> [!IMPORTANT]
+> In `manual` focus mode, the focus position is not a config setting. Adjust the focus slider
+> in the web app and save it with the button next to it. The position is stored together with
+> the current OAK chip temperature in `configs/manual_focus.json` and used as reference for the
+> thermal focus compensation. This file is written by the device and specific to it - copying
+> it to another camera trap carries the wrong calibration.
 
 ### Detection
 

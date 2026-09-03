@@ -6,52 +6,34 @@ Author:   Maximilian Sittinger (https://github.com/maxsitt)
 Docs:     https://maxsitt.github.io/insect-detect-docs/
 
 Functions:
-    convert_cm_lens_position(): Convert closest available centimeter value to OAK lens position value.
-    deletterbox_bbox():         De-letterbox bounding box from NN-normalized letterboxed space
-                                to frame-normalized space.
-    create_pipeline():          Create and configure depthai pipeline for OAK camera.
-    stop_pipeline():            Stop and close the OAK pipeline/device with a bounded wait.
-    send_camctrl():             Send a camera control command, tolerating a lost OAK connection.
+    deletterbox_bbox(): De-letterbox bounding box from NN-normalized letterboxed space
+                        to frame-normalized space.
+    create_pipeline():  Create and configure depthai pipeline for OAK camera.
+    stop_pipeline():    Stop and close the OAK pipeline/device with a bounded wait.
+    send_camctrl():     Send a camera control command, tolerating a lost OAK connection.
+    get_chip_temp():    Get the current OAK chip temperature.
 """
 
 import logging
 import math
 import threading
+import time
 from datetime import timedelta
 from typing import cast
 
 import depthai as dai
 
 from insectdetect.config import AppConfig, get_field_constraints
-from insectdetect.constants import MODELS_PATH, RESOLUTION_PRESETS, SENSOR_CROP, SENSOR_RES
+from insectdetect.constants import (
+    LENS_POS_DEFAULT,
+    MODELS_PATH,
+    RESOLUTION_PRESETS,
+    SENSOR_CROP,
+    SENSOR_RES,
+)
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
-
-# Mapping of object-to-camera distances (8-80 cm) to OAK lens position values (255-120)
-CM_LENS_POSITIONS: dict[int, int] = {
-    8: 255, 9: 210, 10: 200, 11: 190, 12: 180, 13: 175, 14: 170, 15: 165, 16: 162, 17: 160,
-    18: 158, 19: 156, 20: 154, 21: 152, 22: 150, 23: 148, 24: 146, 25: 144, 26: 142, 27: 141,
-    28: 140, 29: 139, 30: 138, 31: 137, 32: 136, 34: 135, 36: 134, 38: 133, 40: 132, 42: 131,
-    45: 130, 48: 129, 52: 128, 56: 127, 60: 126, 64: 125, 68: 124, 72: 123, 76: 122, 80: 120,
-}
-CM_KEYS: tuple[int, ...] = tuple(CM_LENS_POSITIONS.keys())
-
-
-def convert_cm_lens_position(distance_cm: int) -> int:
-    """Convert closest available centimeter value to OAK lens position value.
-
-    Args:
-        distance_cm: Object-to-camera distance in centimeters.
-
-    Returns:
-        OAK lens position value (120-255) corresponding to the given distance.
-    """
-    if distance_cm in CM_KEYS:
-        return CM_LENS_POSITIONS[distance_cm]
-    closest_cm = min(CM_KEYS, key=lambda k: abs(k - distance_cm))
-    return CM_LENS_POSITIONS[closest_cm]
-
 
 def _round_even(value: float) -> int:
     """Round to the nearest even integer.
@@ -170,7 +152,8 @@ def _log_reconnection_status(status: dai.Device.ReconnectionStatus) -> None:
 
 def create_pipeline(
     config: AppConfig,
-    stream: bool = False
+    stream: bool = False,
+    lens_pos: int | None = None
 ) -> tuple[
     dai.Pipeline,
     dai.MessageQueue,
@@ -184,9 +167,11 @@ def create_pipeline(
     """Create and configure depthai pipeline for OAK camera.
 
     Args:
-        config: AppConfig containing all configuration settings.
-        stream: If True, request ISP output at stream resolution for webapp.py.
-                If False, request ISP output at HQ resolution for capture.py.
+        config:   AppConfig containing all configuration settings.
+        stream:   If True, request ISP output at stream resolution for webapp.py.
+                  If False, request ISP output at HQ resolution for capture.py.
+        lens_pos: Lens position for 'manual' focus mode, from focus.resolve_lens_pos().
+                  Falls back to LENS_POS_DEFAULT if no focus position has been set yet.
 
     Returns:
         Tuple of (pipeline, q_sync, q_syslog, q_camctrl,
@@ -220,27 +205,15 @@ def create_pipeline(
     cam.initialControl.setChromaDenoise(config.camera.isp.chroma_denoise)
 
     if config.camera.focus.mode == "manual":
-        # Set manual focus using either object-to-camera distance (cm) or lens position (0-255)
+        # Set manual focus to the lens position set in the web app (see focus.resolve_lens_pos)
         cam.initialControl.setAutoFocusMode(dai.CameraControl.AutoFocusMode.OFF)
-        if config.camera.focus.type == "distance":
-            cam.initialControl.setManualFocus(
-                convert_cm_lens_position(config.camera.focus.manual.distance)
-            )
-        elif config.camera.focus.type == "lens_pos":
-            cam.initialControl.setManualFocus(config.camera.focus.manual.lens_pos)
+        cam.initialControl.setManualFocus(lens_pos if lens_pos is not None else LENS_POS_DEFAULT)
     elif config.camera.focus.mode == "range":
-        # Set auto focus range using either object-to-camera distance (cm) or lens position (0-255)
-        # Note: higher distance -> lower lens position, so min/max are intentionally swapped
-        if config.camera.focus.type == "distance":
-            cam.initialControl.setAutoFocusLensRange(
-                convert_cm_lens_position(config.camera.focus.range.distance.max),
-                convert_cm_lens_position(config.camera.focus.range.distance.min)
-            )
-        elif config.camera.focus.type == "lens_pos":
-            cam.initialControl.setAutoFocusLensRange(
-                config.camera.focus.range.lens_pos.min,
-                config.camera.focus.range.lens_pos.max,
-            )
+        # Restrict auto focus to the configured lens position range
+        cam.initialControl.setAutoFocusLensRange(
+            config.camera.focus.range.min,
+            config.camera.focus.range.max
+        )
 
     # For square or zoomed presets, set AE/AF region to the sensor-space crop area
     sensor_crop_w, sensor_crop_h = SENSOR_CROP[config.camera.image.resolution]
@@ -443,3 +416,32 @@ def send_camctrl(q_camctrl: dai.InputQueue, ctrl: dai.CameraControl) -> None:
         q_camctrl.send(ctrl)
     except Exception:
         logger.exception("Could not send camera control command")
+
+
+def get_chip_temp(
+    q_syslog: dai.MessageQueue,
+    fallback: float | None = None,
+    wait_s: float = 0.0
+) -> float | None:
+    """Get the current OAK chip temperature.
+
+    Args:
+        q_syslog: depthai output queue for SystemInformation messages.
+        fallback: Value returned if no new SystemInformation message is available.
+        wait_s:   Seconds to keep polling for a message.
+
+    Returns:
+        Average chip temperature in degrees Celsius, or the fallback value.
+    """
+    deadline = time.monotonic() + wait_s
+    while True:
+        try:
+            sysinfo = cast(dai.SystemInformation | None, q_syslog.tryGet())
+        except Exception:
+            logger.exception("Error getting system information from q_syslog")
+            return fallback
+        if sysinfo is not None:
+            return float(sysinfo.chipTemperature.average)
+        if time.monotonic() >= deadline:
+            return fallback
+        time.sleep(0.05)

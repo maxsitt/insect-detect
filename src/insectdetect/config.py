@@ -29,6 +29,8 @@ from insectdetect.constants import (
     CONFIGS_PATH,
     HOSTNAME,
     LED_GPIO_PINS,
+    LENS_POS_MAX,
+    LENS_POS_MIN,
     WPA2_PASSWORD_MIN_LENGTH,
     ContentSelection,
 )
@@ -90,10 +92,10 @@ class ImageConfig(BaseModel):
     """Resolution preset and JPEG quality for captured full images.
 
     Available resolution presets:
-      4k:           3840x2160 image, 1280x720 webapp stream (16:9)
-      4k-square:    2176x2160 image,  960x960 webapp stream (1:1)
-      1080p:        1920x1080 image, 1280x720 webapp stream (16:9)
-      1080p-square: 1088x1080 image,  960x960 webapp stream (1:1)
+      4k:           3840x2160 image, 1920x1080 webapp stream (16:9)
+      4k-square:    2176x2160 image, 1088x1080 webapp stream (1:1)
+      1080p:        1920x1080 image, 1920x1080 webapp stream (16:9)
+      1080p-square: 1088x1080 image, 1088x1080 webapp stream (1:1)
     """
     resolution: Literal["4k", "4k-square", "1080p", "1080p-square"] = "4k"
     quality: int = Field(default=80, ge=10, le=100)
@@ -110,59 +112,35 @@ class ZoomConfig(BaseModel):
     factor: float = Field(default=1.0, ge=1.0, le=3.0, multiple_of=0.1)
 
 
-class FocusManualConfig(BaseModel):
-    """Fixed lens position for 'manual' focus mode.
+class FocusRangeConfig(BaseModel):
+    """Lens position range to restrict auto focus in 'range' focus mode.
 
-    Two representations of the same position selected by 'focus.type':
-    - lens_pos: OAK lens position value (120-255, higher = closer)
-    - distance: subject distance in cm (8-80), converted to lens_pos
+    Lower lens positions focus farther (LENS_POS_MIN = infinity), higher positions closer
+    (LENS_POS_MAX = 8 cm). The inner bounds keep the range from collapsing at either end.
     """
-    lens_pos: int = Field(default=156, ge=120, le=255)
-    distance: int = Field(default=19, ge=8, le=80)
-
-
-class FocusRangeLensPosConfig(BaseModel):
-    """Lens position range to restrict auto focus in 'range' mode.
-
-    Lens position values: 120 = infinity, 255 = closest focus distance (8 cm).
-    """
-    min: int = Field(default=154, ge=120, le=210)
-    max: int = Field(default=165, ge=122, le=255)
+    min: int = Field(default=154, ge=LENS_POS_MIN, le=210)
+    max: int = Field(default=165, ge=122, le=LENS_POS_MAX)
 
     @model_validator(mode="after")
-    def min_must_be_less_than_max(self) -> "FocusRangeLensPosConfig":
+    def min_must_be_less_than_max(self) -> "FocusRangeConfig":
         """Ensure min lens position is strictly less than max lens position."""
         if self.min >= self.max:
-            raise ValueError(
-                f"focus.range.lens_pos.min ({self.min}) must be less than max ({self.max})"
-            )
+            raise ValueError(f"focus.range.min ({self.min}) must be less than max ({self.max})")
         return self
 
 
-class FocusRangeDistanceConfig(BaseModel):
-    """Subject distance range (in cm) to restrict auto focus in 'range' mode."""
-    min: int = Field(default=15, ge=8, le=75)
-    max: int = Field(default=20, ge=9, le=80)
+class FocusCompensationConfig(BaseModel):
+    """Temperature compensation of the manual focus position ('manual' focus mode only).
 
-    @model_validator(mode="after")
-    def min_must_be_less_than_max(self) -> "FocusRangeDistanceConfig":
-        """Ensure min distance is strictly less than max distance."""
-        if self.min >= self.max:
-            raise ValueError(
-                f"focus.range.distance.min ({self.min}) must be less than max ({self.max})"
-            )
-        return self
-
-
-class FocusRangeConfig(BaseModel):
-    """Auto focus range for 'range' focus mode.
-
-    Two representations of the same ranges selected by 'focus.type':
-    - lens_pos: OAK lens position value (120-255, higher = closer)
-    - distance: subject distance in cm (8-80), converted to lens_pos
+    - enabled: Apply the correction during recording sessions.
+    - coeff:   Lens position correction per degree Celsius.
+    - sweep:   Re-measure the focus position at session start with a bounded focus sweep,
+               to correct slow mechanical drift. Requires a scene with a single dominant
+               focus plane and adds ~70 s per session.
     """
-    lens_pos: FocusRangeLensPosConfig = FocusRangeLensPosConfig()
-    distance: FocusRangeDistanceConfig = FocusRangeDistanceConfig()
+    enabled: bool = True
+    coeff: float = Field(default=0.373, ge=0.0, le=1.0)
+    sweep: bool = False
 
 
 class FocusConfig(BaseModel):
@@ -170,16 +148,15 @@ class FocusConfig(BaseModel):
 
     Modes:
     - continuous: continuous auto focus
-    - manual:     fixed focus position defined in 'focus.manual'
-    - range:      auto focus restricted to a range defined in 'focus.range'
+    - manual:     fixed lens position, set in the web app and stored in 'manual_focus.json'
+    - range:      auto focus restricted to the lens position range defined in 'focus.range'
 
-    The 'type' field selects whether distances are specified as OAK lens position
-    values ('lens_pos') or in cm ('distance') for 'manual' and 'range' modes.
+    The manual focus position is not part of this file: it is a per-device calibration that
+    must be paired with the chip temperature it was set at, which only the web app can record.
     """
     mode: Literal["continuous", "manual", "range"] = "continuous"
-    type: Literal["lens_pos", "distance"] = "lens_pos"
-    manual: FocusManualConfig = FocusManualConfig()
     range: FocusRangeConfig = FocusRangeConfig()
+    compensation: FocusCompensationConfig = FocusCompensationConfig()
 
 
 class IspConfig(BaseModel):

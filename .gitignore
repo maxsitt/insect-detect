@@ -2,6 +2,7 @@
 models/*.tar.xz
 logs/
 data/
+configs/manual_focus.json*
 configs_backup/
 ssl/
 *.pem

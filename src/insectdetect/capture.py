@@ -57,14 +57,22 @@ from insectdetect.constants import (
     ARCHIVE_PATH,
     CONFIGS_PATH,
     DATA_PATH,
+    FOCUS_CORRECTION_MAX_INTERVAL,
     HOSTNAME,
     IMAGE_DRAIN_TIMEOUT,
     LOGS_PATH,
     OAK_RECONNECT_TIMEOUT,
 )
 from insectdetect.data import archive_data, upload_data
+from insectdetect.focus import FocusController, load_manual_focus
 from insectdetect.metrics import configure_logger, save_metrics, save_session_info
-from insectdetect.oak import create_pipeline, deletterbox_bbox, send_camctrl, stop_pipeline
+from insectdetect.oak import (
+    create_pipeline,
+    deletterbox_bbox,
+    get_chip_temp,
+    send_camctrl,
+    stop_pipeline,
+)
 from insectdetect.postprocess import process_images
 from insectdetect.power import PowerManagerState, init_power_manager
 
@@ -89,6 +97,7 @@ class RecordingContext:
     nn_input_size: tuple[int, int]
     sensor_roi: tuple[int, int, int, int]
     labels: list[str]
+    focus: FocusController
 
 
 @dataclass
@@ -320,7 +329,7 @@ def _run_recording(
         RecordingResult with stop reason flags and final system state.
     """
     result = RecordingResult()
-    result.session_start = datetime.now()  # noqa: DTZ005
+    result.session_start = datetime.now()  # noqa: DTZ005  fallback, reset once recording starts
 
     metrics_thread: threading.Thread | None = None
     metrics_stop = threading.Event()
@@ -387,6 +396,12 @@ def _run_recording(
             # Give auto focus/exposure/whitebalance some time to stabilize
             time.sleep(2)
 
+            # Anchor the focus and apply the temperature correction before recording starts
+            if ctx.focus.enabled:
+                focus_start = time.monotonic()
+                ctx.focus.set_up_session(ctx.q_sync, ctx.q_camctrl, ctx.q_syslog)
+                logger.info("Manual focus setup took %.1f s", time.monotonic() - focus_start)
+
             # Log recording session start with initial system state
             if ctx.pwr.enabled:
                 logger.info(
@@ -410,21 +425,21 @@ def _run_recording(
             disk_check = config.storage.disk_check
             temp_oak_max = config.oak.temp_max
             temp_oak_check = config.oak.temp_check
+            focus_check = (min(temp_oak_check, FOCUS_CORRECTION_MAX_INTERVAL)
+                           if ctx.focus.enabled else temp_oak_check)
             charge_min = config.powermanager.charge_min
             charge_check = config.powermanager.charge_check
-            try:
-                sysinfo = cast(dai.SystemInformation | None, ctx.q_syslog.tryGet())
-            except Exception:
-                logger.exception("Error getting system information from q_syslog")
-                sysinfo = None
+            temp_initial = get_chip_temp(ctx.q_syslog)
             result.disk_free = disk_free
-            result.temp_oak = round(sysinfo.chipTemperature.average) if sysinfo else 0
+            result.temp_oak = round(temp_initial) if temp_initial is not None else 0
             result.chargelevel = ctx.pwr.chargelevel_start if ctx.pwr.enabled else None
+            result.session_start = datetime.now()  # noqa: DTZ005
             start_time = time.monotonic()
             last_capture = start_time - tl_interval  # trigger first timelapse capture immediately
             next_capture = start_time + det_interval
             last_disk_check = start_time
             last_temp_oak_check = start_time
+            last_focus_check = start_time
             last_charge_check = start_time
             chargelevels: list[int | str | None] = []
             last_det_snapshot: dict[int, tuple[float, float, float, float, float]] = {}
@@ -585,14 +600,15 @@ def _run_recording(
                     last_disk_check = current_time
 
                 # Update OAK chip temperature at configured interval
-                if current_time >= last_temp_oak_check + temp_oak_check:
-                    try:
-                        sysinfo = cast(dai.SystemInformation | None, ctx.q_syslog.tryGet())
-                    except Exception:
-                        logger.exception("Error getting system information from q_syslog")
-                        sysinfo = None
-                    result.temp_oak = round(sysinfo.chipTemperature.average) if sysinfo else result.temp_oak
-                    last_temp_oak_check = current_time
+                if current_time >= last_focus_check + focus_check:
+                    temp_now = get_chip_temp(ctx.q_syslog)
+                    if current_time >= last_temp_oak_check + temp_oak_check:
+                        result.temp_oak = round(temp_now) if temp_now is not None else result.temp_oak
+                        last_temp_oak_check = current_time
+                    # Apply manual focus correction based on current chip temperature if enabled
+                    if ctx.focus.enabled:
+                        ctx.focus.apply_correction(ctx.q_camctrl, temp_now)
+                    last_focus_check = current_time
 
                 # Update charge level at configured interval and add to list if below threshold
                 if ctx.pwr.enabled and current_time >= last_charge_check + charge_check:
@@ -624,6 +640,10 @@ def _run_recording(
         logger.exception("Error during recording session %s", ctx.session_id)
     finally:
         result.session_end = datetime.now()  # noqa: DTZ005
+
+        # Persist the working anchor and the session end, which gates the sweep of the next session
+        if config.camera.focus.mode == "manual":
+            ctx.focus.persist(session_end=result.session_end)
 
         # Stop background metrics logger and wait for thread to finish
         metrics_stop.set()
@@ -803,9 +823,14 @@ def main() -> None:
         # Save sanitized config snapshot
         _save_config_snapshot(session_path, config_active, config)
 
+        # Initialize focus controller (load manual focus file if available)
+        focus = FocusController(config, load_manual_focus())
+
         # Create OAK camera pipeline and get output queues
         (pipeline, q_sync, q_syslog, q_camctrl,
-         frame_size, nn_input_size, sensor_roi, labels) = create_pipeline(config, stream=False)
+         frame_size, nn_input_size, sensor_roi, labels) = create_pipeline(
+            config, stream=False, lens_pos=focus.applied_pos
+        )
 
         # Bundle all session state into a single context object
         ctx = RecordingContext(
@@ -822,7 +847,8 @@ def main() -> None:
             frame_size=frame_size,
             nn_input_size=nn_input_size,
             sensor_roi=sensor_roi,
-            labels=labels
+            labels=labels,
+            focus=focus
         )
 
         # Start recording session

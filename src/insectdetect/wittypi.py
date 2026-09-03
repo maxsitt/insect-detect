@@ -30,6 +30,9 @@ import time
 
 from smbus2 import SMBus
 
+# Initialize logger for this module
+logger = logging.getLogger(__name__)
+
 # I2C bus number and device address
 I2C_BUS = 1
 I2C_MC_ADDRESS = 0x08
@@ -222,11 +225,11 @@ def print_info(wittypi: WittyPiStatus) -> None:
 
     for key, (value, unit) in wittypi_info.items():
         if value is None:
-            logging.info("%s: NA", key)
+            logger.info("%s: NA", key)
         elif key == "Estimated charge level" and value == "USB_C_IN":
-            logging.info("%s: %s", key, value)
+            logger.info("%s: %s", key, value)
         else:
-            logging.info("%s: %s %s", key, value, unit)
+            logger.info("%s: %s %s", key, value, unit)
 
 
 def main() -> None:
@@ -237,7 +240,7 @@ def main() -> None:
 
     while True:
         print_info(wittypi)
-        logging.info("")
+        logger.info("")
         time.sleep(2)
 
 

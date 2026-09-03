@@ -666,7 +666,9 @@ def build_roi_overlay(zoom: float) -> str:
         SVG string with the ROI boundary rectangle.
     """
     # Pending crop dimensions from precomputed lookup table (exact aligned pixel values)
-    pending_w, pending_h = ZOOM_SIZES[app.state.config.camera.image.resolution]["stream"][zoom]
+    zoom_table = ZOOM_SIZES[app.state.config.camera.image.resolution]["stream"]
+    zoom = min(max(zoom, min(zoom_table)), max(zoom_table))
+    pending_w, pending_h = zoom_table[zoom]
 
     # Center the pending crop within the active frame
     x_min_norm = (app.state.frame_size[0] - pending_w) / 2 / app.state.frame_size[0]
